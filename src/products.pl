@@ -7,4 +7,4 @@
 
 product('milk').
 product('bread').
-product('')
+product('water').

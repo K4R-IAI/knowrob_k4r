@@ -1,6 +1,7 @@
 :- module(k4r_purchase,
 	[
-	test_sparql(r)
+	shopping_basket(r),
+	in_basket('r','r')
 	]).
 
 :- use_module(library('semweb/sparql_client')).
@@ -17,15 +18,15 @@
 %
 % @param ID ID of the customer.
 %
-customer('A235').
-customer('A352').
-customer('A524').
+shopping_basket('A235').
+shopping_basket('A352').
+shopping_basket('A524').
 
-%% has_shopping_basket(?ID,?Basket) is nondet.
+%% in_basket(?ID,?Item) is nondet.
 %
 % True iff there is a customer with this ID that is assigned this basket.
 %
 % @param ID ID of the customer.
 %
-has_in_basket('A235', '10001').
-has_in_basket('A352', '10002').
+in_basket('A235', 'milk').
+in_basket('A352', 'water').

@@ -20,3 +20,5 @@
 customer('235').
 customer('352').
 customer('524').
+
+has_shopping_basket('234','A235').
