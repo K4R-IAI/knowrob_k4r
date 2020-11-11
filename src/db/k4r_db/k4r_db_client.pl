@@ -1,5 +1,5 @@
 :- module(k4r_db_client,
-    [ k4_db_get/2
+    [ k4rdb_values/2
     ]).
 /** <module> A client for the k4r db for Prolog.
 
@@ -7,24 +7,7 @@
 @license BSD
 */
 
-/*
-  triple(L, rdf:first, X),
-  triple(L, rdf:rest, Ys)
--->
-db.triples.aggregate([
-   { $match: { p: rdf:rest } },
-   { $graphLookup: {
-      from: "triples",
-      startWith: "$o", connectFromField: "o", connectToField: "s",
-      restrictSearchWithMatch: { p: rdf:rest },
-      as: "paths"
-   }}
-])
--->
-{ [ ... ] }
-*/
-
-:- use_foreign_library('lib_k4rdb_kb.so').
+:- use_foreign_library('libk4r_db_client.so').
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
