@@ -11,9 +11,9 @@
 #include <iostream>
 #include <list>    
 
-PREDICATE(k4rdb_values, 2) {PL_A1
+PREDICATE(k4rdb_values, 2) {
 	// This method gets the path in the variable PL_A1 and should return a list of values and assign it toPL_A2
-	// REturning could look a bit like this:
+	// Returning could look a bit like this:
 	PlTail values(PL_A2);
 	values.append("Test1");
 	values.append("Test2");
