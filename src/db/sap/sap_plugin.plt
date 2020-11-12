@@ -22,7 +22,30 @@ test('sap_mng_get_field_values') :-
 
 test('sap_mng_get_item_filter') :-
 	sap_mng_get_item_filter('MATNR',string('000000000100000022'),Items),
-	write(Items),
+	write(Item),
 	write('\n').
 
-:- end_tests('sap_plugin').
+test('sap_mng_get_price_of_MATNR') :-
+  write(-------------------------------),
+  write('\n'),
+  sap_mng_get_price_of_MATNR(string('000000000100000022'),Price),
+  write(Price),
+  write('\n').
+  %DB=roslog,
+  %Name=sap,
+  %P1=,
+  %write(-------------------------------),
+  %mng_db_name(DB),
+  %mng_cursor_create(DB,Name,Cursor),
+  %mng_cursor_filter(Cursor,['MATNR',P1]),
+  %mng_cursor_materialize(Cursor,Item),
+  %write('Item:\n'),
+  %write(Item),
+  %write('\n'),
+  %mng_get_dict('E1WBB03',Item,ProductInfos),
+  %mng_get_dict('E1WBB07',ProductInfos,ProductInfosPricerelated),
+  %mng_get_dict('E1WBB08',ProductInfosPricerelated,ProductInfosPriceInfo),
+  %mng_get_dict('KWERT',ProductInfosPriceInfo,Price),
+  %write(Price).
+
+:- end_tests('sap_plugin')

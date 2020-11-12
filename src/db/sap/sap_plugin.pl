@@ -2,7 +2,8 @@
 	[
 	sap_mng_wipe/0,
 	sap_mng_get_item_filter/3,
-	sap_mng_get_field_values/2
+	sap_mng_get_field_values/2,
+	sap_mng_get_price_of_MATNR/2
 	]).
 
 :- use_module(library('db/mongo/client')).
@@ -54,7 +55,7 @@ get_field_values([Field|[]], DictList, _, FieldValues) :-
 		( member(Dict, DictList),
 			mng_get_dict(Field, Dict, FieldValue)
 		), FieldValues).
-		
+
 get_field_root_values(Field, Cursor, FieldValues) :-
 	findall(FieldValue,
 		(	mng_cursor_materialize(Cursor,Items),
@@ -71,4 +72,16 @@ sap_mng_get_item_filter(Field,FieldValue,Items) :-
 	findall(Item,
 	(    mng_cursor_materialize(Cursor,Item)
 	), Items),
+	mng_cursor_destroy(Cursor).
+
+sap_mng_get_price_of_MATNR(MATNR,Price) :-
+	mng_db_name(DB),
+	sap_db(DB, Name),
+	mng_cursor_create(DB,Name,Cursor),
+	mng_cursor_filter(Cursor,['MATNR',MATNR]),
+	mng_cursor_materialize(Cursor,Item),
+	mng_get_dict('E1WBB03',Item,ProductInfos),
+	mng_get_dict('E1WBB07',ProductInfos,ProductInfosPricerelated),
+	mng_get_dict('E1WBB08',ProductInfosPricerelated,ProductInfosPriceInfo),
+	mng_get_dict('KWERT',ProductInfosPriceInfo,Price),
 	mng_cursor_destroy(Cursor).
