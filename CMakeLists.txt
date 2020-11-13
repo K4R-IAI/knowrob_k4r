@@ -13,12 +13,16 @@ find_package(PkgConfig)
 pkg_check_modules(SWIPL REQUIRED swipl)
 link_directories(${SWIPL_LIBRARY_DIRS})
 
+pkg_check_modules(CURLPP REQUIRED curlpp)
+include_directories(${CURLPP_INCLUDE_DIRS})
+link_directories(${CURLPP_LIBRARY_DIRS})
+
 catkin_package(
 	CATKIN_DEPENDS rosprolog roscpp roslib
 )
 
 set(CMAKE_CXX_FLAGS "-std=c++0x -pthread ${CMAKE_CXX_FLAGS}")
-include_directories(include ${SWIPL_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
+include_directories(include ${SWIPL_INCLUDE_DIRS} ${CURLPP_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
 ##############
 #### DB
@@ -31,7 +35,7 @@ install(DIRECTORY prolog/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/prolog)
 
 add_library(k4r_db_client SHARED src/db/k4r_db/k4rdb_kb.cpp)
-target_link_libraries(k4r_db_client ${SWIPL_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(k4r_db_client ${SWIPL_LIBRARIES} ${CURLPP_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(k4r_db_client
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS})
