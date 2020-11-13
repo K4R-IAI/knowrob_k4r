@@ -26,7 +26,7 @@ catkin_package(
 )
 
 set(CMAKE_CXX_FLAGS "-std=c++0x -pthread ${CMAKE_CXX_FLAGS}")
-include_directories(include ${SWIPL_INCLUDE_DIRS} ${JSONCPP_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
+include_directories(include ${SWIPL_INCLUDE_DIRS} ${CURLPP_INCLUDE_DIRS} ${JSONCPP_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
 ##############
 #### DB
@@ -39,7 +39,7 @@ install(DIRECTORY prolog/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/prolog)
 
 add_library(k4r_db_client SHARED src/db/k4r_db/k4rdb_kb.cpp)
-target_link_libraries(k4r_db_client ${SWIPL_LIBRARIES} ${JSONCPP_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(k4r_db_client ${SWIPL_LIBRARIES} ${CURLPP_LIBRARIES} ${JSONCPP_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(k4r_db_client
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS})
