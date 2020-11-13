@@ -40,8 +40,8 @@ PREDICATE(k4rdb_values, 2) {
 	// Then it should return a list of the values and assign it to PL_A2
 	// Returning lists to Prolog can be done like this:
 	PlTail values(PL_A2);
-	values.append(data_json["storeName"].asString());
-	values.append(data_json["storeNumber"].asString());
-	values.append(data_json["addressCountry"].asString());
+	values.append(data_json["storeName"].asString().c_str());
+	values.append(data_json["storeNumber"].asString().c_str());
+	values.append(data_json["addressCountry"].asString().c_str());
 	return values.close();
 }
