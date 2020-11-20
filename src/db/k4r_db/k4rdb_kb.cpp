@@ -8,40 +8,51 @@
 
 #define PL_SAFE_ARG_MACROS
 #include <SWI-cpp.h>
-#include <iostream>
-#include <list>    
 
-// For REST
-#include <curlpp/cURLpp.hpp>
-#include <curlpp/Options.hpp>
-#include <sstream>
-#include <jsoncpp/json/json.h>
-#include <jsoncpp/json/reader.h>
+// For K4R
+#include "Entities/CharacteristicController.cpp"
+#include "Entities/CustomerController.cpp"
+#include "Entities/ProductController.cpp"
+#include "Entities/PropertyController.cpp"
+#include "Entities/ShelfController.cpp"
+#include "Entities/ShelfLayerController.cpp"
+#include "Entities/StoreController.cpp"
 
-PREDICATE(k4rdb_values, 2) {
-	// This method gets the path in the variable PL_A1.
-	// This is how you assign the value to path
-	std::string path((char*)PL_A1);
-	// Then get the values from the API
+PREDICATE(k4r_get_stores, 2) {
+  StoreController stores(PL_A1);
 
-	// That's all that is needed to do cleanup of used resources (RAII style).
-  curlpp::Cleanup myCleanup;
+  PlTail values(PL_A2);
+  values.append(stores.get_stores().toStyledString().c_str());
+  return values.close();
+}
 
-  // Read data as a string
-  std::stringstream os;
-  os << curlpp::options::Url(std::string("http://ked.informatik.uni-bremen.de:8090/k4r-core/api/v0/stores/4")); // This is PL_A1 I think
-  std::string data = os.str();
+PREDICATE(k4r_get_customers, 2)
+{
+  CustomerController customers(PL_A1);
 
-  // Convert the string to json
-  Json::Value data_json;
-  Json::Reader reader;
-  reader.parse(data, data_json);
+  PlTail values(PL_A2);
+  values.append(customers.get_customers().toStyledString().c_str());
+  return values.close();
+}
 
-	// Then it should return a list of the values and assign it to PL_A2
-	// Returning lists to Prolog can be done like this:
-	PlTail values(PL_A2);
-	values.append(data_json["storeName"].asString().c_str());
-	values.append(data_json["storeNumber"].asString().c_str());
-	values.append(data_json["addressCountry"].asString().c_str());
-	return values.close();
+PREDICATE(k4r_post_customer, 2)
+{
+  CustomerController customers(PL_A1);
+
+  return customers.post_customer(std::string(PL_A2));
+}
+
+PREDICATE(k4r_delete_customer, 2)
+{
+  CustomerController customers(PL_A1);
+  std::string customer_id;
+  for (const auto customer : customers.get_customers())
+  {
+    if (customer["anonymisedName"].compare(std::string(PL_A2)) == 0)
+    {
+      customer_id = customer["id"].asString();
+      break; // In case we find more...
+    }
+  }
+  return customers.delete_customer(customer_id);
 }
