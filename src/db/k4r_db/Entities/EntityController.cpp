@@ -3,6 +3,7 @@
 #include <curlpp/Easy.hpp>
 #include <curlpp/Options.hpp>
 #include <curlpp/cURLpp.hpp>
+#include <curlpp/Infos.hpp>
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/reader.h>
 #include <sstream>
@@ -31,6 +32,7 @@ public:
   virtual bool post_data(std::string link_tail = "")
   {
     curlpp::Easy request;
+    long status_code = 0;
     try
     {
       request.setOpt<curlpp::options::Url>((this->link + link_tail).c_str());
@@ -40,6 +42,9 @@ public:
       request.setOpt(new curlpp::options::HttpHeader(header));
       request.setOpt(new curlpp::options::PostFields(this->data.toStyledString()));
       request.perform();
+      status_code = curlpp::infos::ResponseCode::get(request);
+
+      return status_code == 200;
     }
 
     catch (curlpp::RuntimeError& e)
@@ -52,18 +57,20 @@ public:
     {
       std::cout << e.what() << std::endl;
     }
-
-    return true;
   }
 
   virtual bool delete_data(std::string link_tail = "")
   {
     curlpp::Easy request;
+    long status_code = 0;
     try
     {
       request.setOpt<curlpp::options::Url>((this->link + link_tail).c_str());
       request.setOpt(new curlpp::options::CustomRequest{"DELETE"});
       request.perform();
+      status_code = curlpp::infos::ResponseCode::get(request);
+
+      return status_code == 200;
     }
 
     catch (curlpp::RuntimeError& e)
@@ -76,8 +83,6 @@ public:
     {
       std::cout << e.what() << std::endl;
     }
-
-    return true;
   }
 
   Json::Value data;
