@@ -27,7 +27,7 @@ void remove_new_line(std::string& str)
 
 class Entity
 {
-private:
+protected:
   std::string link;
   
 public:
@@ -76,7 +76,34 @@ public:
       request.setOpt(new curlpp::options::PostFields(this->data.toStyledString()));
       request.perform();
       status_code = curlpp::infos::ResponseCode::get(request);
+      return status_code == 200;
+    }
 
+    catch (curlpp::RuntimeError& e)
+    {
+      std::cout << e.what() << std::endl;
+      std::cout << "Is host name correct?" << std::endl;
+    }
+
+    catch (curlpp::LogicError& e)
+    {
+      std::cout << e.what() << std::endl;
+    }
+  }
+
+  virtual bool put_data(std::string link_tail = "")
+  {
+    remove_new_line(link_tail);
+    curlpp::Easy request;
+    long status_code = 0;
+    try
+    {
+      request.setOpt<curlpp::options::Url>((this->link + link_tail).c_str());
+      request.setOpt(new curlpp::options::Put(true));
+      request.setOpt(new curlpp::options::Upload(true));
+      request.setOpt(new curlpp::options::PostFields(this->data.toStyledString()));
+      request.perform();
+      status_code = curlpp::infos::ResponseCode::get(request);
       return status_code == 200;
     }
 
@@ -137,6 +164,12 @@ protected:
   {
     this->data = data;
     return this->post_data(link_tail);
+  }
+
+  virtual bool put_entity(const Json::Value& data, std::string link_tail = "")
+  {
+    this->data = data;
+    return this->put_data(link_tail);
   }
 
   virtual bool delete_entity(std::string link_tail = "")

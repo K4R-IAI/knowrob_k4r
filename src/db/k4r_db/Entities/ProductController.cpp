@@ -8,11 +8,12 @@ public:
   ProductController(const char*);
 
   Json::Value get_product(const std::string &);
-  bool post_product(const Json::Value &, const std::string &);
-  bool delete_product(const std::string &);
-
   Json::Value get_products();
-  bool post_products(const Json::Value &);
+
+  bool post_product(const Json::Value &, const std::string &);
+  bool post_products(const Json::Value&);
+
+  bool delete_product(const std::string &);
 };
 
 ProductController::ProductController(const char* link) : EntityController::EntityController((std::string(link) + "products/").c_str())

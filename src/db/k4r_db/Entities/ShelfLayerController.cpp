@@ -16,13 +16,13 @@ public:
   bool set_shelf(const std::string&);
 
   Json::Value get_shelf_layer(const std::string&);
+  Json::Value get_shelf_layers(const std::string&);
+  Json::Value get_shelf_layers();
 
   bool post_shelf_layer(const std::string &, const Json::Value&);
   bool post_shelf_layer(const Json::Value&);
-  bool delete_shelf_layer(const std::string&);
 
-  Json::Value get_shelf_layers(const std::string&);
-  Json::Value get_shelf_layers();
+  bool delete_shelf_layer(const std::string&);
 };
 
 ShelfLayerController::ShelfLayerController(const char* link) : EntityController::EntityController(link)

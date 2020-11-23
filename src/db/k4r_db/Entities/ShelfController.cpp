@@ -16,14 +16,14 @@ public:
   bool set_store(const std::string&);
 
   Json::Value get_shelf(const std::string&);
+  Json::Value get_shelves(const std::string&);
+  Json::Value get_shelves();
 
   bool post_shelf(const std::string &, const Json::Value&);
   bool post_shelf(const Json::Value&);
+
   bool delete_shelf(const std::string&, const std::string&, const std::string&);
   bool delete_shelf(const std::string&);
-
-  Json::Value get_shelves(const std::string&);
-  Json::Value get_shelves();
 };
 
 ShelfController::ShelfController(const char* link) : EntityController::EntityController(link)

@@ -8,10 +8,11 @@ public:
   CharacteristicController(const char*);
 
   Json::Value get_characteristic(const std::string &);
-  bool post_characteristic(const std::string &);
-  bool delete_characteristic(const std::string &);
-
   Json::Value get_characteristics();
+
+  bool post_characteristic(const std::string &);
+
+  bool delete_characteristic(const std::string &);
 };
 
 CharacteristicController::CharacteristicController(const char* link) : EntityController::EntityController((std::string(link) + "characteristics/").c_str())

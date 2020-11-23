@@ -24,13 +24,14 @@ public:
   bool set_product(const std::string&);
   bool set_characteristic(const std::string&);
 
+  Json::Value get_properties();
+
   bool post_property(const std::string&, const std::string&, const std::string&, const std::string&);
   bool post_property(const std::string&);
+  
   bool delete_property(const std::string&, const std::string&, const std::string&);
   bool delete_property(const std::string&);
   bool delete_property();
-
-  Json::Value get_properties();
 };
 
 PropertyController::PropertyController(const char* link) : EntityController::EntityController((std::string(link) + "stores/").c_str())

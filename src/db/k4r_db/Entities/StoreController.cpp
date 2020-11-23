@@ -8,11 +8,12 @@ public:
   StoreController(const char*);
 
   Json::Value get_store(const std::string&);
-  bool post_store(const Json::Value&);
-  bool delete_store(const std::string&);
-
   Json::Value get_stores();
+
+  bool post_store(const Json::Value&);
   bool post_stores(const Json::Value&);
+
+  bool delete_store(const std::string&);
 };
 
 StoreController::StoreController(const char* link) : EntityController::EntityController((std::string(link) + "stores/").c_str())

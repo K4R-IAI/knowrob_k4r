@@ -17,6 +17,7 @@
 #include "Entities/ShelfController.cpp"
 #include "Entities/ShelfLayerController.cpp"
 #include "Entities/StoreController.cpp"
+#include "Entities/ShoppingBasketController.cpp"
 
 PREDICATE(k4r_get_link, 1) {
   PL_A1 = "http://ked.informatik.uni-bremen.de:8090/k4r-core/api/v0/";
@@ -85,6 +86,12 @@ PREDICATE(k4r_post_customer, 2)
 {
   CustomerController customers(PL_A1);
   return customers.post_customer(std::string(PL_A2));
+}
+
+PREDICATE(k4r_put_customer, 3)
+{
+  CustomerController customers(PL_A1);
+  return customers.put_customer(std::string(PL_A2), std::string(PL_A3));
 }
 
 PREDICATE(k4r_delete_customer, 2)
@@ -335,7 +342,6 @@ PREDICATE(k4r_post_shelf_layer, 3)
 {
   ShelfLayerController shelf_layers(PL_A1, std::string(PL_A2));
   Json::Value entity = char_to_json((char*)PL_A3);
-  std::cout << entity << std::endl;
   return shelf_layers.post_shelf_layer(entity);
 }
 
@@ -343,4 +349,56 @@ PREDICATE(k4r_delete_shelf_layer, 2)
 {
   ShelfLayerController shelf_layers(PL_A1);
   return shelf_layers.delete_shelf_layer(std::string(PL_A2));
+}
+
+// Shopping basket
+
+PREDICATE(k4r_get_shopping_baskets, 4)
+{
+  ShoppingBasketController shopping_baskets(PL_A1, std::string(PL_A2), std::string(PL_A3));
+
+  PlTail values(PL_A4);
+  for (const Json::Value& shopping_basket : shopping_baskets.get_shopping_baskets())
+  {
+    values.append(shopping_basket.toStyledString().c_str());
+  }
+  return values.close();
+}
+
+PREDICATE(k4r_get_shopping_basket_by_id, 5)
+{
+  ShoppingBasketController shopping_baskets(PL_A1, std::string(PL_A2), std::string(PL_A3), std::string(PL_A4));
+
+  Json::Value shopping_basket = shopping_baskets.get_shopping_basket();
+  std::string product_id = shopping_basket["productId"].asString();
+  remove_new_line(product_id);
+  if (std::string(PL_A4) == product_id)
+  {
+    PL_A5 = shopping_basket.toStyledString().c_str();
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+PREDICATE(k4r_post_shopping_basket, 4)
+{
+  ShoppingBasketController shopping_baskets(PL_A1, std::string(PL_A2), std::string(PL_A3));
+  std::cout << (char*)PL_A4 << std::endl;
+  Json::Value shopping_basket = char_to_json((char*)PL_A4);
+  return shopping_baskets.post_shopping_basket(shopping_basket);
+}
+
+PREDICATE(k4r_delete_shopping_baskets, 3)
+{
+  ShoppingBasketController shopping_baskets(PL_A1, std::string(PL_A2), std::string(PL_A3));
+  return shopping_baskets.delete_shopping_baskets();
+}
+
+PREDICATE(k4r_delete_shopping_basket, 4)
+{
+  ShoppingBasketController shopping_baskets(PL_A1, std::string(PL_A2), std::string(PL_A3), std::string(PL_A4));
+  return shopping_baskets.delete_shopping_basket();
 }
