@@ -7,6 +7,23 @@
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/reader.h>
 #include <sstream>
+#include <string>
+
+void remove_new_line(std::string& str)
+{
+  while (true)
+  {
+    size_t str_last_index = str.length() - 1;
+    if (!str.empty() && str[str_last_index] == '\n')
+    {
+      str.erase(str_last_index);
+    }
+    else
+    {
+      break;
+    }
+  }
+}
 
 class Entity
 {
@@ -16,21 +33,37 @@ private:
 public:
   virtual Json::Value get_data(std::string link_tail = "")
   {
+    remove_new_line(link_tail);
     curlpp::Easy request;
-    request.setOpt<curlpp::options::Url>((this->link + link_tail).c_str());
+    try
+    {
+      request.setOpt<curlpp::options::Url>((this->link + link_tail).c_str());
 
-    std::stringstream ss;
-    ss << request;
-    request.perform();
+      std::stringstream ss;
+      ss << request;
+      request.perform();
 
-    // Convert the string to json
-    Json::Reader reader;
-    reader.parse(ss.str(), this->data);
-    return this->data;
+      // Convert the string to json
+      Json::Reader reader;
+      reader.parse(ss.str(), this->data);
+      return this->data;
+    }
+
+    catch (curlpp::RuntimeError& e)
+    {
+      std::cout << e.what() << std::endl;
+      std::cout << "Is host name correct?" << std::endl;
+    }
+
+    catch (curlpp::LogicError& e)
+    {
+      std::cout << e.what() << std::endl;
+    }
   }
 
   virtual bool post_data(std::string link_tail = "")
   {
+    remove_new_line(link_tail);
     curlpp::Easy request;
     long status_code = 0;
     try
@@ -61,6 +94,7 @@ public:
 
   virtual bool delete_data(std::string link_tail = "")
   {
+    remove_new_line(link_tail);
     curlpp::Easy request;
     long status_code = 0;
     try

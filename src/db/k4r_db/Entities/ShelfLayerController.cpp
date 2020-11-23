@@ -11,6 +11,7 @@ private:
 
 public:
   ShelfLayerController(const char*);
+  ShelfLayerController(const char*, const std::string);
 
   bool set_shelf(const std::string&);
 
@@ -27,6 +28,11 @@ public:
 ShelfLayerController::ShelfLayerController(const char* link) : EntityController::EntityController(link)
 {
   shelf_controller = new ShelfController(link);
+}
+
+ShelfLayerController::ShelfLayerController(const char* link, const std::string shelf_id) : ShelfLayerController::ShelfLayerController(link)
+{
+  this->set_shelf(shelf_id);
 }
 
 bool ShelfLayerController::set_shelf(const std::string& shelf_id)

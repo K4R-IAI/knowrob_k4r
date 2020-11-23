@@ -5,7 +5,10 @@
     k4r_get_entity_by_id/3,
     k4r_get_customer_by_name/3,
     k4r_get_store_by_name/3,
-    k4r_get_product_by_name/3
+    k4r_get_product_by_name/3,
+    k4r_get_characteristic_by_name/3,
+    k4r_get_shelf_by_externalReferenceId/3,
+    k4r_get_shelf_layer_by_externalReferenceId/3
     ]).
 /** <module> A client for the k4r db for Prolog.
 
@@ -49,3 +52,12 @@ k4r_get_store_by_name(StoreList, StoreName, Store) :-
 
 k4r_get_product_by_name(ProductList, ProductName, Product) :-
     k4r_get_entity_by_key_value(ProductList, "name", ProductName, Product).
+
+k4r_get_characteristic_by_name(CharacteristicList, CharacteristicName, Characteristic) :-
+    k4r_get_entity_by_key_value(CharacteristicList, "name", CharacteristicName, Characteristic).
+
+k4r_get_shelf_by_externalReferenceId(ShelfList, ShelfExtRefId, Shelf) :-
+    k4r_get_entity_by_key_value(ShelfList, "externalReferenceId", ShelfExtRefId, Shelf).
+
+k4r_get_shelf_layer_by_externalReferenceId(ShelfLayerList, ShelfLayerExtRefId, ShelfLayer) :-
+    k4r_get_entity_by_key_value(ShelfLayerList, "externalReferenceId", ShelfLayerExtRefId, ShelfLayer).

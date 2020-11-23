@@ -11,6 +11,7 @@ private:
 
 public:
   ShelfController(const char*);
+  ShelfController(const char*, const std::string);
 
   bool set_store(const std::string&);
 
@@ -28,6 +29,11 @@ public:
 ShelfController::ShelfController(const char* link) : EntityController::EntityController(link)
 {
   store_controller = new StoreController(link);
+}
+
+ShelfController::ShelfController(const char* link, const std::string store_id) : ShelfController::ShelfController(link)
+{
+  this->set_store(store_id);
 }
 
 bool ShelfController::set_store(const std::string& store_id)

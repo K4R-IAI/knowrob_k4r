@@ -17,6 +17,8 @@ private:
 
 public:
   PropertyController(const char*);
+  PropertyController(const char*, const std::string, const std::string);
+  PropertyController(const char*, const std::string, const std::string, const std::string);
 
   bool set_store(const std::string&);
   bool set_product(const std::string&);
@@ -25,6 +27,7 @@ public:
   bool post_property(const std::string&, const std::string&, const std::string&, const std::string&);
   bool post_property(const std::string&);
   bool delete_property(const std::string&, const std::string&, const std::string&);
+  bool delete_property(const std::string&);
   bool delete_property();
 
   Json::Value get_properties();
@@ -35,6 +38,18 @@ PropertyController::PropertyController(const char* link) : EntityController::Ent
   store_controller = new StoreController(link);
   product_controller = new ProductController(link);
   characteristic_controller = new CharacteristicController(link);
+}
+
+PropertyController::PropertyController(const char* link, const std::string store_id, const std::string product_id) : PropertyController::PropertyController(link)
+{
+  this->set_store(store_id);
+  this->set_product(product_id);
+}
+
+PropertyController::PropertyController(const char* link, const std::string store_id, const std::string product_id, const std::string characteristic_id) : 
+PropertyController::PropertyController(link, store_id, product_id)
+{
+  this->set_characteristic(characteristic_id);
 }
 
 bool PropertyController::set_store(const std::string& store_id)
@@ -101,6 +116,12 @@ bool PropertyController::post_property(const std::string& value)
 bool PropertyController::delete_property(const std::string& store_id, const std::string& product_id, const std::string& characteristic_id)
 {
   return this->set_store(store_id) && this->set_product(product_id) && this->set_characteristic(characteristic_id) && this->delete_property();
+}
+
+bool PropertyController::delete_property(const std::string& characteristic_id)
+{
+  std::string link_tail = this->store_id + "/products/" + this->product_id + "/properties/" + characteristic_id;
+  return this->delete_entity(link_tail);
 }
 
 bool PropertyController::delete_property()
