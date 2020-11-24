@@ -33,6 +33,7 @@ protected:
 public:
   virtual Json::Value get_data(std::string link_tail = "")
   {
+    cURLpp::Cleanup cleanup;
     remove_new_line(link_tail);
     curlpp::Easy request;
     try
@@ -68,8 +69,8 @@ public:
     long status_code = 0;
     try
     {
+      cURLpp::Cleanup cleanup;
       request.setOpt<curlpp::options::Url>((this->link + link_tail).c_str());
-
       std::list<std::string> header;
       header.push_back("Content-Type: application/json");
       request.setOpt(new curlpp::options::HttpHeader(header));
@@ -93,14 +94,17 @@ public:
 
   virtual bool put_data(std::string link_tail = "")
   {
+    cURLpp::Cleanup cleanup;
     remove_new_line(link_tail);
     curlpp::Easy request;
     long status_code = 0;
     try
     {
       request.setOpt<curlpp::options::Url>((this->link + link_tail).c_str());
-      request.setOpt(new curlpp::options::Put(true));
-      request.setOpt(new curlpp::options::Upload(true));
+      std::list<std::string> header;
+      header.push_back("Content-Type: application/json");
+      request.setOpt(new curlpp::options::HttpHeader(header));
+      request.setOpt(new curlpp::options::CustomRequest("PUT"));
       request.setOpt(new curlpp::options::PostFields(this->data.toStyledString()));
       request.perform();
       status_code = curlpp::infos::ResponseCode::get(request);
@@ -121,6 +125,7 @@ public:
 
   virtual bool delete_data(std::string link_tail = "")
   {
+    cURLpp::Cleanup cleanup;
     remove_new_line(link_tail);
     curlpp::Easy request;
     long status_code = 0;

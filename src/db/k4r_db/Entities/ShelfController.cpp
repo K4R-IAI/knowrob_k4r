@@ -13,6 +13,8 @@ public:
   ShelfController(const char*);
   ShelfController(const char*, const std::string);
 
+  bool check_shelf(const Json::Value&);
+
   bool set_store(const std::string&);
 
   Json::Value get_shelf(const std::string&);
@@ -21,6 +23,8 @@ public:
 
   bool post_shelf(const std::string &, const Json::Value&);
   bool post_shelf(const Json::Value&);
+
+  bool put_shelf(const std::string &, const Json::Value&);
 
   bool delete_shelf(const std::string&, const std::string&, const std::string&);
   bool delete_shelf(const std::string&);
@@ -62,7 +66,7 @@ bool ShelfController::post_shelf(const std::string& store_id, const Json::Value&
   return this->set_store(store_id) && this->post_shelf(shelf);
 }
 
-bool ShelfController::post_shelf(const Json::Value& shelf)
+bool ShelfController::check_shelf(const Json::Value& shelf)
 {
   if (shelf["cadPlanId"].isString() &&
       shelf["depth"].isInt() &&
@@ -78,14 +82,25 @@ bool ShelfController::post_shelf(const Json::Value& shelf)
       shelf["productGroupId"].isInt() &&
       shelf["width"].isNumeric())
   {
-    std::string link_tail = "/stores/" + this->store_id + "/shelves";
-    return this->post_entity(shelf, link_tail);
+    return true;
   }
   else
   {
     std::cout << "Invalid Shelf" << std::endl;
     return false;
   }
+}
+
+bool ShelfController::post_shelf(const Json::Value& shelf)
+{
+  std::string link_tail = "/stores/" + this->store_id + "/shelves";
+  return this->check_shelf(shelf) && this->post_entity(shelf, link_tail);
+}
+
+bool ShelfController::put_shelf(const std::string& shelf_id, const Json::Value& shelf)
+{
+  std::string link_tail = "/shelves/" + shelf_id;
+  return this->check_shelf(shelf) && this->put_entity(shelf, link_tail);
 }
 
 bool ShelfController::delete_shelf(const std::string& shelf_id)

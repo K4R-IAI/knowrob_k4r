@@ -136,6 +136,13 @@ PREDICATE(k4r_post_store, 2)
   return stores.post_store(entity);
 }
 
+PREDICATE(k4r_put_store, 3)
+{
+  StoreController stores(PL_A1);
+  Json::Value entity = char_to_json((char*)PL_A3);
+  return stores.put_store(std::string(PL_A2), entity);
+}
+
 PREDICATE(k4r_delete_store, 2)
 {
   StoreController stores(PL_A1);
@@ -181,11 +188,18 @@ PREDICATE(k4r_post_products, 2)
   return products.post_products(entity);
 }
 
+PREDICATE(k4r_put_product, 3)
+{
+  ProductController products(PL_A1);
+  Json::Value entity = char_to_json((char*)PL_A2);
+  return products.put_product(std::string(PL_A3), entity);
+}
+
 PREDICATE(k4r_post_product, 3)
 {
   ProductController products(PL_A1);
   Json::Value entity = char_to_json((char*)PL_A2);
-  return products.post_product(entity, std::string(PL_A3));
+  return products.post_product(std::string(PL_A3), entity);
 }
 
 PREDICATE(k4r_delete_product, 2)
@@ -286,6 +300,13 @@ PREDICATE(k4r_post_shelf, 3)
   ShelfController shelves(PL_A1, std::string(PL_A2));
   Json::Value entity = char_to_json((char*)PL_A3);
   return shelves.post_shelf(entity);
+}
+
+PREDICATE(k4r_put_shelf, 3)
+{
+  ShelfController shelves(PL_A1);
+  Json::Value entity = char_to_json((char*)PL_A3);
+  return shelves.put_shelf(std::string(PL_A2), entity);
 }
 
 PREDICATE(k4r_delete_shelf, 2)

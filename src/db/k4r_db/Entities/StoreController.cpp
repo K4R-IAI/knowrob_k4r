@@ -7,11 +7,15 @@ class StoreController : public EntityController
 public:
   StoreController(const char*);
 
+  bool check_store(const Json::Value&);
+
   Json::Value get_store(const std::string&);
   Json::Value get_stores();
 
   bool post_store(const Json::Value&);
   bool post_stores(const Json::Value&);
+
+  bool put_store(const std::string&, const Json::Value&);
 
   bool delete_store(const std::string&);
 };
@@ -25,7 +29,7 @@ Json::Value StoreController::get_store(const std::string& store_id)
   return this->get_entity(store_id);
 }
 
-bool StoreController::post_store(const Json::Value& store)
+bool StoreController::check_store(const Json::Value& store)
 {
   if (store["addressAdditional"].isString() &&
       store["addressCity"].isString() &&
@@ -40,13 +44,23 @@ bool StoreController::post_store(const Json::Value& store)
       store["storeName"].isString() &&
       store["storeNumber"].isString())
   {
-    return this->post_entity(store);
+    return true;
   }
   else
   {
     std::cout << "Invalid Store" << std::endl;
     return false;
   }
+}
+
+bool StoreController::post_store(const Json::Value& store)
+{
+  return this->check_store(store) && this->post_entity(store);
+}
+
+bool StoreController::put_store(const std::string& store_id, const Json::Value& store)
+{
+  return this->check_store(store) && this->put_entity(store, store_id);
 }
 
 bool StoreController::delete_store(const std::string& store_id)
