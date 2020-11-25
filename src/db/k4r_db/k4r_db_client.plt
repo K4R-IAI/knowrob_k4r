@@ -6,12 +6,12 @@
         'package://knowrob/owl/test/test_owl.owl'
   ).
 
-% % Customer
+% Customer
 
 test('k4r_customer_test_1') :-
   k4r_get_link(Link),
-  k4r_get_customer_by_id(Link, 122, Customer),
-  writeln('Return customer with id 122:'),
+  k4r_get_customer_by_id(Link, 10, Customer),
+  writeln('Return customer with id 10:'),
   writeln(Customer).
 
 test('k4r_customer_test_2') :-
@@ -135,43 +135,43 @@ test('k4r_characteristic_test_3') :-
 
 test('k4r_property_test_1') :-
   k4r_get_link(Link),
-  k4r_get_properties(Link, "21", "0", PropertyList),
-  writeln('Return properties of product 0 in store 21:'),
+  k4r_get_properties(Link, "2", "A1", PropertyList),
+  writeln('Return properties of product A1 in store 2:'),
   writeln(PropertyList).
 
 test('k4r_property_test_2') :-
   k4r_get_link(Link),
   k4r_get_characteristics(Link, CharacteristicList),
-  k4r_get_characteristic_by_name(CharacteristicList, "price", Characteristic),
+  k4r_get_characteristic_by_name(CharacteristicList, "Review", Characteristic),
   k4r_get_entity_id(Characteristic, CharacteristicId),
-  k4r_post_property(Link, "21", "0", CharacteristicId, "1000 Euro"),
-  k4r_get_properties(Link, "21", "0", PropertyList),
-  writeln('Return properties of product 0 in store 21 with price 1000 Euro:'),
+  k4r_post_property(Link, "2", "A1", CharacteristicId, "Good Review"),
+  k4r_get_properties(Link, "2", "A1", PropertyList),
+  writeln('Return properties of product A1 in store 2 with Good Review:'),
   writeln(PropertyList).
 
 test('k4r_property_test_3') :-
   k4r_get_link(Link),
   k4r_get_characteristics(Link, CharacteristicList),
-  k4r_get_characteristic_by_name(CharacteristicList, "price", Characteristic),
+  k4r_get_characteristic_by_name(CharacteristicList, "Review", Characteristic),
   k4r_get_entity_id(Characteristic, CharacteristicId),
-  k4r_delete_property(Link, "21", "0", CharacteristicId),
-  k4r_get_properties(Link, "21", "0", PropertyList),
-  writeln('Return properties of product 0 in store 21 without characteristic Price:'),
+  k4r_delete_property(Link, "2", "A1", CharacteristicId),
+  k4r_get_properties(Link, "2", "A1", PropertyList),
+  writeln('Return properties of product A1 in store 2 without Good Review:'),
   writeln(PropertyList).
 
 % Product
 
 test('k4r_product_test_1') :-
   k4r_get_link(Link),
-  k4r_get_product_by_id(Link, 0, Product),
-  writeln('Return product with id 0:'),
+  k4r_get_product_by_id(Link, "A1", Product),
+  writeln('Return product with id A1:'),
   writeln(Product).
 
 test('k4r_product_test_2') :-
   k4r_get_link(Link),
   k4r_get_products(Link, ProductList),
-  k4r_get_product_by_name(ProductList, "shampoo", Product),
-  writeln('Return product with name shampoo:'),
+  k4r_get_product_by_name(ProductList, "Shampoo", Product),
+  writeln('Return product with name Shampoo:'),
   writeln(Product).
 
 test('k4r_product_test_3') :-
@@ -184,9 +184,9 @@ test('k4r_product_test_3') :-
     \"length\" : 12,
     \"name\" : \"new product\",
     \"weight\" : 100
-  }", 10),
+  }", "A10"),
   k4r_get_products(Link, ProductList),
-  writeln('Return products with product new product at id 10:'),
+  writeln('Return products with product new product at id A10:'),
   writeln(ProductList).
 
 test('k4r_product_test_4') :-
@@ -199,9 +199,9 @@ test('k4r_product_test_4') :-
     \"length\" : 12,
     \"name\" : \"new changed product\",
     \"weight\" : 100
-  }", 10),
+  }", "A10"),
   k4r_get_products(Link, ProductList),
-  writeln('Return products with product new changed product at id 10:'),
+  writeln('Return products with product new changed product at id A10:'),
   writeln(ProductList).
 
 test('k4r_product_test_5') :-
@@ -214,7 +214,7 @@ test('k4r_product_test_5') :-
           \"description\" : \"a new product 2\",
           \"gtin\" : \"whatisthis\",
           \"height\" : null,
-          \"id\" : 101,
+          \"id\" : \"A101\",
           \"length\" : 1,
           \"name\" : \"shampoo\",
           \"weight\" : 2
@@ -224,7 +224,7 @@ test('k4r_product_test_5') :-
           \"description\" : \"a new product 3\",
           \"gtin\" : \"whatisthis\",
           \"height\" : null,
-          \"id\" : 102,
+          \"id\" : \"A102\",
           \"length\" : 1,
           \"name\" : \"paper\",
           \"weight\" : 4
@@ -233,38 +233,38 @@ test('k4r_product_test_5') :-
     }"
   ),
   k4r_get_products(Link, ProductList),
-  writeln('Return products with products at id 101 and 102:'),
+  writeln('Return products with products at id A101 and A102:'),
   writeln(ProductList).
 
 test('k4r_product_test_6') :-
   k4r_get_link(Link),
-  k4r_delete_product(Link, 10),
-  k4r_delete_product(Link, 101),
-  k4r_delete_product(Link, 102),
+  k4r_delete_product(Link, "A10"),
+  k4r_delete_product(Link, "A101"),
+  k4r_delete_product(Link, "A102"),
   k4r_get_products(Link, ProductList),
-  writeln('Return products without products at id 10, 101 and 102:'),
+  writeln('Return products without products at id A10, A101 and A102:'),
   writeln(ProductList).
 
 % Shelf
 
 test('k4r_shelf_test_1') :-
   k4r_get_link(Link),
-  k4r_get_shelves(Link, 21, ShelfList),
+  k4r_get_shelves(Link, 2, ShelfList),
   writeln('Return Shelves:'),
   writeln(ShelfList).
 
 test('k4r_shelf_test_2') :-
   k4r_get_link(Link),
-  k4r_get_shelf_by_id(Link, 74, Shelf),
-  writeln('Return Shelf at id 74:'),
+  k4r_get_shelf_by_id(Link, 1, Shelf),
+  writeln('Return Shelf at id 1:'),
   writeln(Shelf).
 
 test('k4r_shelf_test_3') :-
   k4r_get_link(Link),
-  k4r_post_shelf(Link, 21, "{
+  k4r_post_shelf(Link, 2, "{
     \"cadPlanId\" : \"an_new_cadPlanId\",
     \"depth\" : 40,
-    \"externalReferenceId\" : \"an_new_extId\",
+    \"externalReferenceId\" : \"R4\",
     \"height\" : 30,
     \"orientationY\" : 2,
     \"orientationYaw\" : 4,
@@ -274,17 +274,16 @@ test('k4r_shelf_test_3') :-
     \"positionY\" : 5,
     \"positionZ\" : 6,
     \"productGroupId\" : 3,
-    \"storeId\" : 21,
     \"width\" : 20
  }"),
- k4r_get_shelves(Link, 21, ShelfList),
- writeln('Return Shelves with shelf with externalReferenceId an_new_extId:'),
+ k4r_get_shelves(Link, 2, ShelfList),
+ writeln('Return Shelves with shelf with externalReferenceId R4:'),
  writeln(ShelfList).
 
 test('k4r_shelf_test_4') :-
   k4r_get_link(Link),
-  k4r_get_shelves(Link, 21, ShelfList),
-  k4r_get_shelf_by_externalReferenceId(ShelfList, "an_new_extId", Shelf),
+  k4r_get_shelves(Link, 2, ShelfList),
+  k4r_get_shelf_by_externalReferenceId(ShelfList, "R4", Shelf),
   k4r_get_shelf_location(Shelf, ShelfPosX, ShelfPosY, ShelfPosZ, ShelfOrientationX, ShelfOrientationY, ShelfOrientationZ, ShelfOrientationW),
   writeln('Position and Orientation:'),
   writeln(ShelfPosX),
@@ -297,102 +296,102 @@ test('k4r_shelf_test_4') :-
 
 test('k4r_shelf_test_5') :-
   k4r_get_link(Link),
-  k4r_get_shelves(Link, 21, ShelfList),
-  k4r_get_shelf_by_externalReferenceId(ShelfList, "an_new_extId", Shelf),
+  k4r_get_shelves(Link, 2, ShelfList),
+  k4r_get_shelf_by_externalReferenceId(ShelfList, "R4", Shelf),
   k4r_get_entity_id(Shelf, ShelfId),
   k4r_put_shelf(Link, ShelfId, "{
     \"cadPlanId\" : \"an_new_cadPlanId\",
-    \"depth\" : 40,
-    \"externalReferenceId\" : \"an_new_extId\",
-    \"height\" : 30,
-    \"orientationY\" : 2,
-    \"orientationYaw\" : 4,
-    \"orientationZ\" : 3,
-    \"orientationx\" : 2,
-    \"positionX\" : 4,
-    \"positionY\" : 5,
-    \"positionZ\" : 6,
+    \"depth\" : 32,
+    \"externalReferenceId\" : \"R4\",
+    \"height\" : 12,
+    \"orientationY\" : 23,
+    \"orientationYaw\" : 32,
+    \"orientationZ\" : 312,
+    \"orientationx\" : 32,
+    \"positionX\" : 432,
+    \"positionY\" : 421,
+    \"positionZ\" : 14,
     \"productGroupId\" : 3,
-    \"storeId\" : 21,
+    \"storeId\" : 2,
     \"width\" : 20
  }"),
- k4r_get_shelves(Link, 21, ShelfList),
- writeln('Return Shelves with shelf with externalReferenceId an_new_extId:'),
+ k4r_get_shelves(Link, 2, ShelfList),
+ writeln('Return Shelves with shelf with externalReferenceId R4:'),
  writeln(ShelfList).
 
 test('k4r_shelf_test_6') :-
   k4r_get_link(Link),
-  k4r_get_shelves(Link, 21, ShelfList),
-  k4r_get_shelf_by_externalReferenceId(ShelfList, "an_new_extId", Shelf),
+  k4r_get_shelves(Link, 2, ShelfList),
+  k4r_get_shelf_by_externalReferenceId(ShelfList, "R4", Shelf),
   k4r_get_entity_id(Shelf, ShelfId),
   k4r_delete_shelf(Link, ShelfId),
-  k4r_get_shelves(Link, 21, ShelfListNew),
-  writeln('Return Shelves with shelf without externalReferenceId an_new_extId:'),
+  k4r_get_shelves(Link, 2, ShelfListNew),
+  writeln('Return Shelves with shelf without externalReferenceId R4:'),
   writeln(ShelfListNew).
 
 % ShelfLayer
 
 test('k4r_shelf_layer_test_1') :-
   k4r_get_link(Link),
-  k4r_get_shelf_layers(Link, 74, ShelfLayerList),
+  k4r_get_shelf_layers(Link, 1, ShelfLayerList),
   writeln('Return shelflayers'),
   writeln(ShelfLayerList).
 
 test('k4r_shelf_layer_test_2') :-
   k4r_get_link(Link),
-  k4r_get_shelf_layer_by_id(Link, 57, ShelfLayer),
-  writeln('Return shelflayer at id 57'),
+  k4r_get_shelf_layer_by_id(Link, 2, ShelfLayer),
+  writeln('Return shelflayer at id 2'),
   writeln(ShelfLayer).
 
 test('k4r_shelf_layer_test_3') :-
   k4r_get_link(Link),
-  k4r_post_shelf_layer(Link, 74, "{
+  k4r_post_shelf_layer(Link, 1, "{
     \"level\": 123,
     \"type\": \"type123\",
     \"positionZ\": 34,
     \"width\": 32,
     \"height\": 63,
     \"depth\": 16,
-    \"externalReferenceId\": \"a ref Id\"
+    \"externalReferenceId\": \"E4\"
   }").
 
 test('k4r_shelf_layer_test_4') :-
   k4r_get_link(Link),
-  k4r_get_shelf_layers(Link, 74, ShelfLayerList),
-  k4r_get_shelf_layer_by_externalReferenceId(ShelfLayerList, "a ref Id", ShelfLayer),
+  k4r_get_shelf_layers(Link, 1, ShelfLayerList),
+  k4r_get_shelf_layer_by_externalReferenceId(ShelfLayerList, "E4", ShelfLayer),
   k4r_get_entity_id(ShelfLayer, ShelfLayerId),
   k4r_delete_shelf_layer(Link, ShelfLayerId),
-  writeln('Return ShelfLayers without shelflayer externalReferenceId an_new_extId:'),
-  k4r_get_shelf_layers(Link, 74, ShelfLayerListNew),
+  writeln('Return ShelfLayers without shelflayer externalReferenceId E4:'),
+  k4r_get_shelf_layers(Link, 1, ShelfLayerListNew),
   writeln(ShelfLayerListNew).
 
 % Shopping basket
 
 test('k4r_shopping_basket_test_1') :-
   k4r_get_link(Link),
-  k4r_get_shopping_baskets(Link, 21, 23, ShoppingBasketList),
-  writeln('Return shopping baskets'),
+  k4r_get_shopping_baskets(Link, 2, 1, ShoppingBasketList),
+  writeln('Return shopping baskets of store id 2, customer id 1'),
   writeln(ShoppingBasketList).
 
 test('k4r_shopping_basket_test_2') :-
   k4r_get_link(Link),
-  k4r_get_shopping_basket_by_id(Link, 21, 23, 0, ShoppingBasket),
-  writeln('Return shopping basket with product id 0'),
+  k4r_get_shopping_basket_by_id(Link, 2, 1, "A1", ShoppingBasket),
+  writeln('Return shopping basket with product id A1'),
   writeln(ShoppingBasket).
 
 test('k4r_shopping_basket_test_3') :-
   k4r_get_link(Link),
-  k4r_post_shopping_basket(Link, 21, 23, "{
-    \"productId\": \"2\",
-    \"sellingPrice\": 5.99,
-    \"quantity\": 50
+  k4r_post_shopping_basket(Link, 2, 1, "{
+    \"productId\": \"A3\",
+    \"sellingPrice\": 3.99,
+    \"quantity\": 6
   }").
 
 test('k4r_shopping_basket_test_4') :-
   k4r_get_link(Link),
-  k4r_delete_shopping_basket(Link, 21, 23, 2),
-  k4r_get_shopping_baskets(Link, 21, 23, ShoppingBasketList),
-  writeln('Return shopping baskets without product id 2'),
+  k4r_delete_shopping_basket(Link, 2, 1, "A3"),
+  k4r_get_shopping_baskets(Link, 2, 1, ShoppingBasketList),
+  writeln('Return shopping baskets without product id A3'),
   writeln(ShoppingBasketList).
 
 :- end_tests(k4r_db_client).

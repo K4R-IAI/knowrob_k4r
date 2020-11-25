@@ -57,6 +57,12 @@ ShoppingBasketController::ShoppingBasketController(const char* link, const std::
 
 bool ShoppingBasketController::set_store(const std::string& store_id)
 {
+  if (store_id.empty())
+  {
+    std::cout << "Store with empty Id does not exist" << std::endl;
+    return false;
+  }
+  
   Json::Value store = this->store_controller->get_store(store_id);
   if (store["id"].asString() == store_id)
   {

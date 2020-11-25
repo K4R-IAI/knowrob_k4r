@@ -169,7 +169,7 @@ PREDICATE(k4r_get_product_by_id, 3)
   Json::Value product = products.get_product(std::string(PL_A2));
   std::string product_id = product["id"].asString();
   remove_new_line(product_id);
-  if (std::stoi(std::string(PL_A2)) == std::stoi(product_id))
+  if (std::string(PL_A2) == product_id)
   {
     PL_A3 = product.toStyledString().c_str();
     return true;

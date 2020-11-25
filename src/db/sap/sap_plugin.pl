@@ -16,7 +16,7 @@
 
 
 sap_db(DB, Name) :-
-	mng_get_db(DB, Name, 'sap').
+	mng_get_db(DB, Name, 'items').
 
 %%
 sap_mng_wipe :-
