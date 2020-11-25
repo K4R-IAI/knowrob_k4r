@@ -16,8 +16,9 @@
 #include "Entities/PropertyController.cpp"
 #include "Entities/ShelfController.cpp"
 #include "Entities/ShelfLayerController.cpp"
-#include "Entities/StoreController.cpp"
 #include "Entities/ShoppingBasketController.cpp"
+#include "Entities/StoreController.cpp"
+#include "Entities/FacingController.cpp"
 
 PREDICATE(k4r_get_link, 1) {
   PL_A1 = "http://ked.informatik.uni-bremen.de:8090/k4r-core/api/v0/";
@@ -71,7 +72,9 @@ PREDICATE(k4r_get_customer_by_id, 3)
   CustomerController customers(PL_A1);
 
   Json::Value customer = customers.get_customer(std::string(PL_A2));
-  if (std::stoi(std::string(PL_A2)) == customer["id"].asInt())
+  std::string customer_id = customer["id"].asString();
+  remove_new_line(customer_id);
+  if (std::stoi(std::string(PL_A2)) == std::stoi(customer_id))
   {
     PL_A3 = customer.toStyledString().c_str();
     return true;
@@ -118,7 +121,9 @@ PREDICATE(k4r_get_store_by_id, 3)
   StoreController stores(PL_A1);
 
   Json::Value store = stores.get_store(std::string(PL_A2));
-  if (std::stoi(std::string(PL_A2)) == store["id"].asInt())
+  std::string store_id = store["id"].asString();
+  remove_new_line(store_id);
+  if (std::stoi(std::string(PL_A2)) == std::stoi(store_id))
   {
     PL_A3 = store.toStyledString().c_str();
     return true;
@@ -132,15 +137,15 @@ PREDICATE(k4r_get_store_by_id, 3)
 PREDICATE(k4r_post_store, 2)
 {
   StoreController stores(PL_A1);
-  Json::Value entity = char_to_json((char*)PL_A2);
-  return stores.post_store(entity);
+  Json::Value store = char_to_json((char*)PL_A2);
+  return stores.post_store(store);
 }
 
 PREDICATE(k4r_put_store, 3)
 {
   StoreController stores(PL_A1);
-  Json::Value entity = char_to_json((char*)PL_A3);
-  return stores.put_store(std::string(PL_A2), entity);
+  Json::Value store = char_to_json((char*)PL_A3);
+  return stores.put_store(std::string(PL_A2), store);
 }
 
 PREDICATE(k4r_delete_store, 2)
@@ -184,22 +189,22 @@ PREDICATE(k4r_post_products, 2)
 {
   ProductController products(PL_A1);
   std::cout << std::string(PL_A2) << std::endl;
-  Json::Value entity = char_to_json((char*)PL_A2);
-  return products.post_products(entity);
+  Json::Value product = char_to_json((char*)PL_A2);
+  return products.post_products(product);
 }
 
 PREDICATE(k4r_put_product, 3)
 {
   ProductController products(PL_A1);
-  Json::Value entity = char_to_json((char*)PL_A2);
-  return products.put_product(std::string(PL_A3), entity);
+  Json::Value product = char_to_json((char*)PL_A2);
+  return products.put_product(std::string(PL_A3), product);
 }
 
 PREDICATE(k4r_post_product, 3)
 {
   ProductController products(PL_A1);
-  Json::Value entity = char_to_json((char*)PL_A2);
-  return products.post_product(std::string(PL_A3), entity);
+  Json::Value product = char_to_json((char*)PL_A2);
+  return products.post_product(std::string(PL_A3), product);
 }
 
 PREDICATE(k4r_delete_product, 2)
@@ -298,15 +303,15 @@ PREDICATE(k4r_get_shelf_by_id, 3)
 PREDICATE(k4r_post_shelf, 3)
 {
   ShelfController shelves(PL_A1, std::string(PL_A2));
-  Json::Value entity = char_to_json((char*)PL_A3);
-  return shelves.post_shelf(entity);
+  Json::Value shelf = char_to_json((char*)PL_A3);
+  return shelves.post_shelf(shelf);
 }
 
 PREDICATE(k4r_put_shelf, 3)
 {
   ShelfController shelves(PL_A1);
-  Json::Value entity = char_to_json((char*)PL_A3);
-  return shelves.put_shelf(std::string(PL_A2), entity);
+  Json::Value shelf = char_to_json((char*)PL_A3);
+  return shelves.put_shelf(std::string(PL_A2), shelf);
 }
 
 PREDICATE(k4r_delete_shelf, 2)
@@ -317,14 +322,14 @@ PREDICATE(k4r_delete_shelf, 2)
 
 PREDICATE(k4r_get_shelf_location, 8)
 {
-  Json::Value entity = char_to_json((char*)PL_A1);
-  PL_A2 = entity["positionX"].asString().c_str();
-  PL_A3 = entity["positionY"].asString().c_str();
-  PL_A4 = entity["positionZ"].asString().c_str();
-  PL_A5 = entity["orientationx"].asString().c_str();
-  PL_A6 = entity["orientationY"].asString().c_str();
-  PL_A7 = entity["orientationZ"].asString().c_str();
-  PL_A8 = entity["orientationYaw"].asString().c_str();
+  Json::Value shelf = char_to_json((char*)PL_A1);
+  PL_A2 = shelf["positionX"].asString().c_str();
+  PL_A3 = shelf["positionY"].asString().c_str();
+  PL_A4 = shelf["positionZ"].asString().c_str();
+  PL_A5 = shelf["orientationx"].asString().c_str();
+  PL_A6 = shelf["orientationY"].asString().c_str();
+  PL_A7 = shelf["orientationZ"].asString().c_str();
+  PL_A8 = shelf["orientationYaw"].asString().c_str();
   return true;
 }
 
@@ -362,8 +367,8 @@ PREDICATE(k4r_get_shelf_layer_by_id, 3)
 PREDICATE(k4r_post_shelf_layer, 3)
 {
   ShelfLayerController shelf_layers(PL_A1, std::string(PL_A2));
-  Json::Value entity = char_to_json((char*)PL_A3);
-  return shelf_layers.post_shelf_layer(entity);
+  Json::Value shelf_layer = char_to_json((char*)PL_A3);
+  return shelf_layers.post_shelf_layer(shelf_layer);
 }
 
 PREDICATE(k4r_delete_shelf_layer, 2)
@@ -422,4 +427,56 @@ PREDICATE(k4r_delete_shopping_basket, 4)
 {
   ShoppingBasketController shopping_baskets(PL_A1, std::string(PL_A2), std::string(PL_A3), std::string(PL_A4));
   return shopping_baskets.delete_shopping_basket();
+}
+
+// Facing
+
+PREDICATE(k4r_get_facings, 3)
+{
+  FacingController facings(PL_A1, std::string(PL_A2));
+
+  PlTail values(PL_A3);
+  for (const Json::Value& facing : facings.get_facings())
+  {
+    values.append(facing.toStyledString().c_str());
+  }
+  return values.close();
+}
+
+PREDICATE(k4r_get_facing_by_id, 3)
+{
+  FacingController facings(PL_A1);
+
+  Json::Value facing = facings.get_facing(std::string(PL_A2));
+  std::string facing_id = facing["id"].asString();
+  remove_new_line(facing_id);
+  if (std::stoi(std::string(PL_A2)) == std::stoi(facing_id))
+  {
+    PL_A3 = facing.toStyledString().c_str();
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+PREDICATE(k4r_post_facing, 3)
+{
+  FacingController facings(PL_A1, std::string(PL_A2));
+  Json::Value facing = char_to_json((char*)PL_A3);
+  return facings.post_facing(facing);
+}
+
+PREDICATE(k4r_put_facing, 3)
+{
+  FacingController facings(PL_A1);
+  Json::Value facing = char_to_json((char*)PL_A3);
+  return facings.put_facing(std::string(PL_A2), facing);
+}
+
+PREDICATE(k4r_delete_facing, 2)
+{
+  FacingController facings(PL_A1);
+  return facings.delete_facing(std::string(PL_A2));
 }

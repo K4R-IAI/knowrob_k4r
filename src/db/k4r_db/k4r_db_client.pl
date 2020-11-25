@@ -1,15 +1,15 @@
 :- module(k4r_db_client,
-    [ 
-    k4r_get_entity_id/2,
-    k4r_get_entity_by_key_value/4,
-    k4r_get_entity_by_id/3,
-    k4r_get_customer_by_name/3,
-    k4r_get_store_by_name/3,
-    k4r_get_product_by_name/3,
-    k4r_get_characteristic_by_name/3,
-    k4r_get_shelf_by_externalReferenceId/3,
-    k4r_get_shelf_layer_by_externalReferenceId/3
-    ]).
+          [ k4r_get_entity_id/2,
+            k4r_get_entity_by_key_value/4,
+            k4r_get_entity_by_id/3,
+            k4r_get_customer_by_name/3,
+            k4r_get_store_by_name/3,
+            k4r_get_product_by_name/3,
+            k4r_get_characteristic_by_name/3,
+            k4r_get_shelf_by_externalReferenceId/3,
+            k4r_get_shelf_layer_by_externalReferenceId/3,
+            k4r_get_facing_by_layerRelativePosition/3
+          ]).
 /** <module> A client for the k4r db for Prolog.
 
 @author Sascha Jongebloed
@@ -61,3 +61,6 @@ k4r_get_shelf_by_externalReferenceId(ShelfList, ShelfExtRefId, Shelf) :-
 
 k4r_get_shelf_layer_by_externalReferenceId(ShelfLayerList, ShelfLayerExtRefId, ShelfLayer) :-
     k4r_get_entity_by_key_value(ShelfLayerList, "externalReferenceId", ShelfLayerExtRefId, ShelfLayer).
+
+k4r_get_facing_by_layerRelativePosition(FacingList, FacingRelPos, Facing) :-
+    k4r_get_entity_by_key_value(FacingList, "layerRelativePosition", FacingRelPos, Facing).
