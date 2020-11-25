@@ -369,30 +369,34 @@ test('k4r_shelf_layer_test_4') :-
 
 test('k4r_shopping_basket_test_1') :-
   k4r_get_link(Link),
-  k4r_get_shopping_baskets(Link, 2, 1, ShoppingBasketList),
+  k4r_get_shopping_basket_positions(Link, 2, 1, ShoppingBasketList),
   writeln('Return shopping baskets of store id 2, customer id 1'),
   writeln(ShoppingBasketList).
 
 test('k4r_shopping_basket_test_2') :-
   k4r_get_link(Link),
-  k4r_get_shopping_basket_by_id(Link, 2, 1, "A1", ShoppingBasket),
-  writeln('Return shopping basket with product id A1'),
+  k4r_get_shopping_basket_position_by_id(Link, 5, ShoppingBasket),
+  writeln('Return shopping basket with id 5'),
   writeln(ShoppingBasket).
 
 test('k4r_shopping_basket_test_3') :-
   k4r_get_link(Link),
-  k4r_post_shopping_basket(Link, 2, 1, "{
+  k4r_post_shopping_basket_position(Link, 2, 1, "{
     \"productId\": \"A3\",
     \"sellingPrice\": 3.99,
-    \"quantity\": 6
+    \"quantity\": 6,
+    \"currency\": \"yen\"
   }").
 
 test('k4r_shopping_basket_test_4') :-
   k4r_get_link(Link),
-  k4r_delete_shopping_basket(Link, 2, 1, "A3"),
-  k4r_get_shopping_baskets(Link, 2, 1, ShoppingBasketList),
+  k4r_get_shopping_basket_positions(Link, 2, 1, ShoppingBasketList),
+  k4r_get_entity_by_key_value(ShoppingBasketList, "productId", "A3", ShoppingBasket),
+  k4r_get_entity_id(ShoppingBasket, ShoppingBasketId),
+  k4r_delete_shopping_basket_position(Link, ShoppingBasketId),
+  k4r_get_shopping_basket_positions(Link, 2, 1, ShoppingBasketListNew),
   writeln('Return shopping baskets without product id A3'),
-  writeln(ShoppingBasketList).
+  writeln(ShoppingBasketListNew).
 
 % Facing
 
@@ -411,16 +415,7 @@ test('k4r_facing_test_2') :-
 test('k4r_facing_test_3') :-
   k4r_get_link(Link),
   k4r_post_facing(Link, 1, "{
-    \"productId\": \"A1\",
-    \"layerRelativePosition\": 1,
-    \"quantity\": 1
-  }"),
-  k4r_post_facing(Link, 1, "{
-    \"productId\": \"A2\",
-    \"layerRelativePosition\": 2,
-    \"quantity\": 2
-  }"),
-  k4r_post_facing(Link, 1, "{
+    \"shelfLayerId\": 1,
     \"productId\": \"A3\",
     \"layerRelativePosition\": 4,
     \"quantity\": 2
@@ -428,7 +423,11 @@ test('k4r_facing_test_3') :-
 
 test('k4r_facing_test_4') :-
   k4r_get_link(Link),
-  k4r_put_facing(Link, 3, "{
+  k4r_get_facings(Link, 1, FacingList),
+  k4r_get_facing_by_layerRelativePosition(FacingList, "4", Facing),
+  k4r_get_entity_id(Facing, FacingId),
+  k4r_put_facing(Link, FacingId, "{
+    \"shelfLayerId\": 1,
     \"productId\": \"A3\",
     \"layerRelativePosition\": 3,
     \"quantity\": 1

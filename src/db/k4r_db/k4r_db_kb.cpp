@@ -16,7 +16,7 @@
 #include "Entities/PropertyController.cpp"
 #include "Entities/ShelfController.cpp"
 #include "Entities/ShelfLayerController.cpp"
-#include "Entities/ShoppingBasketController.cpp"
+#include "Entities/ShoppingBasketPositionController.cpp"
 #include "Entities/StoreController.cpp"
 #include "Entities/FacingController.cpp"
 
@@ -379,28 +379,29 @@ PREDICATE(k4r_delete_shelf_layer, 2)
 
 // Shopping basket
 
-PREDICATE(k4r_get_shopping_baskets, 4)
+PREDICATE(k4r_get_shopping_basket_positions, 4)
 {
-  ShoppingBasketController shopping_baskets(PL_A1, std::string(PL_A2), std::string(PL_A3));
+  ShoppingBasketPositionController shopping_basket_positions(PL_A1, std::string(PL_A2), std::string(PL_A3));
 
   PlTail values(PL_A4);
-  for (const Json::Value& shopping_basket : shopping_baskets.get_shopping_baskets())
+  for (const Json::Value& shopping_basket_position : shopping_basket_positions.get_shopping_basket_positions())
   {
-    values.append(shopping_basket.toStyledString().c_str());
+    values.append(shopping_basket_position.toStyledString().c_str());
   }
   return values.close();
 }
 
-PREDICATE(k4r_get_shopping_basket_by_id, 5)
+PREDICATE(k4r_get_shopping_basket_position_by_id, 3)
 {
-  ShoppingBasketController shopping_baskets(PL_A1, std::string(PL_A2), std::string(PL_A3), std::string(PL_A4));
+  ShoppingBasketPositionController shopping_basket_positions(PL_A1);
 
-  Json::Value shopping_basket = shopping_baskets.get_shopping_basket();
-  std::string product_id = shopping_basket["productId"].asString();
-  remove_new_line(product_id);
-  if (std::string(PL_A4) == product_id)
+  Json::Value shopping_basket_position = shopping_basket_positions.get_shopping_basket_position(std::string(PL_A2));
+  std::cout << shopping_basket_position << std::endl;
+  std::string shopping_basket_position_id = shopping_basket_position["id"].asString();
+  remove_new_line(shopping_basket_position_id);
+  if (std::stoi(std::string(PL_A2)) == std::stoi(shopping_basket_position_id))
   {
-    PL_A5 = shopping_basket.toStyledString().c_str();
+    PL_A3 = shopping_basket_position.toStyledString().c_str();
     return true;
   }
   else
@@ -409,24 +410,23 @@ PREDICATE(k4r_get_shopping_basket_by_id, 5)
   }
 }
 
-PREDICATE(k4r_post_shopping_basket, 4)
+PREDICATE(k4r_post_shopping_basket_position, 4)
 {
-  ShoppingBasketController shopping_baskets(PL_A1, std::string(PL_A2), std::string(PL_A3));
-  std::cout << (char*)PL_A4 << std::endl;
-  Json::Value shopping_basket = char_to_json((char*)PL_A4);
-  return shopping_baskets.post_shopping_basket(shopping_basket);
+  ShoppingBasketPositionController shopping_basket_positions(PL_A1, std::string(PL_A2), std::string(PL_A3));
+  Json::Value shopping_basket_position = char_to_json((char*)PL_A4);
+  return shopping_basket_positions.post_shopping_basket_position(shopping_basket_position);
 }
 
-PREDICATE(k4r_delete_shopping_baskets, 3)
+PREDICATE(k4r_delete_shopping_basket_position, 2)
 {
-  ShoppingBasketController shopping_baskets(PL_A1, std::string(PL_A2), std::string(PL_A3));
-  return shopping_baskets.delete_shopping_baskets();
+  ShoppingBasketPositionController shopping_basket_positions(PL_A1);
+  return shopping_basket_positions.delete_shopping_basket_position(std::string(PL_A2));
 }
 
-PREDICATE(k4r_delete_shopping_basket, 4)
+PREDICATE(k4r_delete_shopping_basket_positions, 3)
 {
-  ShoppingBasketController shopping_baskets(PL_A1, std::string(PL_A2), std::string(PL_A3), std::string(PL_A4));
-  return shopping_baskets.delete_shopping_basket();
+  ShoppingBasketPositionController shopping_basket_positions(PL_A1, std::string(PL_A2), std::string(PL_A3));
+  return shopping_basket_positions.delete_shopping_basket_positions();
 }
 
 // Facing
