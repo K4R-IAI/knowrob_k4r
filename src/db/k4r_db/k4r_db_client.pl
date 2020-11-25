@@ -8,7 +8,8 @@
             k4r_get_characteristic_by_name/3,
             k4r_get_shelf_by_externalReferenceId/3,
             k4r_get_shelf_layer_by_externalReferenceId/3,
-            k4r_get_facing_by_layerRelativePosition/3
+            k4r_get_facing_by_layerRelativePosition/3,
+            k4r_get_product_by_shelf/3
           ]).
 /** <module> A client for the k4r db for Prolog.
 
@@ -64,3 +65,13 @@ k4r_get_shelf_layer_by_externalReferenceId(ShelfLayerList, ShelfLayerExtRefId, S
 
 k4r_get_facing_by_layerRelativePosition(FacingList, FacingRelPos, Facing) :-
     k4r_get_entity_by_key_value(FacingList, "layerRelativePosition", FacingRelPos, Facing).
+
+k4r_get_product_by_shelf(Link, Shelf, Product) :-
+    k4r_get_entity_id(Shelf, ShelfId),
+    k4r_get_shelf_layers(Link, ShelfId, ShelfLayerList),
+    member(ShelfLayer, ShelfLayerList),
+    k4r_get_entity_id(ShelfLayer, ShelfLayerId),
+    k4r_get_facings(Link, ShelfLayerId, Facings),
+    member(Facing, Facings),
+    k4r_get_value_from_key(Facing, "productId", ProductId),
+    k4r_get_product_by_id(Link, ProductId, Product).

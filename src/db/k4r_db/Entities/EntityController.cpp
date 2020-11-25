@@ -1,9 +1,10 @@
 #pragma once
 
+#include <algorithm>
 #include <curlpp/Easy.hpp>
+#include <curlpp/Infos.hpp>
 #include <curlpp/Options.hpp>
 #include <curlpp/cURLpp.hpp>
-#include <curlpp/Infos.hpp>
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/reader.h>
 #include <sstream>
@@ -23,6 +24,7 @@ void remove_new_line(std::string& str)
       break;
     }
   }
+  str.erase(std::remove(str.begin(), str.end(), '"'), str.end());
 }
 
 class Entity

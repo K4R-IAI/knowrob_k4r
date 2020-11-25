@@ -42,7 +42,9 @@ PREDICATE(k4r_get_value_from_key, 3)
   }
   else
   {
-    PL_A3 = value.toStyledString().c_str();
+    std::string entity_value(value.toStyledString());
+    remove_new_line(entity_value);
+    PL_A3 = entity_value.c_str();
     return true;
   }
 }
@@ -170,7 +172,6 @@ PREDICATE(k4r_get_products, 2) {
 PREDICATE(k4r_get_product_by_id, 3)
 {
   ProductController products(PL_A1);
-
   Json::Value product = products.get_product(std::string(PL_A2));
   std::string product_id = product["id"].asString();
   remove_new_line(product_id);
