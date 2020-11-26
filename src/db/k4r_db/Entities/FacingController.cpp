@@ -21,7 +21,7 @@ public:
   Json::Value get_facings(const std::string&);
   Json::Value get_facings();
 
-  bool post_facing(const std::string &, const Json::Value&);
+  bool post_facing(const std::string&, const Json::Value&);
   bool post_facing(const Json::Value&);
 
   bool put_facing(const std::string&, const Json::Value&);
@@ -42,7 +42,7 @@ FacingController::FacingController(const char* link, const std::string shelf_lay
 bool FacingController::set_shelf_layer(const std::string& shelf_layer_id)
 {
   Json::Value shelf_layer = this->shelf_layer_controller->get_shelf_layer(shelf_layer_id);
-  if(shelf_layer["id"].asString() == shelf_layer_id)
+  if (shelf_layer["id"].asString() == shelf_layer_id)
   {
     this->shelf_layer_id = shelf_layer_id;
     return true;
@@ -70,7 +70,6 @@ Json::Value FacingController::get_facings(const std::string& shelf_layer_id)
   {
     return Json::Value();
   }
-  
 }
 
 Json::Value FacingController::get_facings()

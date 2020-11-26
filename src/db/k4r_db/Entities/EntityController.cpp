@@ -31,7 +31,7 @@ class Entity
 {
 protected:
   std::string link;
-  
+
 public:
   virtual Json::Value get_data(std::string link_tail = "")
   {

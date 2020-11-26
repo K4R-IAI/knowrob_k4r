@@ -19,6 +19,8 @@
 #include "Entities/ShoppingBasketPositionController.cpp"
 #include "Entities/StoreController.cpp"
 #include "Entities/FacingController.cpp"
+#include "Entities/PlanogramController.cpp"
+#include "Entities/ProductGroupController.cpp"
 
 PREDICATE(k4r_get_link, 1) {
   PL_A1 = "http://ked.informatik.uni-bremen.de:8090/k4r-core/api/v0/";
@@ -327,7 +329,7 @@ PREDICATE(k4r_get_shelf_location, 8)
   PL_A2 = shelf["positionX"].asString().c_str();
   PL_A3 = shelf["positionY"].asString().c_str();
   PL_A4 = shelf["positionZ"].asString().c_str();
-  PL_A5 = shelf["orientationx"].asString().c_str();
+  PL_A5 = shelf["orientationX"].asString().c_str();
   PL_A6 = shelf["orientationY"].asString().c_str();
   PL_A7 = shelf["orientationZ"].asString().c_str();
   PL_A8 = shelf["orientationYaw"].asString().c_str();
@@ -480,4 +482,95 @@ PREDICATE(k4r_delete_facing, 2)
 {
   FacingController facings(PL_A1);
   return facings.delete_facing(std::string(PL_A2));
+}
+
+// Planogram
+
+PREDICATE(k4r_get_planograms, 2)
+{
+  PlanogramController planograms(PL_A1);
+
+  PlTail values(PL_A2);
+  for (const Json::Value& planogram : planograms.get_planograms())
+  {
+    values.append(planogram.toStyledString().c_str());
+  }
+  return values.close();
+}
+
+PREDICATE(k4r_post_planogram, 2)
+{
+  PlanogramController planograms(PL_A1);
+  Json::Value planogram = char_to_json((char*)PL_A2);
+  return planograms.post_planogram(planogram);
+}
+
+PREDICATE(k4r_put_planogram, 3)
+{
+  PlanogramController planograms(PL_A1);
+  Json::Value planogram = char_to_json((char*)PL_A3);
+  return planograms.put_planogram(std::string(PL_A2), planogram);
+}
+
+PREDICATE(k4r_delete_planogram, 2)
+{
+  PlanogramController planograms(PL_A1);
+  return planograms.delete_planogram(std::string(PL_A2));
+}
+
+// Product group
+
+PREDICATE(k4r_get_product_groups, 3)
+{
+  ProductGroupController product_groups(PL_A1);
+  product_groups.set_store(std::string(PL_A2));
+
+  PlTail values(PL_A3);
+  for (const Json::Value& product_group : product_groups.get_product_groups())
+  {
+    values.append(product_group.toStyledString().c_str());
+  }
+  return values.close();
+}
+
+PREDICATE(k4r_get_product_group_by_id, 3)
+{
+  ProductGroupController product_groups(PL_A1);
+
+  Json::Value product_group = product_groups.get_product_group(std::string(PL_A2));
+  std::string product_group_id = product_group["id"].asString();
+  remove_new_line(product_group_id);
+  if (std::stoi(std::string(PL_A2)) == std::stoi(product_group_id))
+  {
+    PL_A3 = product_group.toStyledString().c_str();
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+PREDICATE(k4r_post_product_to_product_group, 3)
+{
+  ProductGroupController product_groups(PL_A1);
+  return product_groups.post_product_to_product_group(std::string(PL_A2), std::string(PL_A3));
+}
+
+PREDICATE(k4r_post_product_group, 3)
+{
+  ProductGroupController product_groups(PL_A1);
+  return product_groups.post_product_group(std::string(PL_A2), std::string(PL_A3));
+}
+
+PREDICATE(k4r_delete_product_group, 2)
+{
+  ProductGroupController product_groups(PL_A1);
+  return product_groups.delete_product_group(std::string(PL_A2));
+}
+
+PREDICATE(k4r_delete_product_from_product_group, 3)
+{
+  ProductGroupController product_groups(PL_A1);
+  return product_groups.delete_product_from_product_group(std::string(PL_A2), std::string(PL_A3));
 }

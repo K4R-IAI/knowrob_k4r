@@ -25,7 +25,7 @@ public:
 
   bool post_shopping_basket_position(const std::string&, const std::string&, const Json::Value&);
   bool post_shopping_basket_position(const Json::Value&);
-  
+
   bool delete_shopping_basket_position(const std::string&);
   bool delete_shopping_basket_positions(const std::string&, const std::string&);
   bool delete_shopping_basket_positions();
@@ -50,7 +50,7 @@ bool ShoppingBasketPositionController::set_store(const std::string& store_id)
     std::cout << "Store with empty Id does not exist" << std::endl;
     return false;
   }
-  
+
   Json::Value store = this->store_controller->get_store(store_id);
   if (store["id"].asString() == store_id)
   {

@@ -21,10 +21,10 @@ public:
   Json::Value get_shelves(const std::string&);
   Json::Value get_shelves();
 
-  bool post_shelf(const std::string &, const Json::Value&);
+  bool post_shelf(const std::string&, const Json::Value&);
   bool post_shelf(const Json::Value&);
 
-  bool put_shelf(const std::string &, const Json::Value&);
+  bool put_shelf(const std::string&, const Json::Value&);
 
   bool delete_shelf(const std::string&, const std::string&, const std::string&);
   bool delete_shelf(const std::string&);
@@ -43,7 +43,7 @@ ShelfController::ShelfController(const char* link, const std::string store_id) :
 bool ShelfController::set_store(const std::string& store_id)
 {
   Json::Value store = this->store_controller->get_store(store_id);
-  if(store["id"].asString() == store_id)
+  if (store["id"].asString() == store_id)
   {
     this->store_id = store_id;
     return true;
@@ -75,7 +75,7 @@ bool ShelfController::check_shelf(const Json::Value& shelf)
       shelf["orientationY"].isNumeric() &&
       shelf["orientationYaw"].isNumeric() &&
       shelf["orientationZ"].isNumeric() &&
-      shelf["orientationx"].isNumeric() &&
+      shelf["orientationX"].isNumeric() &&
       shelf["positionX"].isNumeric() &&
       shelf["positionY"].isNumeric() &&
       shelf["positionZ"].isNumeric() &&

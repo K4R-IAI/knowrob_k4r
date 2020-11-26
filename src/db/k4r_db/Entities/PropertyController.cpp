@@ -1,8 +1,8 @@
 #pragma once
 
-#include "StoreController.cpp"
-#include "ProductController.cpp"
 #include "CharacteristicController.cpp"
+#include "ProductController.cpp"
+#include "StoreController.cpp"
 
 class PropertyController : public EntityController
 {
@@ -28,7 +28,7 @@ public:
 
   bool post_property(const std::string&, const std::string&, const std::string&, const std::string&);
   bool post_property(const std::string&);
-  
+
   bool delete_property(const std::string&, const std::string&, const std::string&);
   bool delete_property(const std::string&);
   bool delete_property();
@@ -47,8 +47,7 @@ PropertyController::PropertyController(const char* link, const std::string store
   this->set_product(product_id);
 }
 
-PropertyController::PropertyController(const char* link, const std::string store_id, const std::string product_id, const std::string characteristic_id) : 
-PropertyController::PropertyController(link, store_id, product_id)
+PropertyController::PropertyController(const char* link, const std::string store_id, const std::string product_id, const std::string characteristic_id) : PropertyController::PropertyController(link, store_id, product_id)
 {
   this->set_characteristic(characteristic_id);
 }
@@ -71,7 +70,7 @@ bool PropertyController::set_store(const std::string& store_id)
 bool PropertyController::set_product(const std::string& product_id)
 {
   Json::Value product = this->product_controller->get_product(product_id);
-  if(product["id"].asString() == product_id)
+  if (product["id"].asString() == product_id)
   {
     this->product_id = product_id;
     return true;

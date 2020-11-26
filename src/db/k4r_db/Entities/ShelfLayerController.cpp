@@ -19,7 +19,7 @@ public:
   Json::Value get_shelf_layers(const std::string&);
   Json::Value get_shelf_layers();
 
-  bool post_shelf_layer(const std::string &, const Json::Value&);
+  bool post_shelf_layer(const std::string&, const Json::Value&);
   bool post_shelf_layer(const Json::Value&);
 
   bool delete_shelf_layer(const std::string&);
@@ -38,7 +38,7 @@ ShelfLayerController::ShelfLayerController(const char* link, const std::string s
 bool ShelfLayerController::set_shelf(const std::string& shelf_id)
 {
   Json::Value shelf = this->shelf_controller->get_shelf(shelf_id);
-  if(shelf["id"].asString() == shelf_id)
+  if (shelf["id"].asString() == shelf_id)
   {
     this->shelf_id = shelf_id;
     return true;
