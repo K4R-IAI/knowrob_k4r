@@ -1,0 +1,7 @@
+# Small file to test if docker compose up works 
+version: '3'
+services:
+  # an interface to the docker API of the host
+  knowrob:
+    image: "k4r/knowrob"
+    container_name: knowrob

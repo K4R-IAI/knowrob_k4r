@@ -1,0 +1,17 @@
+FROM openease/knowrob:latest
+MAINTAINER gautam dange, gdange@uni-bremen.de
+
+USER ros
+
+# Initialize the catkin workspace
+WORKDIR /home/ros/src
+
+RUN git clone https://github.com/K4R-IAI/knowrob_k4r.git
+
+WORKDIR /home/ros
+# Build the catkin workspace
+RUN /opt/ros/melodic/bin/catkin_make
+
+COPY knowrob_k4r.sh /knowrob_k4r.sh
+
+ENTRYPOINT ["/knowrob_k4r.sh"]
