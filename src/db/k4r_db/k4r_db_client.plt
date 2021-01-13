@@ -542,4 +542,15 @@ test('k4r_product_group_test_6') :-
   writeln('Return product groups without new group:'),
   writeln(ProductGroupListNew).
 
+% test('get products from a shelf layer') :-
+%   get_products_in_shelflayer(1, Products),
+%   forall(member([FacingId, ProductId], Products), 
+%         (writeln(FacingId), writeln(ProductId))).
+
+test('shelf location') :-
+  write_shelf_location.
+
+test('get shelf data') :-
+  get_shelf_data.
+
 :- end_tests(k4r_db_client).

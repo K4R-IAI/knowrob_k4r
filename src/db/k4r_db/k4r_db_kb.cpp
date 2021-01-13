@@ -191,7 +191,6 @@ PREDICATE(k4r_get_product_by_id, 3)
 PREDICATE(k4r_post_products, 2)
 {
   ProductController products(PL_A1);
-  std::cout << std::string(PL_A2) << std::endl;
   Json::Value product = char_to_json((char*)PL_A2);
   return products.post_products(product);
 }
@@ -274,6 +273,7 @@ PREDICATE(k4r_delete_property, 4)
 
 // Shelf
 
+// k4R_get_shelves(Link, StoreId, Shelves)
 PREDICATE(k4r_get_shelves, 3) {
   ShelfController shelves(PL_A1, std::string(PL_A2));
 
@@ -285,16 +285,51 @@ PREDICATE(k4r_get_shelves, 3) {
   return values.close();
 }
 
-PREDICATE(k4r_get_shelf_by_id, 3)
+// k4r_get_shelf_by_id(Link, ShelfId, StoreId, ShapeData, Pose)
+PREDICATE(k4r_get_shelf_by_id, 5)
 {
   ShelfController shelves(PL_A1);
+  PlTerm pose_term;
+  PlTail pose_list(pose_term);
 
   Json::Value shelf = shelves.get_shelf(std::string(PL_A2));
   std::string shelf_id = shelf["id"].asString();
   remove_new_line(shelf_id);
   if (std::stoi(std::string(PL_A2)) == std::stoi(shelf_id))
-  {
-    PL_A3 = shelf.toStyledString().c_str();
+  { 
+    PlTerm shape_term;
+    PlTail shape(shape_term);
+
+    shape.append(shelf["depth"].asFloat());
+    shape.append(shelf["width"].asFloat());
+    shape.append(shelf["height"].asFloat());
+
+    PL_A3 = shelf["storeId"].asInt();
+
+    PlTerm pos_term;
+
+    PlTail position_list(pos_term);
+
+    position_list.append(shelf["positionX"].asDouble());
+    position_list.append(shelf["positionY"].asDouble());
+    position_list.append(shelf["positionZ"].asDouble());
+    position_list.close();
+
+    PlTerm rotation_term;
+
+    PlTail rotation_list(rotation_term);
+
+    // rotation_list.append(shelf["orientationX"].asDouble());
+    rotation_list.append(shelf["orientationY"].asDouble());
+    rotation_list.append(shelf["orientationZ"].asDouble());
+    //rotation_list.append(shelf["orientationW"].asDouble());
+
+    pose_list.append(pos_term);
+    pose_list.append(rotation_term);
+
+    PL_A4 = shape_term;
+    PL_A5 = pose_term;
+
     return true;
   }
   else
@@ -303,11 +338,50 @@ PREDICATE(k4r_get_shelf_by_id, 3)
   }
 }
 
-PREDICATE(k4r_post_shelf, 3)
+// k4r_post_shelf(Link, StoreId, ShelfId, [Translation, Rotation], [D,W,H])
+PREDICATE(k4r_post_shelf, 5)
 {
   ShelfController shelves(PL_A1, std::string(PL_A2));
-  Json::Value shelf = char_to_json((char*)PL_A3);
-  return shelves.post_shelf(shelf);
+
+  Json::Value shelf_data = shelves.get_shelf(std::string(PL_A3));
+  shelf_data["storeId"] = (int)PL_A2;
+
+  PlTail pose_list(PL_A4);
+  PlTerm temp_term, traversal_term;
+  
+  pose_list.next(temp_term);
+
+  PlTail translation(temp_term);
+
+  translation.next(traversal_term);
+  shelf_data["positionX"] = (double)traversal_term;
+  translation.next(traversal_term);
+  shelf_data["positionY"] = (double)traversal_term;
+  translation.next(traversal_term);
+  shelf_data["positionZ"] = (double)traversal_term;
+
+  pose_list.next(temp_term);
+
+  PlTail rotation(temp_term);
+
+  rotation.next(traversal_term);
+  shelf_data["orientationX"] = (double)traversal_term;
+  rotation.next(traversal_term);
+  shelf_data["orientationY"] = (double)traversal_term;
+  rotation.next(traversal_term);
+  shelf_data["orientationZ"] = (double)traversal_term;
+  rotation.next(traversal_term);
+  shelf_data["orientationW"] = (double)traversal_term;
+
+  PlTail dimension(PL_A5);
+  dimension.next(traversal_term);
+  shelf_data["depth"] = (int)traversal_term;
+  dimension.next(traversal_term);
+  shelf_data["width"] = (int)traversal_term;
+  dimension.next(traversal_term);
+  shelf_data["height"] = (int)traversal_term;
+
+  return shelves.post_shelf(shelf_data);
 }
 
 PREDICATE(k4r_put_shelf, 3)
@@ -332,7 +406,7 @@ PREDICATE(k4r_get_shelf_location, 8)
   PL_A5 = shelf["orientationX"].asString().c_str();
   PL_A6 = shelf["orientationY"].asString().c_str();
   PL_A7 = shelf["orientationZ"].asString().c_str();
-  PL_A8 = shelf["orientationYaw"].asString().c_str();
+  PL_A8 = shelf["orientationW"].asString().c_str();
   return true;
 }
 
@@ -399,7 +473,6 @@ PREDICATE(k4r_get_shopping_basket_position_by_id, 3)
   ShoppingBasketPositionController shopping_basket_positions(PL_A1);
 
   Json::Value shopping_basket_position = shopping_basket_positions.get_shopping_basket_position(std::string(PL_A2));
-  std::cout << shopping_basket_position << std::endl;
   std::string shopping_basket_position_id = shopping_basket_position["id"].asString();
   remove_new_line(shopping_basket_position_id);
   if (std::stoi(std::string(PL_A2)) == std::stoi(shopping_basket_position_id))
