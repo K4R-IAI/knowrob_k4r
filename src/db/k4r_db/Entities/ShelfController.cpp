@@ -69,11 +69,11 @@ bool ShelfController::post_shelf(const std::string& store_id, const Json::Value&
 bool ShelfController::check_shelf(const Json::Value& shelf)
 {
   if (shelf["cadPlanId"].isString() &&
-      shelf["depth"].isInt() &&
+      shelf["depth"].isNumeric() &&
       shelf["externalReferenceId"].isString() &&
-      shelf["height"].isInt() &&
+      shelf["height"].isNumeric() &&
       shelf["orientationY"].isNumeric() &&
-      shelf["orientationYaw"].isNumeric() &&
+      shelf["orientationW"].isNumeric() &&
       shelf["orientationZ"].isNumeric() &&
       shelf["orientationX"].isNumeric() &&
       shelf["positionX"].isNumeric() &&
