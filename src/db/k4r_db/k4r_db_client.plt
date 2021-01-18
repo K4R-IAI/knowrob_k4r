@@ -575,7 +575,7 @@ test('shelf_delete_test') :-
 %          Shelf layer          %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-test('shelf_layer_init_test') :-
+test('shelf_layer_post_test') :-
   k4r_get_link(Link),
   post_test_shelf(Link, _, _, ShelfId),
   k4r_post_shelf_layer(Link, ShelfId, [10, "externalReferenceId 1", 11, 12, 13.13, "type 1", 14]),
@@ -664,7 +664,7 @@ test('shopping_basket_delete_test') :-
 %             Facing            %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-test('facing_init_test_data') :-
+test('facing_post_test') :-
   k4r_get_link(Link),
   post_test_shelf_layer(Link, _, _, _, ShelfLayerId),
   post_test_product(Link, ProductId),
@@ -673,7 +673,7 @@ test('facing_init_test_data') :-
   k4r_post_facing(Link, ShelfLayerId, ProductId, 30, 31),
   k4r_post_facing(Link, ShelfLayerId, ProductId, 40, 41).
 
-test('facing_test_1') :-
+test('facing_get_test') :-
   k4r_get_link(Link),
   get_test_shelf_layer_id(Link, ShelfLayerId),
   get_facing_id_by_layer_rel_pos(Link, ShelfLayerId, 10, FacingId),
@@ -681,7 +681,7 @@ test('facing_test_1') :-
   writeln('Return facings with layerRelativePosition 10'),
   writeln(Facing).
 
-test('facing_test_2') :-
+test('facing_put_test') :-
   k4r_get_link(Link),
   get_test_shelf_layer_id(Link, ShelfLayerId),
   get_facing_id_by_layer_rel_pos(Link, ShelfLayerId, 10, FacingId),
@@ -691,7 +691,7 @@ test('facing_test_2') :-
   writeln('Return facings with layerRelativePosition 10'),
   writeln(Facing).
 
-test('facing_delete_test_data') :-
+test('facing_delete_test') :-
   k4r_get_link(Link),
   get_test_shelf_layer_id(Link, ShelfLayerId),
   get_facing_id_by_layer_rel_pos(Link, ShelfLayerId, 10, FacingId1),
@@ -708,7 +708,7 @@ test('facing_delete_test_data') :-
 %           Planogram           %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-test('planogram_init_test_data') :-
+test('planogram_post_test') :-
   k4r_get_link(Link),
   post_test_shelf_layer(Link, _, _, _, ShelfLayerId),
   post_test_product(Link, ProductId),
@@ -717,7 +717,7 @@ test('planogram_init_test_data') :-
   k4r_post_planogram(Link, ProductId, ShelfLayerId, [30, 31.31, 32, 33]),
   k4r_post_planogram(Link, ProductId, ShelfLayerId, [40, 41.41, 42, 43]).
 
-test('planogram_test_1') :-
+test('planogram_put_test') :-
   k4r_get_link(Link),
   get_test_shelf_layer_id(Link, ShelfLayerId),
   get_planogram_id_by_number_of_facing(Link, 10, PlanogramId),
@@ -733,7 +733,7 @@ test('planogram_test_1') :-
   writeln('Return new planogram list:'),
   writeln(PlanogramListNew).
 
-test('planogram_delete_test_data') :-
+test('planogram_delete_test') :-
   k4r_get_link(Link),
   get_test_shelf_layer_id(Link, ShelfLayerId),
   get_planogram_id_by_number_of_facing(Link, 10, PlanogramId1),
