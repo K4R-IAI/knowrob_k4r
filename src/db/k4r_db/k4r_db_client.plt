@@ -6,77 +6,232 @@
         'package://knowrob/owl/test/test_owl.owl'
   ).
 
-% Customer
-
-test('k4r_customer_test_1') :-
-  k4r_get_link(Link),
-  k4r_get_customer_by_id(Link, 10, Customer),
-  writeln('Return customer with id 10:'),
-  writeln(Customer).
-
-test('k4r_customer_test_2') :-
-  k4r_get_link(Link),
+post_test_customer(Link, CustomerId) :-
+  k4r_post_customer(Link, "anonymisedName Test"),
   k4r_get_customers(Link, CustomerList),
-  k4r_get_entity_by_key_value(CustomerList, "anonymisedName", "Megan Firefox", Customer),
-  writeln('Return customer with name Megan Firefox:'),
-  writeln(Customer).
+  k4r_get_entity_by_key_value(CustomerList, "anonymisedName", "anonymisedName Test", Customer),
+  k4r_get_entity_id(Customer, CustomerId).
 
-test('k4r_customer_test_3') :-
+post_test_store(Link, StoreId) :-
+  k4r_post_store(Link, 
+    ["addressAdditional test", 
+    "addressCity test", 
+    "addressCountry test", 
+    "addressPostcode test", 
+    "addressState test", 
+    "addressStreet test", 
+    "addressStreetNumber test", 
+    "cadPlanId test",
+    1.1,
+    1.2,
+    "storeName test",
+    "storeNumber test"]),
+  get_store_id_by_store_name(Link, "storeName test", StoreId).
+
+post_test_product(Link, "idTest") :-
+  k4r_post_product(Link, [10, "description test", "gtin test", 11, 12, "name test", 13], "idTest").
+
+post_test_product_group(Link, StoreId, ProductGroupId) :-
+  post_test_store(Link, StoreId),
+  k4r_post_product_group(Link, StoreId, "name Test"),
+  k4r_get_product_groups(Link, StoreId, ProductGroupList),
+  k4r_get_entity_by_key_value(ProductGroupList, "name", "name Test", ProductGroup),
+  k4r_get_entity_id(ProductGroup, ProductGroupId).
+
+post_test_shelf(Link, StoreId, ProductGroupId, ShelfId) :-
+  post_test_product_group(Link, StoreId, ProductGroupId),
+  k4r_post_shelf(Link, StoreId, ProductGroupId,
+    ["cadPlanId Test", 10, "externalReferenceId Test", 11, 12.12, 13.13, 14.14, 15.15, 16.16, 17.17, 18.18, 19]),
+  get_shelf_id_by_shelf_ext_id(Link, StoreId, "externalReferenceId Test", ShelfId).
+
+post_test_shelf_layer(Link, StoreId, ProductGroupId, ShelfId, ShelfLayerId) :-
+  post_test_shelf(Link, StoreId, ProductGroupId, ShelfId),
+  k4r_post_shelf_layer(Link, ShelfId, [10, "externalReferenceId Test", 11, 12, 13.13, "type Test", 14]),
+  get_shelf_layer_id_by_shelf_layer_ext_id(Link, ShelfId, "externalReferenceId Test", ShelfLayerId).
+
+get_test_customer_id(Link, CustomerId) :-
+  get_customer_id_by_customer_name(Link, "anonymisedName Test", CustomerId).
+
+get_customer_id_by_customer_name(Link, CustomerName, CustomerId) :-
+  k4r_get_customers(Link, CustomerList),
+  k4r_get_entity_by_key_value(CustomerList, "anonymisedName", CustomerName, Customer),
+  k4r_get_entity_id(Customer, CustomerId).
+
+get_store_id_by_store_name(Link, StoreName, StoreId) :-
+  k4r_get_stores(Link, StoreList),
+  k4r_get_entity_by_key_value(StoreList, "storeName", StoreName, Store),
+  k4r_get_entity_id(Store, StoreId).
+
+get_test_store_id(Link, StoreId) :-
+  get_store_id_by_store_name(Link, "storeName test", StoreId).
+
+get_characteristic_id_by_characteristic_name(Link, CharacteristicName, CharacteristicId) :-
+  k4r_get_characteristics(Link, CharacteristicList),
+  k4r_get_entity_by_key_value(CharacteristicList, "name", CharacteristicName, Characteristic),
+  k4r_get_entity_id(Characteristic, CharacteristicId).
+
+get_product_group_id_by_product_group_name(Link, StoreId, ProductGroupName, ProductGroupId) :-
+  k4r_get_product_groups(Link, StoreId, ProductGroupList),
+  k4r_get_entity_by_key_value(ProductGroupList, "name", ProductGroupName, ProductGroup),
+  k4r_get_entity_id(ProductGroup, ProductGroupId).
+
+get_test_product_id("idTest").
+
+get_test_product_group_id(Link, StoreId, ProductGroupId) :-
+  get_test_store_id(Link, StoreId),
+  k4r_get_product_groups(Link, StoreId, ProductGroupList),
+  k4r_get_entity_by_key_value(ProductGroupList, "name", "name Test", ProductGroup),
+  k4r_get_entity_id(ProductGroup, ProductGroupId).
+
+get_shelf_id_by_shelf_ext_id(Link, StoreId, ShelfExtId, ShelfId) :-
+  k4r_get_shelves(Link, StoreId, ShelfList),
+  k4r_get_entity_by_key_value(ShelfList, "externalReferenceId", ShelfExtId, Shelf),
+  k4r_get_entity_id(Shelf, ShelfId).
+
+get_test_shelf_id(Link, ShelfId) :-
+  get_test_store_id(Link, StoreId),
+  get_shelf_id_by_shelf_ext_id(Link, StoreId, "externalReferenceId Test", ShelfId).
+
+get_shelf_layer_id_by_shelf_layer_ext_id(Link, ShelfId, ShelfLayerExtId, ShelfLayerId) :-
+  k4r_get_shelf_layers(Link, ShelfId, ShelfLayerList),
+  k4r_get_entity_by_key_value(ShelfLayerList, "externalReferenceId", ShelfLayerExtId, ShelfLayer),
+  k4r_get_entity_id(ShelfLayer, ShelfLayerId).
+
+get_shopping_basket_position_id_by_product_id(Link, StoreId, CustomerId, ProductId, ShoppingBasketId) :-
+  k4r_get_shopping_basket_positions(Link, StoreId, CustomerId, ShoppingBasketList),
+  k4r_get_entity_by_key_value(ShoppingBasketList, "productId", ProductId, ShoppingBasket),
+  k4r_get_entity_id(ShoppingBasket, ShoppingBasketId).
+
+get_test_shelf_layer_id(Link, ShelfLayerId) :-
+  get_test_shelf_id(Link, ShelfId),
+  get_shelf_layer_id_by_shelf_layer_ext_id(Link, ShelfId, "externalReferenceId Test", ShelfLayerId).
+
+get_facing_id_by_layer_rel_pos(Link, ShelfLayerId, LayerRelativePosition, FacingId) :-
+  k4r_get_facings(Link, ShelfLayerId, FacingList),
+  k4r_get_entity_by_key_value(FacingList, "layerRelativePosition", LayerRelativePosition, Facing),
+  k4r_get_entity_id(Facing, FacingId).
+
+get_planogram_id_by_number_of_facing(Link, NumberOfFacings, PlanogramId) :-
+  k4r_get_planograms(Link, PlanogramList),
+  k4r_get_entity_by_key_value(PlanogramList, "numberOfFacings", NumberOfFacings, Planogram),
+  k4r_get_entity_id(Planogram, PlanogramId).
+
+delete_test_product(Link) :-
+  k4r_delete_product(Link, "idTest").
+
+delete_test_product_group_and_store(Link) :-
+  get_test_product_group_id(Link, StoreId, ProductGroupId),
+  k4r_delete_product_group(Link, ProductGroupId),
+  k4r_delete_store(Link, StoreId).
+
+delete_test_shelf_layer_and_shelf(Link) :-
+  get_test_shelf_id(Link, ShelfId),
+  get_shelf_layer_id_by_shelf_layer_ext_id(Link, ShelfId, "externalReferenceId Test", ShelfLayerId),
+  k4r_delete_shelf_layer(Link, ShelfLayerId),
+  k4r_delete_shelf(Link, ShelfId).
+
+delete_test_data(Link) :-
+  delete_test_product(Link),
+  delete_test_shelf_layer_and_shelf(Link),
+  delete_test_product_group_and_store(Link).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%            Customer           %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+test('customer_post_test') :-
+  k4r_get_link(Link),
+  k4r_post_customer(Link, "Giang"),
+  k4r_post_customer(Link, "Kaviya"),
+  k4r_post_customer(Link, "Gautam"),
+  k4r_post_customer(Link, "Nils").
+
+test('customer_put_test') :-
   k4r_get_link(Link),
   k4r_post_customer(Link, "TaylorSwift"),
-  k4r_get_customers(Link, CustomerList),
-  k4r_get_entity_by_key_value(CustomerList, "anonymisedName", "TaylorSwift", Customer),
-  k4r_get_entity_id(Customer, CustomerId),
+  get_customer_id_by_customer_name(Link, "TaylorSwift", CustomerId),
+  k4r_get_customer(Link, CustomerId, Customer),
+  write('Return customer with id '), writeln(CustomerId),
+  writeln(Customer),
   k4r_put_customer(Link, CustomerId, "Taylor Swift"),
-  writeln('Return customer with name Taylor Swift:'),
-  writeln(Customer).
-
-test('k4r_customer_test_4') :-
-  k4r_get_link(Link),
   k4r_get_customers(Link, CustomerList),
-  k4r_get_entity_by_key_value(CustomerList, "anonymisedName", "Taylor Swift", Customer),
-  k4r_get_entity_id(Customer, CustomerId),
-  k4r_delete_customer(Link, CustomerId),
-  k4r_get_customers(Link, CustomerNewList),
-  writeln('Return customer list without customer name Taylor Swift:'),
-  writeln(CustomerNewList).
+  writeln('Return customer list with name Taylor Swift:'),
+  writeln(CustomerList).
 
-% Store
+test('customer_delete_test') :-
+  k4r_get_link(Link),
+  get_customer_id_by_customer_name(Link, "Giang", CustomerId1),
+  k4r_delete_customer(Link, CustomerId1),
+  get_customer_id_by_customer_name(Link, "Kaviya", CustomerId2),
+  k4r_delete_customer(Link, CustomerId2),
+  get_customer_id_by_customer_name(Link, "Gautam", CustomerId3),
+  k4r_delete_customer(Link, CustomerId3),
+  get_customer_id_by_customer_name(Link, "Nils", CustomerId4),
+  k4r_delete_customer(Link, CustomerId4).
 
-test('k4r_store_test_1') :-
-  k4r_get_link(Link),
-  k4r_get_stores(Link, StoreList),
-  k4r_get_entity_by_key_value(StoreList, "storeName", "Refills Lab", Store),
-  writeln('Return store with name Refills Lab:'),
-  writeln(Store).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%             Store             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-test('k4r_store_test_2') :-
+test('store_post_test') :-
   k4r_get_link(Link),
-  k4r_post_store(Link, "{
-    \"addressAdditional\" : \"Nothing\",
-    \"addressCity\" : \"Bremen\",
-    \"addressCountry\" : \"DE\",
-    \"addressPostcode\" : \"28211\",
-    \"addressState\" : \"Land Bremen\",
-    \"addressStreet\" : \"Heinrich-Hertz-Strasse\",
-    \"addressStreetNumber\" : \"19\",
-    \"cadPlanId\" : \"123CAD321\",
-    \"latitude\" : 12.3455,
-    \"longitude\" : 46.321,
-    \"storeName\" : \"Giang Lab\",
-    \"storeNumber\" : \"123ABC\"
-  }"),
-  k4r_get_stores(Link, StoreList),
-  k4r_get_entity_by_key_value(StoreList, "storeName", "Giang Lab", Store),
-  writeln('Return store with name Giang Lab:'),
-  writeln(Store).
+  k4r_post_store(Link, 
+    ["addressAdditional 1", 
+    "addressCity 1", 
+    "addressCountry 1", 
+    "addressPostcode 1", 
+    "addressState 1", 
+    "addressStreet 1", 
+    "addressStreetNumber 1", 
+    "cadPlanId 1",
+    1.1,
+    1.2,
+    "storeName 1",
+    "storeNumber 1"]),
+  k4r_post_store(Link,
+    ["addressAdditional 2", 
+    "addressCity 2", 
+    "addressCountry 2", 
+    "addressPostcode 2", 
+    "addressState 2", 
+    "addressStreet 2", 
+    "addressStreetNumber 2", 
+    "cadPlanId 2", 
+    2.1, 
+    2.2,
+    "storeName 2",
+    "storeNumber 2"]),
+    k4r_post_store(Link,
+    ["addressAdditional 3", 
+    "addressCity 3", 
+    "addressCountry 3", 
+    "addressPostcode 3", 
+    "addressState 3", 
+    "addressStreet 3", 
+    "addressStreetNumber 3", 
+    "cadPlanId 3", 
+    3.1, 
+    3.2,
+    "storeName 3",
+    "storeNumber 3"]),
+  k4r_post_store(Link,
+    ["addressAdditional 4", 
+    "addressCity 4", 
+    "addressCountry 4", 
+    "addressPostcode 4", 
+    "addressState 4", 
+    "addressStreet 4", 
+    "addressStreetNumber 4", 
+    "cadPlanId 4", 
+    4.1, 
+    4.2,
+    "storeName 4",
+    "storeNumber 4"]).
 
-test('k4r_store_test_3') :-
+test('store_put_and_get_test') :-
   k4r_get_link(Link),
-  k4r_get_link(Link),
-  k4r_get_stores(Link, StoreList),
-  k4r_get_entity_by_key_value(StoreList, "storeName", "Giang Lab", Store),
-  k4r_get_entity_id(Store, StoreId),
+  get_store_id_by_store_name(Link, "storeName 4", StoreId),
   k4r_put_store(Link, StoreId, "{
     \"addressAdditional\" : \"Changed\",
     \"addressCity\" : \"REFD\",
@@ -88,40 +243,130 @@ test('k4r_store_test_3') :-
     \"cadPlanId\" : \"123CAD321\",
     \"latitude\" : 12.43,
     \"longitude\" : 32.435,
-    \"storeName\" : \"Giang Lab\",
+    \"storeName\" : \"storeName 4\",
     \"storeNumber\" : \"ABC123\"
   }"),
-  k4r_get_stores(Link, StoreList),
-  k4r_get_entity_by_key_value(StoreList, "storeName", "Giang Lab", Store),
-  writeln('Return changed store with name Giang Lab:'),
+  k4r_put_store(Link, StoreId, 
+    ["addressAdditional changed", 
+    "addressCity changed", 
+    "addressCountry changed", 
+    "addressPostcode changed", 
+    "addressState changed", 
+    "addressStreet changed", 
+    "addressStreetNumber changed", 
+    "cadPlanId changed", 
+    4.1, 
+    4.2,
+    "storeName 4",
+    "storeNumber changed"]),
+  get_store_id_by_store_name(Link, "storeName 4", StoreId),
+  k4r_get_store(Link, StoreId, Store),
+  writeln('Return changed store with name storeName 4:'),
   writeln(Store).
 
-test('k4r_store_test_4') :-
+test('store_delete_test') :-
   k4r_get_link(Link),
-  k4r_get_stores(Link, StoreList),
-  k4r_get_entity_by_key_value(StoreList, "storeName", "Giang Lab", Store),
-  k4r_get_entity_id(Store, StoreId),
-  k4r_delete_store(Link, StoreId),
-  k4r_get_stores(Link, StoreListNew),
-  writeln('Return stores without store name Giang Lab:'),
-  writeln(StoreListNew).
+  get_store_id_by_store_name(Link, "storeName 1", StoreId1),
+  k4r_delete_store(Link, StoreId1),
+  get_store_id_by_store_name(Link, "storeName 2", StoreId2),
+  k4r_delete_store(Link, StoreId2),
+  get_store_id_by_store_name(Link, "storeName 3", StoreId3),
+  k4r_delete_store(Link, StoreId3),
+  get_store_id_by_store_name(Link, "storeName 4", StoreId4),
+  k4r_delete_store(Link, StoreId4).
 
-% Characteristic
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%            Product            %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-test('k4r_characteristic_test_1') :-
+test('product_post_test') :-
   k4r_get_link(Link),
-  k4r_get_characteristics(Link, CharacteristicList),
-  writeln('Return characteristics:'),
-  writeln(CharacteristicList).
+  k4r_post_product(Link, [10, "description 1", "gtin 1", 11, 12, "name 1", 13], "id1"),
+  k4r_post_product(Link, [20, "description 2", "gtin 2", 21, 22, "name 2", 23], "id2"),
+  k4r_post_product(Link, [30, "description 3", "gtin 3", 31, 32, "name 3", 33], "id3"),
+  k4r_post_product(Link, [40, "description 4", "gtin 4", 41, 42, "name 4", 43], "id4").
 
-test('k4r_characteristic_test_2') :-
+test('product_get_test') :-
+  k4r_get_link(Link),
+  k4r_get_product(Link, "id1", Product),
+  writeln('Return product with id id1:'),
+  writeln(Product).
+
+test('product_put_test') :-
+  k4r_get_link(Link),
+  k4r_put_product(Link, "{
+    \"depth\" : 3,
+    \"description\" : \"a new changed product\",
+    \"gtin\" : \"whatisthis\",
+    \"height\" : 2,
+    \"length\" : 12,
+    \"name\" : \"new changed product\",
+    \"weight\" : 111
+  }", "id4"),
+  k4r_put_product(Link, [40, "description changed", "gtin changed", 41, 42, "name changed", 43], "id4"),
+  k4r_get_products(Link, ProductList),
+  writeln('Return products with product new changed product at id id4:'),
+  writeln(ProductList).
+
+test('product_posts_test') :-
+  k4r_get_link(Link),
+  k4r_post_products(Link, "{
+    \"products\": 
+      [
+        {
+          \"depth\" : 50,
+          \"description\" : \"description 5\",
+          \"gtin\" : \"gtin 5\",
+          \"height\" : 51,
+          \"id\" : \"id5\",
+          \"length\" : 52,
+          \"name\" : \"name 5\",
+          \"weight\" : 53
+        }
+        ,{
+          \"depth\" : 60,
+          \"description\" : \"description 6\",
+          \"gtin\" : \"gtin 6\",
+          \"height\" : 61,
+          \"id\" : \"id6\",
+          \"length\" : 62,
+          \"name\" : \"name 6\",
+          \"weight\" : 63
+        }
+      ]
+    }"
+  ),
+  k4r_post_products(Link, [
+    [70, "description 7", "gtin 7", 71, "id7", 72, "name 7", 73],
+    [80, "description 8", "gtin 8", 81, "id8", 82, "name 8", 83]
+  ]),
+  k4r_get_products(Link, ProductList),
+  writeln('Return products with products at id id5 to id8:'),
+  writeln(ProductList).
+
+test('product_delete_test') :-
+  k4r_get_link(Link),
+  k4r_delete_product(Link, "id1"),
+  k4r_delete_product(Link, "id2"),
+  k4r_delete_product(Link, "id3"),
+  k4r_delete_product(Link, "id4"),
+  k4r_delete_product(Link, "id5"),
+  k4r_delete_product(Link, "id6"),
+  k4r_delete_product(Link, "id7"),
+  k4r_delete_product(Link, "id8").
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%         Characteristic        %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+test('characteristic_post_and_get_test') :-
   k4r_get_link(Link),
   k4r_post_characteristic(Link, "New Characteristic"),
   k4r_get_characteristics(Link, CharacteristicList),
   writeln('Return characteristics with New Characteristic'),
   writeln(CharacteristicList).
 
-test('k4r_characteristic_test_3') :-
+test('characteristic_delete_test') :-
   k4r_get_link(Link),
   k4r_get_characteristics(Link, CharacteristicList),
   k4r_get_entity_by_key_value(CharacteristicList, "name", "New Characteristic", Characteristic),
@@ -131,426 +376,390 @@ test('k4r_characteristic_test_3') :-
   writeln('Return characteristics without New Characteristic'),
   writeln(CharacteristicListNew).
 
-% Property
-
-test('k4r_property_test_1') :-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%           Property            %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+test('property_post_test') :-
   k4r_get_link(Link),
-  k4r_get_properties(Link, "2", "A1", PropertyList),
-  writeln('Return properties of product A1 in store 2:'),
+  post_test_store(Link, StoreId),
+  post_test_product(Link, ProductId),
+  k4r_post_characteristic(Link, "name 1"),
+  k4r_post_characteristic(Link, "name 2"),
+  k4r_post_characteristic(Link, "name 3"),
+  k4r_post_characteristic(Link, "name 4"),
+  get_characteristic_id_by_characteristic_name(Link, "name 1", CharacteristicId1),
+  get_characteristic_id_by_characteristic_name(Link, "name 2", CharacteristicId2),
+  get_characteristic_id_by_characteristic_name(Link, "name 3", CharacteristicId3),
+  get_characteristic_id_by_characteristic_name(Link, "name 4", CharacteristicId4),
+  k4r_post_property(Link, StoreId, ProductId, CharacteristicId1, "value 1"),
+  k4r_post_property(Link, StoreId, ProductId, CharacteristicId2, "value 2"),
+  k4r_post_property(Link, StoreId, ProductId, CharacteristicId3, "value 3"),
+  k4r_post_property(Link, StoreId, ProductId, CharacteristicId4, "value 4").
+
+test('property_get_test') :-
+  k4r_get_link(Link),
+  k4r_get_stores(Link, StoreList),
+  k4r_get_entity_by_key_value(StoreList, "storeName", "storeName test", Store),
+  k4r_get_entity_id(Store, StoreId),
+  k4r_get_properties(Link, StoreId, "idTest", PropertyList),
+  writeln('Return properties of product idTest in store name storeName test:'),
   writeln(PropertyList).
 
-test('k4r_property_test_2') :-
+test('property_delete_test') :-
   k4r_get_link(Link),
+  get_test_store_id(Link, StoreId),
   k4r_get_characteristics(Link, CharacteristicList),
-  k4r_get_entity_by_key_value(CharacteristicList, "name", "Review", Characteristic),
-  k4r_get_entity_id(Characteristic, CharacteristicId),
-  k4r_post_property(Link, "2", "A1", CharacteristicId, "Good Review"),
-  k4r_get_properties(Link, "2", "A1", PropertyList),
-  writeln('Return properties of product A1 in store 2 with Good Review:'),
-  writeln(PropertyList).
+  get_characteristic_id_by_characteristic_name(Link, "name 1", CharacteristicId1),
+  get_characteristic_id_by_characteristic_name(Link, "name 2", CharacteristicId2),
+  get_characteristic_id_by_characteristic_name(Link, "name 3", CharacteristicId3),
+  get_characteristic_id_by_characteristic_name(Link, "name 4", CharacteristicId4),
+  get_test_product_id(ProductId),
+  k4r_delete_property(Link, StoreId, ProductId, CharacteristicId1),
+  k4r_delete_property(Link, StoreId, ProductId, CharacteristicId2),
+  k4r_delete_property(Link, StoreId, ProductId, CharacteristicId3),
+  k4r_delete_property(Link, StoreId, ProductId, CharacteristicId4),
+  k4r_delete_characteristic(Link, CharacteristicId1),
+  k4r_delete_characteristic(Link, CharacteristicId2),
+  k4r_delete_characteristic(Link, CharacteristicId3),
+  k4r_delete_characteristic(Link, CharacteristicId4),
+  k4r_delete_product(Link, ProductId),
+  k4r_delete_store(Link, StoreId).
 
-test('k4r_property_test_3') :-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%         Product group         %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+test('product_group_post_test') :-
   k4r_get_link(Link),
-  k4r_get_characteristics(Link, CharacteristicList),
-  k4r_get_entity_by_key_value(CharacteristicList, "name", "Review", Characteristic),
-  k4r_get_entity_id(Characteristic, CharacteristicId),
-  k4r_delete_property(Link, "2", "A1", CharacteristicId),
-  k4r_get_properties(Link, "2", "A1", PropertyList),
-  writeln('Return properties of product A1 in store 2 without Good Review:'),
-  writeln(PropertyList).
+  post_test_store(Link, StoreId),
+  k4r_post_product_group(Link, StoreId, "name 1"),
+  k4r_post_product_group(Link, StoreId, "name 2"),
+  k4r_post_product(Link, [10, "description 1", "gtin 1", 11, 12, "name 1", 13], "id1"),
+  k4r_post_product(Link, [20, "description 2", "gtin 2", 21, 22, "name 2", 23], "id2"),
+  k4r_post_product(Link, [30, "description 3", "gtin 3", 31, 32, "name 3", 33], "id3"),
+  k4r_post_product(Link, [40, "description 4", "gtin 4", 41, 42, "name 4", 43], "id4"),
+  k4r_post_product(Link, [50, "description 5", "gtin 5", 51, 52, "name 5", 53], "id5"),
+  k4r_post_product(Link, [60, "description 6", "gtin 6", 61, 62, "name 6", 63], "id6"),
+  get_product_group_id_by_product_group_name(Link, StoreId, "name 1", ProductGroupId1),
+  get_product_group_id_by_product_group_name(Link, StoreId, "name 2", ProductGroupId2),
+  k4r_post_product_to_product_group(Link, "id1", ProductGroupId1),
+  k4r_post_product_to_product_group(Link, "id2", ProductGroupId1),
+  k4r_post_product_to_product_group(Link, "id3", ProductGroupId2),
+  k4r_post_product_to_product_group(Link, "id4", ProductGroupId2).
 
-% Product
-
-test('k4r_product_test_1') :-
+test('product_group_get_test') :-
   k4r_get_link(Link),
-  k4r_get_product_by_id(Link, "A1", Product),
-  writeln('Return product with id A1:'),
-  writeln(Product).
+  get_test_store_id(Link, StoreId),
+  get_product_group_id_by_product_group_name(Link, StoreId, "name 1", ProductGroupId),
+  k4r_get_product_group(Link, ProductGroupId, ProductGroup),
+  writeln('Return product group with name 1:'),
+  writeln(ProductGroup).
 
-test('k4r_product_test_2') :-
+test('product_group_post_and_delete_product_test') :-
   k4r_get_link(Link),
-  k4r_get_products(Link, ProductList),
-  k4r_get_entity_by_key_value(ProductList, "name", "Shampoo", Product),
-  writeln('Return product with name Shampoo:'),
-  writeln(Product).
+  get_test_store_id(Link, StoreId),
+  get_product_group_id_by_product_group_name(Link, StoreId, "name 1", ProductGroupId),
+  k4r_post_product_to_product_group(Link, "id5", ProductGroupId),
+  k4r_post_product_to_product_group(Link, "id6", ProductGroupId),
+  k4r_get_product_group(Link, ProductGroupId, ProductGroup1),
+  writeln('Return product group 1 with product id5 and id6:'),
+  writeln(ProductGroup1),
+  k4r_delete_product_from_product_group(Link, "id6", ProductGroupId),
+  k4r_get_product_group(Link, ProductGroupId, ProductGroup2),
+  writeln('Return product group 1 without product id6:'),
+  writeln(ProductGroup2).
 
-test('k4r_product_test_3') :-
+test('product_group_delete_test') :-
   k4r_get_link(Link),
-  k4r_post_product(Link, "{
-    \"depth\" : 3,
-    \"description\" : \"a new product\",
-    \"gtin\" : \"whatisthis\",
-    \"height\" : 2,
-    \"length\" : 12,
-    \"name\" : \"new product\",
-    \"weight\" : 100
-  }", "A10"),
-  k4r_get_products(Link, ProductList),
-  writeln('Return products with product new product at id A10:'),
-  writeln(ProductList).
+  get_test_store_id(Link, StoreId),
+  get_product_group_id_by_product_group_name(Link, StoreId, "name 1", ProductGroupId1),
+  get_product_group_id_by_product_group_name(Link, StoreId, "name 2", ProductGroupId2),
+  k4r_delete_product_group(Link, ProductGroupId1),
+  k4r_delete_product_group(Link, ProductGroupId2),
+  k4r_delete_product(Link, "id1"),
+  k4r_delete_product(Link, "id2"),
+  k4r_delete_product(Link, "id3"),
+  k4r_delete_product(Link, "id4"),
+  k4r_delete_product(Link, "id5"),
+  k4r_delete_product(Link, "id6"),
+  k4r_delete_store(Link, StoreId).
 
-test('k4r_product_test_4') :-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%             Shelf             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+test('shelf_post_test') :-
   k4r_get_link(Link),
-  k4r_put_product(Link, "{
-    \"depth\" : 3,
-    \"description\" : \"a new changed product\",
-    \"gtin\" : \"whatisthis\",
-    \"height\" : 2,
-    \"length\" : 12,
-    \"name\" : \"new changed product\",
-    \"weight\" : 100
-  }", "A10"),
-  k4r_get_products(Link, ProductList),
-  writeln('Return products with product new changed product at id A10:'),
-  writeln(ProductList).
+  post_test_product_group(Link, StoreId, ProductGroupId),
+  k4r_post_shelf(Link, StoreId, ProductGroupId,
+    ["cadPlanId 1", 10, "externalReferenceId 1", 11, 12.12, 13.13, 14.14, 15.15, 16.16, 17.17, 18.18, 19]),
+  k4r_post_shelf(Link, StoreId, ProductGroupId,
+    ["cadPlanId 2", 20, "externalReferenceId 2", 21, 22.22, 23.23, 24.24, 25.25, 26.26, 27.27, 28.28, 29]),
+  k4r_post_shelf(Link, StoreId, ProductGroupId,
+    ["cadPlanId 3", 30, "externalReferenceId 3", 31, 32.32, 33.33, 34.34, 35.35, 36.36, 37.37, 38.38, 39]),
+  k4r_post_shelf(Link, StoreId, ProductGroupId,
+    ["cadPlanId 4", 40, "externalReferenceId 4", 41, 42.42, 43.43, 44.44, 45.45, 46.46, 47.47, 48.48, 49]).
 
-test('k4r_product_test_5') :-
+test('shelf_get_test') :-
   k4r_get_link(Link),
-  k4r_post_products(Link, "{
-    \"products\": 
-      [
-        {
-          \"depth\" : 5,
-          \"description\" : \"a new product 2\",
-          \"gtin\" : \"whatisthis\",
-          \"height\" : null,
-          \"id\" : \"A101\",
-          \"length\" : 1,
-          \"name\" : \"shampoo\",
-          \"weight\" : 2
-        }
-        ,{
-          \"depth\" : 3,
-          \"description\" : \"a new product 3\",
-          \"gtin\" : \"whatisthis\",
-          \"height\" : null,
-          \"id\" : \"A102\",
-          \"length\" : 1,
-          \"name\" : \"paper\",
-          \"weight\" : 4
-        }
-      ]
-    }"
-  ),
-  k4r_get_products(Link, ProductList),
-  writeln('Return products with products at id A101 and A102:'),
-  writeln(ProductList).
-
-test('k4r_product_test_6') :-
-  k4r_get_link(Link),
-  k4r_delete_product(Link, "A10"),
-  k4r_delete_product(Link, "A101"),
-  k4r_delete_product(Link, "A102"),
-  k4r_get_products(Link, ProductList),
-  writeln('Return products without products at id A10, A101 and A102:'),
-  writeln(ProductList).
-
-% Shelf
-
-test('k4r_shelf_test_1') :-
-  k4r_get_link(Link),
-  k4r_get_shelves(Link, 2, ShelfList),
-  writeln('Return Shelves:'),
-  writeln(ShelfList).
-
-test('k4r_shelf_test_2') :-
-  k4r_get_link(Link),
-  k4r_get_shelf_by_id(Link, 1, Shelf),
-  writeln('Return Shelf at id 1:'),
+  get_test_store_id(Link, StoreId),
+  get_shelf_id_by_shelf_ext_id(Link, StoreId, "externalReferenceId 1", ShelfId),
+  k4r_get_shelf(Link, ShelfId, Shelf),
+  writeln('Return Shelf at with externalReferenceId 1:'),
   writeln(Shelf).
 
-test('k4r_shelf_test_3') :-
+test('shelf_put_test') :-
   k4r_get_link(Link),
-  k4r_post_shelf(Link, 2, "{
-    \"cadPlanId\" : \"an_new_cadPlanId\",
-    \"depth\" : 40,
-    \"externalReferenceId\" : \"R4\",
-    \"height\" : 30,
-    \"orientationY\" : 2,
-    \"orientationYaw\" : 4,
-    \"orientationZ\" : 3,
-    \"orientationX\" : 2,
-    \"positionX\" : 4,
-    \"positionY\" : 5,
-    \"positionZ\" : 6,
-    \"productGroupId\" : 3,
-    \"width\" : 20
- }"),
- k4r_get_shelves(Link, 2, ShelfList),
- writeln('Return Shelves with shelf with externalReferenceId R4:'),
- writeln(ShelfList).
-
-test('k4r_shelf_test_4') :-
-  k4r_get_link(Link),
-  k4r_get_shelves(Link, 2, ShelfList),
-  k4r_get_entity_by_key_value(ShelfList, "externalReferenceId", "R4", Shelf),
-  k4r_get_shelf_location(Shelf, ShelfPosX, ShelfPosY, ShelfPosZ, ShelfOrientationX, ShelfOrientationY, ShelfOrientationZ, ShelfOrientationW),
-  writeln('Position and Orientation:'),
-  writeln(ShelfPosX),
-  writeln(ShelfPosY),
-  writeln(ShelfPosZ),
-  writeln(ShelfOrientationX),
-  writeln(ShelfOrientationY),
-  writeln(ShelfOrientationZ),
-  writeln(ShelfOrientationW).
-
-test('k4r_shelf_test_5') :-
-  k4r_get_link(Link),
-  k4r_get_shelves(Link, 2, ShelfList),
-  k4r_get_entity_by_key_value(ShelfList, "externalReferenceId", "R4", Shelf),
-  k4r_get_entity_id(Shelf, ShelfId),
-  k4r_put_shelf(Link, ShelfId, "{
+  get_test_product_group_id(Link, StoreId, ProductGroupId),
+  get_shelf_id_by_shelf_ext_id(Link, StoreId, "externalReferenceId 1", ShelfId),
+  k4r_put_shelf(Link, StoreId, ProductGroupId, ShelfId, 
+    "{
     \"cadPlanId\" : \"an_new_cadPlanId\",
     \"depth\" : 32,
     \"externalReferenceId\" : \"R4\",
     \"height\" : 12,
-    \"orientationY\" : 23,
-    \"orientationYaw\" : 32,
-    \"orientationZ\" : 312,
+    \"orientationW\" : 23,
     \"orientationX\" : 32,
+    \"orientationY\" : 312,
+    \"orientationZ\" : 32,
     \"positionX\" : 432,
     \"positionY\" : 421,
     \"positionZ\" : 14,
-    \"productGroupId\" : 3,
-    \"storeId\" : 2,
-    \"width\" : 20
- }"),
- k4r_get_shelves(Link, 2, ShelfList),
- writeln('Return Shelves with shelf with externalReferenceId R4:'),
- writeln(ShelfList).
+    \"width\" : 21
+    }"),
+  k4r_put_shelf(Link, StoreId, ProductGroupId, ShelfId,
+    ["cadPlanId changed", 40, "externalReferenceId 1", 41, 42.42, 43.43, 44.44, 45.45, 46.46, 47.47, 48.48, 49]),
+  k4r_get_shelves(Link, StoreId, ShelfList),
+  writeln('Return Shelves with shelf with cadPlanId changed:'),
+  writeln(ShelfList).
 
-test('k4r_shelf_test_6') :-
+test('shelf_get_data_test') :-
   k4r_get_link(Link),
-  k4r_get_shelves(Link, 2, ShelfList),
-  k4r_get_entity_by_key_value(ShelfList, "externalReferenceId", "R4", Shelf),
-  k4r_get_entity_id(Shelf, ShelfId),
-  k4r_delete_shelf(Link, ShelfId),
-  k4r_get_shelves(Link, 2, ShelfListNew),
-  writeln('Return Shelves with shelf without externalReferenceId R4:'),
-  writeln(ShelfListNew).
+  get_test_store_id(Link, StoreId),
+  get_shelf_id_by_shelf_ext_id(Link, StoreId, "externalReferenceId 1", ShelfId),
+  k4r_get_shelf(Link, ShelfId, Shelf),
+  k4r_get_shelf_data(
+    Shelf,
+    [ShelfPositionX, ShelfPositionY, ShelfPositionZ], 
+    [ShelfOrientationX, ShelfOrientationY, ShelfOrientationZ, ShelfOrientationW], 
+    [ShelfDepth, ShelfWidth, ShelfHeight]),
+  writeln('Position:'),
+  writeln(ShelfPositionX),
+  writeln(ShelfPositionY),
+  writeln(ShelfPositionZ),
+  writeln('Orientation:'),
+  writeln(ShelfOrientationX),
+  writeln(ShelfOrientationY),
+  writeln(ShelfOrientationZ),
+  writeln(ShelfOrientationW),
+  writeln('Dimention:'),
+  writeln(ShelfDepth),
+  writeln(ShelfWidth),
+  writeln(ShelfHeight).
 
-% ShelfLayer
-
-test('k4r_shelf_layer_test_1') :-
+test('shelf_delete_test') :-
   k4r_get_link(Link),
-  k4r_get_shelf_layers(Link, 1, ShelfLayerList),
-  writeln('Return shelflayers'),
-  writeln(ShelfLayerList).
+  get_test_product_group_id(Link, StoreId, ProductGroupId),
+  get_shelf_id_by_shelf_ext_id(Link, StoreId, "externalReferenceId 1", ShelfId1),
+  k4r_delete_shelf(Link, ShelfId1),
+  get_shelf_id_by_shelf_ext_id(Link, StoreId, "externalReferenceId 2", ShelfId2),
+  k4r_delete_shelf(Link, ShelfId2),
+  get_shelf_id_by_shelf_ext_id(Link, StoreId, "externalReferenceId 3", ShelfId3),
+  k4r_delete_shelf(Link, ShelfId3),
+  get_shelf_id_by_shelf_ext_id(Link, StoreId, "externalReferenceId 4", ShelfId4),
+  k4r_delete_shelf(Link, ShelfId4),
+  k4r_delete_product_group(Link, ProductGroupId),
+  k4r_delete_store(Link, StoreId).
 
-test('k4r_shelf_layer_test_2') :-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%          Shelf layer          %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+test('shelf_layer_init_test') :-
   k4r_get_link(Link),
-  k4r_get_shelf_layer_by_id(Link, 2, ShelfLayer),
-  writeln('Return shelflayer at id 2'),
+  post_test_shelf(Link, _, _, ShelfId),
+  k4r_post_shelf_layer(Link, ShelfId, [10, "externalReferenceId 1", 11, 12, 13.13, "type 1", 14]),
+  k4r_post_shelf_layer(Link, ShelfId, [20, "externalReferenceId 2", 21, 22, 23.23, "type 2", 24]),
+  k4r_post_shelf_layer(Link, ShelfId, [30, "externalReferenceId 3", 31, 32, 33.33, "type 3", 34]),
+  k4r_post_shelf_layer(Link, ShelfId, [40, "externalReferenceId 4", 41, 42, 43.43, "type 4", 44]).
+
+test('shelf_layer_get_test') :-
+  k4r_get_link(Link),
+  get_test_shelf_id(Link, ShelfId),
+  get_shelf_layer_id_by_shelf_layer_ext_id(Link, ShelfId, "externalReferenceId 1", ShelfLayerId),
+  k4r_get_shelf_layer(Link, ShelfLayerId, ShelfLayer),
+  writeln('Return shelf layer with externalReferenceId 1'),
   writeln(ShelfLayer).
 
-test('k4r_shelf_layer_test_3') :-
+test('shelf_layer_delete_test') :-
   k4r_get_link(Link),
-  k4r_post_shelf_layer(Link, 1, "{
-    \"level\": 123,
-    \"type\": \"type123\",
-    \"positionZ\": 34,
-    \"width\": 32,
-    \"height\": 63,
-    \"depth\": 16,
-    \"externalReferenceId\": \"E4\"
-  }").
+  get_test_shelf_id(Link, ShelfId),
+  get_shelf_layer_id_by_shelf_layer_ext_id(Link, ShelfId, "externalReferenceId 1", ShelfLayerId1),
+  k4r_delete_shelf_layer(Link, ShelfLayerId1),
+  get_shelf_layer_id_by_shelf_layer_ext_id(Link, ShelfId, "externalReferenceId 2", ShelfLayerId2),
+  k4r_delete_shelf_layer(Link, ShelfLayerId2),
+  get_shelf_layer_id_by_shelf_layer_ext_id(Link, ShelfId, "externalReferenceId 3", ShelfLayerId3),
+  k4r_delete_shelf_layer(Link, ShelfLayerId3),
+  get_shelf_layer_id_by_shelf_layer_ext_id(Link, ShelfId, "externalReferenceId 4", ShelfLayerId4),
+  k4r_delete_shelf_layer(Link, ShelfLayerId4),
+  k4r_delete_shelf(Link, ShelfId),
+  delete_test_product_group_and_store(Link).
 
-test('k4r_shelf_layer_test_4') :-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%        Shopping basket        %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+test('shopping_basket_post_test') :-
   k4r_get_link(Link),
-  k4r_get_shelf_layers(Link, 1, ShelfLayerList),
-  k4r_get_entity_by_key_value(ShelfLayerList, "externalReferenceId", "E4", ShelfLayer),
-  k4r_get_entity_id(ShelfLayer, ShelfLayerId),
-  k4r_delete_shelf_layer(Link, ShelfLayerId),
-  writeln('Return ShelfLayers without shelflayer externalReferenceId E4:'),
-  k4r_get_shelf_layers(Link, 1, ShelfLayerListNew),
-  writeln(ShelfLayerListNew).
+  post_test_store(Link, StoreId),
+  post_test_customer(Link, CustomerId), 
+  k4r_post_product(Link, [10, "description 1", "gtin 1", 11, 12, "name 1", 13], "id1"),
+  k4r_post_product(Link, [20, "description 2", "gtin 2", 21, 22, "name 2", 23], "id2"),
+  k4r_post_product(Link, [30, "description 3", "gtin 3", 31, 32, "name 3", 33], "id3"),
+  k4r_post_product(Link, [40, "description 4", "gtin 4", 41, 42, "name 4", 43], "id4"),
+  k4r_post_shopping_basket_position(Link, StoreId, CustomerId, "id1", ["currency 1", 10, 11.11]),
+  k4r_post_shopping_basket_position(Link, StoreId, CustomerId, "id2", ["currency 2", 20, 21.21]),
+  k4r_post_shopping_basket_position(Link, StoreId, CustomerId, "id3", ["currency 3", 30, 31.31]),
+  k4r_post_shopping_basket_position(Link, StoreId, CustomerId, "id4", ["currency 4", 40, 41.41]).
 
-% Shopping basket
-
-test('k4r_shopping_basket_test_1') :-
+test('shopping_basket_get_test') :-
   k4r_get_link(Link),
-  k4r_get_shopping_basket_positions(Link, 2, 1, ShoppingBasketList),
-  writeln('Return shopping baskets of store id 2, customer id 1'),
-  writeln(ShoppingBasketList).
-
-test('k4r_shopping_basket_test_2') :-
-  k4r_get_link(Link),
-  k4r_get_shopping_basket_position_by_id(Link, 5, ShoppingBasket),
-  writeln('Return shopping basket with id 5'),
+  get_test_store_id(Link, StoreId),
+  get_test_customer_id(Link, CustomerId),
+  get_shopping_basket_position_id_by_product_id(Link, StoreId, CustomerId, "id1", ShoppingBasketId),
+  k4r_get_shopping_basket_position(Link, ShoppingBasketId, ShoppingBasket),
+  writeln('Return shopping basket with productId id1:'),
   writeln(ShoppingBasket).
 
-test('k4r_shopping_basket_test_3') :-
+test('shopping_basket_deletes_test') :-
   k4r_get_link(Link),
-  k4r_post_shopping_basket_position(Link, 2, 1, "{
-    \"productId\": \"A3\",
-    \"sellingPrice\": 3.99,
-    \"quantity\": 6,
-    \"currency\": \"yen\"
-  }").
+  get_test_store_id(Link, StoreId),
+  k4r_post_customer(Link, "anonymisedName 2"),
+  get_customer_id_by_customer_name(Link, "anonymisedName 2", CustomerId),
+  k4r_post_shopping_basket_position(Link, StoreId, CustomerId, "id1", ["currency 1", 10, 11.11]),
+  k4r_post_shopping_basket_position(Link, StoreId, CustomerId, "id2", ["currency 2", 20, 21.21]),
+  k4r_delete_shopping_basket_positions(Link, StoreId, CustomerId),
+  k4r_delete_customer(Link, CustomerId).
 
-test('k4r_shopping_basket_test_4') :-
+test('shopping_basket_delete_test') :-
   k4r_get_link(Link),
-  k4r_get_shopping_basket_positions(Link, 2, 1, ShoppingBasketList),
-  k4r_get_entity_by_key_value(ShoppingBasketList, "productId", "A3", ShoppingBasket),
-  k4r_get_entity_id(ShoppingBasket, ShoppingBasketId),
-  k4r_delete_shopping_basket_position(Link, ShoppingBasketId),
-  k4r_get_shopping_basket_positions(Link, 2, 1, ShoppingBasketListNew),
-  writeln('Return shopping baskets without product id A3'),
-  writeln(ShoppingBasketListNew).
+  get_test_store_id(Link, StoreId),
+  get_test_customer_id(Link, CustomerId),
+  get_shopping_basket_position_id_by_product_id(Link, StoreId, CustomerId, "id1", ShoppingBasketId1),
+  k4r_delete_shopping_basket_position(Link, ShoppingBasketId1),
+  get_shopping_basket_position_id_by_product_id(Link, StoreId, CustomerId, "id2", ShoppingBasketId2),
+  k4r_delete_shopping_basket_position(Link, ShoppingBasketId2),
+  get_shopping_basket_position_id_by_product_id(Link, StoreId, CustomerId, "id3", ShoppingBasketId3),
+  k4r_delete_shopping_basket_position(Link, ShoppingBasketId3),
+  get_shopping_basket_position_id_by_product_id(Link, StoreId, CustomerId, "id4", ShoppingBasketId4),
+  k4r_delete_shopping_basket_position(Link, ShoppingBasketId4),
+  k4r_delete_product(Link, "id1"),
+  k4r_delete_product(Link, "id2"),
+  k4r_delete_product(Link, "id3"),
+  k4r_delete_product(Link, "id4"),
+  k4r_delete_customer(Link, CustomerId),
+  k4r_delete_store(Link, StoreId).
 
-% Facing
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%             Facing            %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-test('k4r_facing_test_1') :-
+test('facing_init_test_data') :-
   k4r_get_link(Link),
-  k4r_get_facings(Link, 1, FacingList),
-  writeln('Return facings on shelf layer 1'),
-  writeln(FacingList).
+  post_test_shelf_layer(Link, _, _, _, ShelfLayerId),
+  post_test_product(Link, ProductId),
+  k4r_post_facing(Link, ShelfLayerId, ProductId, 10, 11),
+  k4r_post_facing(Link, ShelfLayerId, ProductId, 20, 21),
+  k4r_post_facing(Link, ShelfLayerId, ProductId, 30, 31),
+  k4r_post_facing(Link, ShelfLayerId, ProductId, 40, 41).
 
-test('k4r_facing_test_2') :-
+test('facing_test_1') :-
   k4r_get_link(Link),
-  k4r_get_facing_by_id(Link, 2, Facing),
-  writeln('Return facings at id 2'),
+  get_test_shelf_layer_id(Link, ShelfLayerId),
+  get_facing_id_by_layer_rel_pos(Link, ShelfLayerId, 10, FacingId),
+  k4r_get_facing(Link, FacingId, Facing),
+  writeln('Return facings with layerRelativePosition 10'),
   writeln(Facing).
 
-test('k4r_facing_test_3') :-
+test('facing_test_2') :-
   k4r_get_link(Link),
-  k4r_post_facing(Link, 1, "{
-    \"shelfLayerId\": 1,
-    \"productId\": \"A3\",
-    \"layerRelativePosition\": 4,
-    \"quantity\": 2
-  }").
+  get_test_shelf_layer_id(Link, ShelfLayerId),
+  get_facing_id_by_layer_rel_pos(Link, ShelfLayerId, 10, FacingId),
+  get_test_product_id(ProductId),
+  k4r_put_facing(Link, ShelfLayerId, ProductId, FacingId, 10, 110),
+  k4r_get_facing(Link, FacingId, Facing),
+  writeln('Return facings with layerRelativePosition 10'),
+  writeln(Facing).
 
-test('k4r_facing_test_4') :-
+test('facing_delete_test_data') :-
   k4r_get_link(Link),
-  k4r_get_facings(Link, 1, FacingList),
-  k4r_get_entity_by_key_value(FacingList, "layerRelativePosition", 4, Facing),
-  k4r_get_entity_id(Facing, FacingId),
-  k4r_put_facing(Link, FacingId, "{
-    \"shelfLayerId\": 1,
-    \"productId\": \"A3\",
-    \"layerRelativePosition\": 3,
-    \"quantity\": 1
-  }"),
-  writeln('Return facings with facing layerRelativePosition 3:'),
-  k4r_get_facings(Link, 1, FacingListNew),
-  writeln(FacingListNew).
+  get_test_shelf_layer_id(Link, ShelfLayerId),
+  get_facing_id_by_layer_rel_pos(Link, ShelfLayerId, 10, FacingId1),
+  k4r_delete_facing(Link, FacingId1),
+  get_facing_id_by_layer_rel_pos(Link, ShelfLayerId, 20, FacingId2),
+  k4r_delete_facing(Link, FacingId2),
+  get_facing_id_by_layer_rel_pos(Link, ShelfLayerId, 30, FacingId3),
+  k4r_delete_facing(Link, FacingId3),
+  get_facing_id_by_layer_rel_pos(Link, ShelfLayerId, 40, FacingId4),
+  k4r_delete_facing(Link, FacingId4),
+  delete_test_data(Link).
 
-test('k4r_facing_test_5') :-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%           Planogram           %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+test('planogram_init_test_data') :-
   k4r_get_link(Link),
-  k4r_get_facings(Link, 1, FacingList),
-  k4r_get_entity_by_key_value(FacingList, "layerRelativePosition", 3, Facing),
-  k4r_get_entity_id(Facing, FacingId),
-  k4r_delete_facing(Link, FacingId),
-  writeln('Return facings without facing layerRelativePosition 3:'),
-  k4r_get_facings(Link, 1, FacingListNew),
-  writeln(FacingListNew).
+  post_test_shelf_layer(Link, _, _, _, ShelfLayerId),
+  post_test_product(Link, ProductId),
+  k4r_post_planogram(Link, ProductId, ShelfLayerId, [10, 11.11, 12, 13]),
+  k4r_post_planogram(Link, ProductId, ShelfLayerId, [20, 21.21, 22, 23]),
+  k4r_post_planogram(Link, ProductId, ShelfLayerId, [30, 31.31, 32, 33]),
+  k4r_post_planogram(Link, ProductId, ShelfLayerId, [40, 41.41, 42, 43]).
 
-test('k4r_get_product_by_shelf_test') :-
+test('planogram_test_1') :-
   k4r_get_link(Link),
-  k4r_get_shelf_by_id(Link, 1, Shelf),
-  forall(k4r_get_product_by_shelf(Link, Shelf, Product), writeln(Product)).
-
-% Planogram
-
-test('k4r_planogram_test_1') :-
-  k4r_get_link(Link),
-  k4r_get_planograms(Link, PlanogramList),
-  writeln('Return planograms:'),
-  writeln(PlanogramList).
-
-test('k4r_customer_test_2') :-
-  k4r_get_link(Link),
-  k4r_post_planogram(Link, "{
-        \"numberOfFacings\": 2,
-        \"orientationYaw\": 2,
-        \"positionX\": 33,
-        \"productId\": \"A2\",
-        \"shelfLayerId\": 2,
-        \"versionTimestamp\": 112
-      }"),
-  k4r_get_planograms(Link, PlanogramList),
-  k4r_get_entity_by_key_value(PlanogramList, "positionX", 33, Planogram),
-  k4r_get_entity_id(Planogram, PlanogramId),
-  k4r_put_planogram(Link, PlanogramId, "{
-        \"numberOfFacings\": 3,
-        \"orientationYaw\": 1,
-        \"positionX\": 35,
-        \"productId\": \"A1\",
-        \"shelfLayerId\": 3,
-        \"versionTimestamp\": 321
-      }"),
+  get_test_shelf_layer_id(Link, ShelfLayerId),
+  get_planogram_id_by_number_of_facing(Link, 10, PlanogramId),
+  k4r_put_planogram(Link, "idTest", ShelfLayerId, PlanogramId, 
+    "{
+      \"numberOfFacings\": 321,
+      \"orientationYaw\": 132.43,
+      \"positionX\": 35,
+      \"versionTimestamp\": 321
+    }"),
+  k4r_put_planogram(Link, "idTest", ShelfLayerId, PlanogramId, [10, 110.11, 120, 130]),
   k4r_get_planograms(Link, PlanogramListNew),
-  writeln('Return planograms with new planogram:'),
+  writeln('Return new planogram list:'),
   writeln(PlanogramListNew).
 
-test('k4r_customer_test_3') :-
+test('planogram_delete_test_data') :-
   k4r_get_link(Link),
-  k4r_get_planograms(Link, PlanogramList),
-  k4r_get_entity_by_key_value(PlanogramList, "positionX", 35, Planogram),
-  k4r_get_entity_id(Planogram, PlanogramId),
-  k4r_delete_planogram(Link, PlanogramId),
-  k4r_get_planograms(Link, PlanogramListNew),
-  writeln('Return planograms without new planogram with positionX 35:'),
-  writeln(PlanogramListNew).
+  get_test_shelf_layer_id(Link, ShelfLayerId),
+  get_planogram_id_by_number_of_facing(Link, 10, PlanogramId1),
+  k4r_delete_planogram(Link, PlanogramId1),
+  get_planogram_id_by_number_of_facing(Link, 20, PlanogramId2),
+  k4r_delete_planogram(Link, PlanogramId2),
+  get_planogram_id_by_number_of_facing(Link, 30, PlanogramId3),
+  k4r_delete_planogram(Link, PlanogramId3),
+  get_planogram_id_by_number_of_facing(Link, 40, PlanogramId4),
+  k4r_delete_planogram(Link, PlanogramId4),
+  delete_test_data(Link).
 
-% Product group
+% test('get_product_by_shelf_test') :-
+%   k4r_get_link(Link),
+%   k4r_get_shelf(Link, 1, Shelf),
+%   forall(k4r_get_product_by_shelf(Link, Shelf, Product), writeln(Product)).
 
-test('k4r_product_group_test_1') :-
-  k4r_get_link(Link),
-  k4r_get_product_groups(Link, 2, ProductGroupList),
-  writeln('Return product groups:'),
-  writeln(ProductGroupList).
+% % test('get products from a shelf layer') :-
+% %   get_products_in_shelflayer(1, Products),
+% %   forall(member([FacingId, ProductId], Products), 
+% %         (writeln(FacingId), writeln(ProductId))).
 
-test('k4r_product_group_test_2') :-
-  k4r_get_link(Link),
-  k4r_get_product_group_by_id(Link, 1, ProductGroup),
-  writeln('Return product group at id 1:'),
-  writeln(ProductGroup).
+% test('shelf location') :-
+%   write_shelf_location.
 
-test('k4r_product_group_test_3') :-
-  k4r_get_link(Link),
-  k4r_post_product_to_product_group(Link, 1, "A2"),
-  k4r_get_product_group_by_id(Link, 1, ProductGroup),
-  writeln('Return product group 1 with product A2:'),
-  writeln(ProductGroup).
-
-test('k4r_product_group_test_4') :-
-  k4r_get_link(Link),
-  k4r_post_product_group(Link, 2, "group new"),
-  k4r_get_product_groups(Link, 2, ProductGroupList),
-  writeln('Return product groups with new group:'),
-  writeln(ProductGroupList).
-
-test('k4r_product_group_test_5') :-
-  k4r_get_link(Link),
-  k4r_get_products(Link, ProductList),
-  k4r_get_entity_by_key_value(ProductList, "id", "A2", Product),
-  k4r_get_entity_id(Product, ProductId),
-  k4r_delete_product_from_product_group(Link, 1, ProductId),
-  k4r_get_product_group_by_id(Link, 1, ProductGroup),
-  writeln('Return product group 1 without product A2:'),
-  writeln(ProductGroup).
-
-test('k4r_product_group_test_6') :-
-  k4r_get_link(Link),
-  k4r_get_product_groups(Link, 2, ProductGroupList),
-  k4r_get_entity_by_key_value(ProductGroupList, "name", "group new", ProductGroup),
-  k4r_get_entity_id(ProductGroup, ProductGroupId),
-  k4r_delete_product_group(Link, ProductGroupId),
-  k4r_get_product_groups(Link, 2, ProductGroupListNew),
-  writeln('Return product groups without new group:'),
-  writeln(ProductGroupListNew).
-
-% test('get products from a shelf layer') :-
-%   get_products_in_shelflayer(1, Products),
-%   forall(member([FacingId, ProductId], Products), 
-%         (writeln(FacingId), writeln(ProductId))).
-
-test('shelf location') :-
-  write_shelf_location.
-
-test('get shelf data') :-
-  get_shelf_data.
+% test('get shelf data') :-
+%   get_shelf_data.
 
 :- end_tests(k4r_db_client).

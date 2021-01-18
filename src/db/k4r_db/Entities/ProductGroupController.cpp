@@ -11,11 +11,11 @@ private:
 
   std::string store_id;
   std::string product_id;
-  std::string product_group_id;
 
 public:
   ProductGroupController(const char*);
-  ProductGroupController(const char*, const std::string, const std::string, const std::string);
+  ProductGroupController(const char*, const std::string);
+  ProductGroupController(const char*, const std::string, const std::string);
 
   bool set_store(const std::string&);
   bool set_product(const std::string&);
@@ -26,14 +26,13 @@ public:
   Json::Value get_product_groups();
 
   bool post_product_to_product_group(const std::string&, const std::string&);
-  bool post_product_to_product_group();
+  bool post_product_to_product_group(const std::string&);
   bool post_product_group(const std::string&, const std::string&);
   bool post_product_group(const std::string&);
 
   bool delete_product_group(const std::string&);
   bool delete_product_from_product_group(const std::string&, const std::string&);
   bool delete_product_from_product_group(const std::string&);
-  bool delete_product_from_product_group();
 };
 
 ProductGroupController::ProductGroupController(const char* link) : EntityController::EntityController(link)
@@ -42,11 +41,14 @@ ProductGroupController::ProductGroupController(const char* link) : EntityControl
   product_controller = new ProductController(link);
 }
 
-ProductGroupController::ProductGroupController(const char* link, const std::string store_id, const std::string product_group_id, const std::string product_id) : ProductGroupController::ProductGroupController(link)
+ProductGroupController::ProductGroupController(const char* link, const std::string product_id) : ProductGroupController::ProductGroupController(link)
+{
+  this->set_product(product_id);
+}
+
+ProductGroupController::ProductGroupController(const char* link, const std::string store_id, const std::string product_id) : ProductGroupController::ProductGroupController(link, product_id)
 {
   this->set_store(store_id);
-  this->set_product_group(product_group_id);
-  this->set_product(product_id);
 }
 
 bool ProductGroupController::set_store(const std::string& store_id)
@@ -69,7 +71,6 @@ bool ProductGroupController::set_product_group(const std::string& product_group_
   Json::Value product_group = this->get_product_group(product_group_id);
   if (product_group["id"].asString() == product_group_id)
   {
-    this->product_group_id = product_group_id;
     return true;
   }
   else
@@ -120,12 +121,12 @@ Json::Value ProductGroupController::get_product_groups()
 
 bool ProductGroupController::post_product_to_product_group(const std::string& product_group_id, const std::string& product_id)
 {
-  return this->set_product_group(product_group_id) && this->set_product(product_id) && this->post_product_to_product_group();
+  return this->set_product_group(product_group_id) && this->set_product(product_id) && this->post_product_to_product_group(product_group_id);
 }
 
-bool ProductGroupController::post_product_to_product_group()
+bool ProductGroupController::post_product_to_product_group(const std::string& product_group_id)
 {
-  std::string link_tail = "productgroups/" + this->product_group_id + "/products/" + this->product_id;
+  std::string link_tail = "productgroups/" + product_group_id + "/products/" + this->product_id;
   return this->post_entity(Json::Value(), link_tail);
 }
 
@@ -150,16 +151,11 @@ bool ProductGroupController::delete_product_group(const std::string& product_gro
 
 bool ProductGroupController::delete_product_from_product_group(const std::string& product_group_id, const std::string& product_id)
 {
-  return this->set_product(product_id) && this->set_product_group(product_group_id) && this->delete_product_from_product_group();
+  return this->set_product(product_id) && this->set_product_group(product_group_id) && this->delete_product_from_product_group(product_group_id);
 }
 
-bool ProductGroupController::delete_product_from_product_group(const std::string& product_id)
+bool ProductGroupController::delete_product_from_product_group(const std::string& product_group_id)
 {
-  return this->set_product(product_id) && this->delete_product_from_product_group();
-}
-
-bool ProductGroupController::delete_product_from_product_group()
-{
-  std::string link_tail = "productgroups/" + this->product_group_id + "/products/" + this->product_id;
+  std::string link_tail = "productgroups/" + product_group_id + "/products/" + this->product_id;
   return this->delete_entity(link_tail);
 }

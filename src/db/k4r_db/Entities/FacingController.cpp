@@ -1,29 +1,37 @@
 #pragma once
 
 #include "ShelfLayerController.cpp"
+#include "ProductController.cpp"
 
 class FacingController : public EntityController
 {
 private:
   ShelfLayerController* shelf_layer_controller;
+  ProductController* product_controller;
 
   std::string shelf_layer_id;
+  std::string product_id;
 
 public:
   FacingController(const char*);
   FacingController(const char*, const std::string);
+  FacingController(const char*, const std::string, const std::string);
 
   bool check_facing(const Json::Value&);
 
   bool set_shelf_layer(const std::string&);
+  bool set_product(const std::string&);
 
   Json::Value get_facing(const std::string&);
   Json::Value get_facings(const std::string&);
   Json::Value get_facings();
 
+  bool post_facing(const std::string&, const std::string&, const Json::Value&);
   bool post_facing(const std::string&, const Json::Value&);
   bool post_facing(const Json::Value&);
 
+  bool put_facing(const std::string&, const std::string&, const std::string&, const Json::Value&);
+  bool put_facing(const std::string&, const std::string&, const Json::Value&);
   bool put_facing(const std::string&, const Json::Value&);
 
   bool delete_facing(const std::string&);
@@ -31,12 +39,18 @@ public:
 
 FacingController::FacingController(const char* link) : EntityController::EntityController(link)
 {
-  shelf_layer_controller = new ShelfLayerController(link);
+  this->shelf_layer_controller = new ShelfLayerController(link);
+  this->product_controller = new ProductController(link);
 }
 
 FacingController::FacingController(const char* link, const std::string shelf_layer_id) : FacingController::FacingController(link)
 {
   this->set_shelf_layer(shelf_layer_id);
+}
+
+FacingController::FacingController(const char* link, const std::string shelf_layer_id, const std::string product_id) : FacingController::FacingController(link, shelf_layer_id)
+{
+  this->set_product(product_id);
 }
 
 bool FacingController::set_shelf_layer(const std::string& shelf_layer_id)
@@ -50,6 +64,21 @@ bool FacingController::set_shelf_layer(const std::string& shelf_layer_id)
   else
   {
     std::cout << "ShelfLayer with given Id does not exist" << std::endl;
+    return false;
+  }
+}
+
+bool FacingController::set_product(const std::string& product_id)
+{
+  Json::Value product = this->product_controller->get_product(product_id);
+  if (product["id"].asString() == product_id)
+  {
+    this->product_id = product_id;
+    return true;
+  }
+  else
+  {
+    std::cout << "Product with given Id does not exist" << std::endl;
     return false;
   }
 }
@@ -80,8 +109,7 @@ Json::Value FacingController::get_facings()
 
 bool FacingController::check_facing(const Json::Value& facing)
 {
-  if (facing["productId"].isString() &&
-      facing["layerRelativePosition"].isInt() &&
+  if (facing["layerRelativePosition"].isInt() &&
       facing["quantity"].isInt())
   {
     return true;
@@ -93,6 +121,11 @@ bool FacingController::check_facing(const Json::Value& facing)
   }
 }
 
+bool FacingController::post_facing(const std::string& shelf_layer_id, const std::string& product_id, const Json::Value& facing)
+{
+  return this->set_product(product_id) && this->post_facing(shelf_layer_id, facing);
+}
+
 bool FacingController::post_facing(const std::string& shelf_layer_id, const Json::Value& facing)
 {
   return this->set_shelf_layer(shelf_layer_id) && this->post_facing(facing);
@@ -100,8 +133,27 @@ bool FacingController::post_facing(const std::string& shelf_layer_id, const Json
 
 bool FacingController::post_facing(const Json::Value& facing)
 {
-  std::string link_tail = "shelflayers/" + this->shelf_layer_id + "/facings";
-  return this->check_facing(facing) && this->post_entity(facing, link_tail);
+  if (this->check_facing(facing))
+  {
+    Json::Value facing_in = facing;
+    facing_in["productId"] = this->product_id;
+    std::string link_tail = "shelflayers/" + this->shelf_layer_id + "/facings";
+    return this->post_entity(facing_in, link_tail);
+  }
+  else
+  {
+    return false;
+  }
+}
+
+bool FacingController::put_facing(const std::string& shelf_layer_id, const std::string& product_id, const std::string& facing_id, const Json::Value& facing)
+{
+  return this->set_shelf_layer(shelf_layer_id) && this->put_facing(product_id, facing_id, facing);
+}
+
+bool FacingController::put_facing(const std::string& product_id, const std::string& facing_id, const Json::Value& facing)
+{
+  return this->set_product(product_id) && this->put_facing(facing_id, facing);
 }
 
 bool FacingController::put_facing(const std::string& facing_id, const Json::Value& facing)
@@ -113,8 +165,11 @@ bool FacingController::put_facing(const std::string& facing_id, const Json::Valu
   }
   else
   {
+    Json::Value facing_in = facing;
+    facing_in["productId"] = this->product_id;
+    facing_in["shelfLayerId"] = std::stoi(this->shelf_layer_id);
     std::string link_tail = "facings/" + facing_id;
-    return this->put_entity(facing, link_tail);
+    return this->put_entity(facing_in, link_tail);
   }
 }
 
