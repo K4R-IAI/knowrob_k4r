@@ -576,7 +576,7 @@ PREDICATE(k4r_get_shelf_data, 4)
   return true;
 }
 
-// Kaviya code
+// k4r_get_shelf_by_id(Link, ShelfId, StoreId, ShapeData, Pose)
 PREDICATE(k4r_get_shelf_by_id, 5)
 {
   ShelfController shelves(PL_A1);

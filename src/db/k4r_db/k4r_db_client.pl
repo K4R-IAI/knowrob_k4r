@@ -1,5 +1,5 @@
 :- module(k4r_db_client,
-          [ k4r_get_core_link/1,
+q          [ k4r_get_core_link/1,
             k4r_get_search_link/1,
             k4r_get_entity_id/2,
             k4r_get_entity_by_key_value/4,
