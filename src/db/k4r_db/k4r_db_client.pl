@@ -1,5 +1,6 @@
 :- module(k4r_db_client,
-          [ k4r_get_link/1,
+          [ k4r_get_core_link/1,
+            k4r_get_search_link/1,
             k4r_get_entity_id/2,
             k4r_get_entity_by_key_value/4,
             k4r_get_entity_by_id/3,
@@ -31,9 +32,12 @@
 % @param Values A List of Values
 %
 
-k4r_get_link(Link) :-
-    % Link = "http://localhost:8090/k4r-core/api/v0/".
-    Link = "http://ked.informatik.uni-bremen.de:8090/k4r-core/api/v0/".
+k4r_get_core_link(Link) :-
+    Link = "http://localhost:8090/k4r-core/api/v0/".
+    % Link = "http://ked.informatik.uni-bremen.de:8090/k4r-core/api/v0/".
+
+k4r_get_search_link(Link) :-
+    Link = "http://localhost:7593/k4r-search/".
 
 k4r_get_entity_id(Entity, EntityId) :-
     k4r_get_value_from_key(Entity, "id", EntityId).
@@ -58,7 +62,7 @@ k4r_get_product_by_shelf(Link, Shelf, Product) :-
     k4r_get_product(Link, ProductId, Product).
 
 % get_shelf_data :-
-%   k4r_get_link(Link),
+%   k4r_get_core_link(Link),
 %   k4r_get_shelf(Link, ShelfId, Shelf), % your ShelfId
 %   k4r_get_shelf_data(
 %     Shelf,
@@ -68,7 +72,7 @@ k4r_get_product_by_shelf(Link, Shelf, Product) :-
 %   writeln(ShelfHeight).
 
 % write_shelf_location:-
-%   k4r_get_link(Link),
+%   k4r_get_core_link(Link),
 %   findall([ShelfId, ['map', [X,Y,Z],[X1,Y1,Z1,W]], [D, W1, H]],
 %       (instance_of(Shelf,dmshop:'DMShelfFrame'),
 %       shelf_with_erp_id(Shelf, ShelfId),
@@ -85,7 +89,7 @@ k4r_get_product_by_shelf(Link, Shelf, Product) :-
 
 
 % get_facings_in_shelflayer(ShelfId, Facings) :-  %% ShelfLayer_Facings -- [ShelfLayerId, Facings]
-%     k4r_get_link(Link), 
+%     k4r_get_core_link(Link), 
 %     k4r_get_shelf_layers(Link, ShelfId, ShelfLayers), 
 %     %findall(ShelfLayerId, Facings,
 %     member(ShelfLayer, ShelfLayers),

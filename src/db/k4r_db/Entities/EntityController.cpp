@@ -27,16 +27,15 @@ void remove_new_line(std::string& str)
   str.erase(std::remove(str.begin(), str.end(), '"'), str.end());
 }
 
-class Entity
+class DataController
 {
 protected:
   std::string link;
 
-public:
   virtual Json::Value get_data(std::string link_tail = "")
   {
     cURLpp::Cleanup cleanup;
-    remove_new_line(link_tail);
+    
     curlpp::Easy request;
     try
     {
@@ -66,7 +65,6 @@ public:
 
   virtual bool post_data(std::string link_tail = "")
   {
-    remove_new_line(link_tail);
     curlpp::Easy request;
     long status_code = 0;
     try
@@ -97,7 +95,6 @@ public:
   virtual bool put_data(std::string link_tail = "")
   {
     cURLpp::Cleanup cleanup;
-    remove_new_line(link_tail);
     curlpp::Easy request;
     long status_code = 0;
     try
@@ -128,7 +125,6 @@ public:
   virtual bool delete_data(std::string link_tail = "")
   {
     cURLpp::Cleanup cleanup;
-    remove_new_line(link_tail);
     curlpp::Easy request;
     long status_code = 0;
     try
@@ -155,13 +151,13 @@ public:
 
   Json::Value data;
 
-  Entity(const char* link) : link(link) {}
-  ~Entity() {}
+  DataController(const char* link) : link(link) {}
+  ~DataController() {}
 };
 
-class EntityController : public Entity
+class EntityController : public DataController
 {
-protected:
+public:
   virtual Json::Value get_entity(std::string link_tail = "")
   {
     return this->get_data(link_tail);
@@ -184,6 +180,6 @@ protected:
     return this->delete_data(link_tail);
   }
 
-  EntityController(const char* link) : Entity::Entity(link) {}
+  EntityController(const char* link) : DataController::DataController(link) {}
   ~EntityController() {}
 };

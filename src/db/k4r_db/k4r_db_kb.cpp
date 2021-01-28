@@ -53,6 +53,84 @@ PREDICATE(k4r_check_key_value, 3)
   return (entity[std::string(PL_A2)].asString() == std::string(PL_A3));
 }
 
+// k4r_get_entities(SearchLink, EntityName, Entities)
+PREDICATE(k4r_get_entities, 3)
+{
+  EntityController entity_controller(PL_A1);
+  PlTail entities(PL_A3);
+  for (const Json::Value &entity : entity_controller.get_entity("entityName/" + std::string(PL_A2)))
+  {
+    entities.append(entity.toStyledString().c_str());
+  }
+  return entities.close();
+}
+
+// k4r_get_entity_properties(SearchLink, EntityName, EntityKey, EntityValues)
+PREDICATE(k4r_get_entity_properties, 4)
+{
+  EntityController entity_controller(PL_A1);
+  PlTail entity_values(PL_A4);
+  for (const Json::Value &entity : entity_controller.get_entity("entityName/" + std::string(PL_A2) + "/" + std::string(PL_A3)))
+  {
+    entity_values.append(entity.toStyledString().c_str());
+  }
+  return entity_values.close();
+}
+
+// k4r_get_entities_by_properties(SearchLink, EntityName, [EntityKeys, EntityValues], Entities)
+PREDICATE(k4r_get_entities_by_properties, 4)
+{
+  PlTail entity_properties(PL_A3);
+  PlTerm entity_keys, entity_values;
+  entity_properties.next(entity_keys);
+  entity_properties.next(entity_values);
+
+  PlTail entity_keys_tail(entity_keys);
+  PlTail entity_values_tail(entity_values);
+  PlTerm entity_key, entity_value;
+  std::string link_tail = "?";
+  while(entity_keys_tail.next(entity_key) && entity_values_tail.next(entity_value))
+  {
+    link_tail += std::string(entity_key) + "=" + std::string(entity_value) + "&";
+  }
+  link_tail.pop_back();
+  
+  EntityController entity_controller(PL_A1);
+  PlTail entities(PL_A4);
+  for (const Json::Value &entity_value : entity_controller.get_entity("entityName/" + std::string(PL_A2) + link_tail))
+  {
+    entities.append(entity_value.toStyledString().c_str());
+  }
+  return entities.close();
+}
+
+// k4r_get_entity_property_by_properties(SearchLink, EntityName, [EntityKeys, EntityValues], EntityKey, EntityValues)
+PREDICATE(k4r_get_entity_property_by_properties, 5)
+{
+  PlTail entity_properties(PL_A3);
+  PlTerm entity_keys, entity_values;
+  entity_properties.next(entity_keys);
+  entity_properties.next(entity_values);
+
+  PlTail entity_keys_tail(entity_keys);
+  PlTail entity_values_tail(entity_values);
+  PlTerm entity_key, entity_value;
+  std::string link_tail = "?";
+  while(entity_keys_tail.next(entity_key) && entity_values_tail.next(entity_value))
+  {
+    link_tail += std::string(entity_key) + "=" + std::string(entity_value) + "&";
+  }
+  link_tail.pop_back();
+  
+  EntityController entity_controller(PL_A1);
+  PlTail entity_values_out(PL_A5);
+  for (const Json::Value &entity_value_out : entity_controller.get_entity("entityName/" + std::string(PL_A2) + "/" + std::string(PL_A4) + link_tail))
+  {
+    entity_values_out.append(entity_value_out.toStyledString().c_str());
+  }
+  return entity_values_out.close();
+}
+
 // Customer
 
 PREDICATE(k4r_get_customers, 2)
