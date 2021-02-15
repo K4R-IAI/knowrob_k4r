@@ -83,8 +83,9 @@ RUN /usr/bin/python /opt/ros/melodic/bin/catkin_init_workspace
 RUN if [ "x$LOCAL_BUILD" = "x0" ] ; then \
     rm -rf /home/ros/src/* && \
     git clone https://github.com/knowrob/knowrob.git && \
-    git clone https://github.com/knowrob/rosprolog.git && \
+    git clone https://github.com/sasjonge/rosprolog.git && \
     git clone https://github.com/K4R-IAI/knowrob_k4r && \
+    git clone -b neems https://github.com/refills-project/knowrob_refills && \
     git clone https://github.com/code-iai/iai_maps.git && \
     git clone https://github.com/code-iai/iai_common_msgs.git && \
     git clone https://github.com/code-iai/iai_cad_tools.git ; \
@@ -95,6 +96,8 @@ WORKDIR /home/ros
 # Build the catkin workspace
 RUN /opt/ros/melodic/bin/catkin_make
 
+EXPOSE 62226 62226
+
 COPY run_knowrob_k4r.sh /run_knowrob_k4r.sh
 
-ENTRYPOINT ["/run_knowrob_4r.sh"]
+ENTRYPOINT ["/run_knowrob_k4r.sh"]
