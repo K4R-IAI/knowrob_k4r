@@ -1,7 +1,29 @@
 # Small file to test if docker compose up works 
 version: '3'
 services:
-  # an interface to the docker API of the host
+  mongo:
+    image: mongo:4.4.3-bionic
+    ports:
+      - '28014:28014'
+    networks:
+      clusternetwork:
+        ipv4_address: 172.16.0.14
+
   knowrob:
-    image: "k4r/knowrob"
+    image: "knowrob/k4r"
     container_name: knowrob
+    depends_on:
+      - 'mongo'
+    environment:
+      - KNOWROB_MONGODB_URI=mongodb://172.16.0.14:28014/?appname=knowrob
+    networks:
+      clusternetwork:
+        ipv4_address: 172.16.0.13
+
+networks:
+  clusternetwork:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.0.0/24
