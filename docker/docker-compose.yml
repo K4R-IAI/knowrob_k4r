@@ -3,22 +3,21 @@ version: '3'
 services:
   mongo:
     image: mongo:4.4.3-bionic
-    ports:
-      - '28014:28014'
+    container_name: mongo_container
     networks:
       clusternetwork:
         ipv4_address: 172.16.0.14
 
   knowrob:
     image: "knowrob/k4r"
-    container_name: knowrob
+    container_name: knowrob_container
     build:
       context: ./
       dockerfile: Dockerfile
     depends_on:
       - 'mongo'
     environment:
-      - KNOWROB_MONGODB_URI=mongodb://172.16.0.14:28014/?appname=knowrob
+      - KNOWROB_MONGODB_URI=mongodb://172.16.0.14:27017/?appname=knowrob
     networks:
       clusternetwork:
         ipv4_address: 172.16.0.13
