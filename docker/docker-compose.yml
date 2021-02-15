@@ -12,6 +12,9 @@ services:
   knowrob:
     image: "knowrob/k4r"
     container_name: knowrob
+    build:
+      context: ./
+      dockerfile: Dockerfile
     depends_on:
       - 'mongo'
     environment:
