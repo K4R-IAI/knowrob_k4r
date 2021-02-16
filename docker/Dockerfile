@@ -40,6 +40,7 @@ RUN sh -c 'wget https://raw.githubusercontent.com/ros/rosdistro/master/ros.key &
     rm -rf /var/lib/apt/lists/*  && \
     rm -rf /tmp/*
 RUN pip install -U rosdep
+RUN pip install flask flask_restful
 # ROS environment setup
 RUN cp /opt/ros/melodic/setup.sh /etc/profile.d/ros_melodic.sh && rosdep init
 
