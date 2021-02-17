@@ -113,7 +113,8 @@ bool ShelfController::check_shelf(const Json::Value& shelf)
       shelf["positionX"].isNumeric() &&
       shelf["positionY"].isNumeric() &&
       shelf["positionZ"].isNumeric() &&
-      shelf["width"].isNumeric())
+      shelf["width"].isNumeric() &&
+      shelf["productGroupId"].isNumeric())
   {
     return true;
   }
@@ -129,8 +130,7 @@ bool ShelfController::post_shelf(const Json::Value& shelf)
   std::string link_tail = "stores/" + this->store_id + "/shelves";
   if (this->check_shelf(shelf))
   {
-    Json::Value shelf_in = shelf;
-    shelf_in["productGroupId"] = std::stoi(this->product_group_id);
+    Json::Value shelf_in = shelf; 
     return this->post_entity(shelf_in, link_tail);
   }
 }

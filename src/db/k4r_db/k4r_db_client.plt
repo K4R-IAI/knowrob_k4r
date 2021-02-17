@@ -780,20 +780,9 @@ test('get_products_in_store_test') :-
   writeln('Return product list:'),
   forall(member(Product, Products), writeln(Product)).
 
-% test('get_product_by_shelf_test') :-
-%   k4r_get_core_link(Link),
-%   k4r_get_shelf(Link, 1, Shelf),
-%   forall(k4r_get_product_by_shelf(Link, Shelf, Product), writeln(Product)).
 
-% % test('get products from a shelf layer') :-
-% %   get_products_in_shelflayer(1, Products),
-% %   forall(member([FacingId, ProductId], Products), 
-% %         (writeln(FacingId), writeln(ProductId))).
+test('shelf location') :-
+  write_shelf_location(3).
 
-% test('shelf location') :-
-%   write_shelf_location.
-
-% test('get shelf data') :-
-%   get_shelf_data.
 
 :- end_tests(k4r_db_client).

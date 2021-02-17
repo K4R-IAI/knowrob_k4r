@@ -295,7 +295,14 @@ PREDICATE(k4r_get_product, 3)
 
   if (std::string(PL_A2) == product_id)
   {
-    PL_A3 = product.toStyledString().c_str();
+    PL_A3 = (product["name"].asString()).c_str();
+    PL_A4 = (product["gtin"].asString()).c_str();
+
+    PlTail dimensions(PL_A5);
+    dimensions.append(product["depth"].asDouble());
+    dimensions.append(product["width"].asDouble());
+    dimensions.append(product["height"].asDouble());
+
     return true;
   }
   else
@@ -576,7 +583,7 @@ PREDICATE(k4r_get_shelf_data, 4)
   return true;
 }
 
-// Kaviya code
+// k4r_get_shelf_by_id(Link, ShelfId, StoreId, ShapeData, Pose)
 PREDICATE(k4r_get_shelf_by_id, 5)
 {
   ShelfController shelves(PL_A1);
@@ -629,17 +636,15 @@ PREDICATE(k4r_get_shelf_by_id, 5)
   }
 }
 
-// k4r_post_shelf(Link, StoreId, ShelfId, [Translation, Rotation], [D,W,H])
-PREDICATE(k4r_post_shelf, 5)
+// k4r_post_shelf(Link, StoreId, [Translation, Rotation], [D,W,H], ProductGroupId, ExtRefId, CadPlanId)
+PREDICATE(k4r_post_shelf, 7)
 {
   ShelfController shelves(PL_A1, std::string(PL_A2));
 
-  Json::Value shelf_data = shelves.get_shelf(std::string(PL_A3));
-  shelf_data["storeId"] = (int)PL_A2;
+  Json::Value shelf_data; 
 
-  PlTail pose_list(PL_A4);
+  PlTail pose_list(PL_A3);
   PlTerm temp_term, traversal_term;
-
   pose_list.next(temp_term);
 
   PlTail translation(temp_term);
@@ -650,7 +655,6 @@ PREDICATE(k4r_post_shelf, 5)
   shelf_data["positionY"] = (double)traversal_term;
   translation.next(traversal_term);
   shelf_data["positionZ"] = (double)traversal_term;
-
   pose_list.next(temp_term);
 
   PlTail rotation(temp_term);
@@ -663,15 +667,16 @@ PREDICATE(k4r_post_shelf, 5)
   shelf_data["orientationZ"] = (double)traversal_term;
   rotation.next(traversal_term);
   shelf_data["orientationW"] = (double)traversal_term;
-
-  PlTail dimension(PL_A5);
+  PlTail dimension(PL_A4);
   dimension.next(traversal_term);
   shelf_data["depth"] = (int)traversal_term;
   dimension.next(traversal_term);
   shelf_data["width"] = (int)traversal_term;
   dimension.next(traversal_term);
   shelf_data["height"] = (int)traversal_term;
-
+  shelf_data["productGroupId"] = (int) PL_A5;
+  shelf_data["externalReferenceId"] = (std::string) PL_A6;
+  shelf_data["cadPlanId"] = (std::string) PL_A7;
   return shelves.post_shelf(shelf_data);
 }
 
