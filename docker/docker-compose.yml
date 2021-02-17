@@ -2,7 +2,6 @@
 version: '3'
 services:
   mongo:
-    tty: false
     image: mongo:4.4.3-bionic
     container_name: mongo_container
     networks:
@@ -10,7 +9,6 @@ services:
         ipv4_address: 172.16.0.14
 
   knowrob:
-    tty: true
     image: "knowrob/k4r"
     container_name: knowrob_container
     build:
@@ -23,10 +21,6 @@ services:
     networks:
       clusternetwork:
         ipv4_address: 172.16.0.13
-    ports:
-      - "62226:62226"
-    entrypoint: /entrypoint.bash
-    command: roslaunch knowrob_k4r knowrob_k4r.launch
 
 networks:
   clusternetwork:
