@@ -7,7 +7,7 @@ services:
     container_name: mongo_container
     networks:
       clusternetwork:
-        ipv4_address: 172.16.0.14
+        ipv4_address: ${MONGO_IP}
 
   knowrob:
     tty: true
@@ -19,10 +19,10 @@ services:
     depends_on:
       - 'mongo'
     environment:
-      - KNOWROB_MONGODB_URI=mongodb://172.16.0.14:27017/?appname=knowrob
+      - KNOWROB_MONGODB_URI=mongodb://${MONGO_IP}:27017/?appname=knowrob
     networks:
       clusternetwork:
-        ipv4_address: 172.16.0.13
+        ipv4_address: ${KNOWROB_IP}
     ports:
       - "62226:62226"
     entrypoint: /entrypoint.bash
@@ -34,4 +34,4 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.16.0.0/24
+        - subnet: ${SUBNET}
