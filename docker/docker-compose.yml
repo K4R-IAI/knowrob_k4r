@@ -5,9 +5,6 @@ services:
     tty: false
     image: mongo:4.4.3-bionic
     container_name: mongo_container
-    networks:
-      clusternetwork:
-        ipv4_address: ${MONGO_IP}
 
   knowrob:
     tty: true
@@ -19,19 +16,8 @@ services:
     depends_on:
       - 'mongo'
     environment:
-      - KNOWROB_MONGODB_URI=mongodb://${MONGO_IP}:27017/?appname=knowrob
-    networks:
-      clusternetwork:
-        ipv4_address: ${KNOWROB_IP}
+      - KNOWROB_MONGODB_URI=mongodb://mongo_container:27017/?appname=knowrob
     ports:
       - "62226:62226"
     entrypoint: /entrypoint.bash
     command: roslaunch knowrob_k4r knowrob_k4r.launch
-
-networks:
-  clusternetwork:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: ${SUBNET}
