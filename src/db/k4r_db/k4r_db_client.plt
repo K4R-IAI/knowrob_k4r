@@ -1,10 +1,8 @@
 :- use_module('k4r_db_client.pl').
 :- use_module(library('rostest')).
 
-:- begin_tripledb_tests(
-        'k4r_db_client',
-        'package://knowrob/owl/test/test_owl.owl'
-  ).
+:- begin_tests(
+        'k4r_db_client').
 
 % post_test_customer(Link, CustomerId) :-
 %   k4r_post_customer(Link, "anonymisedName Test"),
@@ -748,41 +746,51 @@
 
 %% ATTENTION: These tests can only show results with mockup data!!!
 
-test('get_entities_test') :-
-  k4r_get_search_link(Link),
-  k4r_get_entities(Link, 'product', Products),
-  k4r_get_entities(Link, 'shelf', Shelves),
-  k4r_get_entities(Link, 'facing', Facings),
-  writeln('Return product list:'),
-  forall(member(Product, Products), writeln(Product)),
-  writeln('Return shelf list:'),
-  forall(member(Shelf, Shelves), writeln(Shelf)),
-  writeln('Return facing list:'),
-  forall(member(Facing, Facings), writeln(Facing)).
+% test('get_entities_test') :-
+%   k4r_get_search_link(Link),
+%   k4r_get_entities(Link, 'product', Products),
+%   k4r_get_entities(Link, 'shelf', Shelves),
+%   k4r_get_entities(Link, 'facing', Facings),
+%   writeln('Return product list:'),
+%   forall(member(Product, Products), writeln(Product)),
+%   writeln('Return shelf list:'),
+%   forall(member(Shelf, Shelves), writeln(Shelf)),
+%   writeln('Return facing list:'),
+%   forall(member(Facing, Facings), writeln(Facing)).
 
-test('get_entities_by_properties_test') :-
-  k4r_get_search_link(Link),
-  k4r_get_entities_by_properties(Link, 'product', [['length'], [21]], Products1),
-  writeln('Return product list with length 21:'),
-  forall(member(Product, Products1), writeln(Product)),
-  k4r_get_entities_by_properties(Link, 'product', [['length', 'height'], [21, 41]], Products2),
-  writeln('Return product list with length 21 and height 41:'),
-  forall(member(Product, Products2), writeln(Product)),
-  k4r_get_entities_by_properties(Link, 'facing', [['layerRelativePosition', 'quantity'], [40, 11]], Facings),
-  writeln('Return facing list with layerRelativePosition 40 and quantity 11:'),
-  forall(member(Facing, Facings), writeln(Facing)).
+% test('get_entities_by_properties_test') :-
+%   k4r_get_search_link(Link),
+%   k4r_get_entities_by_properties(Link, 'product', [['length'], [21]], Products1),
+%   writeln('Return product list with length 21:'),
+%   forall(member(Product, Products1), writeln(Product)),
+%   k4r_get_entities_by_properties(Link, 'product', [['length', 'height'], [21, 41]], Products2),
+%   writeln('Return product list with length 21 and height 41:'),
+%   forall(member(Product, Products2), writeln(Product)),
+%   k4r_get_entities_by_properties(Link, 'facing', [['layerRelativePosition', 'quantity'], [40, 11]], Facings),
+%   writeln('Return facing list with layerRelativePosition 40 and quantity 11:'),
+%   forall(member(Facing, Facings), writeln(Facing)).
 
-test('get_products_in_store_test') :-
-  k4r_get_search_link(Link),
-  k4r_get_entities_by_properties(Link, 'store', [['storeName'], ['storeName%20Test']], [Store]), % %20 means space, 'storename%20Test' means 'storename Test'
-  k4r_get_value_from_key(Store, 'id', StoreId),
-  k4r_get_entity_property_by_properties(Link, 'product_group', [['storeId'], [StoreId]], 'products', Products), % get products on product_group in store that has store id StoreId
-  writeln('Return product list:'),
-  forall(member(Product, Products), writeln(Product)).
+% test('get_products_in_store_test') :-
+%   k4r_get_search_link(Link),
+%   k4r_get_entities_by_properties(Link, 'store', [['storeName'], ['storeName%20Test']], [Store]), % %20 means space, 'storename%20Test' means 'storename Test'
+%   k4r_get_value_from_key(Store, 'id', StoreId),
+%   k4r_get_entity_property_by_properties(Link, 'product_group', [['storeId'], [StoreId]], 'products', Products), % get products on product_group in store that has store id StoreId
+%   writeln('Return product list:'),
+%   forall(member(Product, Products), writeln(Product)).
 
 
-test('shelf location') :-
-  write_shelf_location(3).
+/* test('shelf location') :-
+  post_shelf_location(2). */
+/* 
+test('shelf layer') :-
+  gtrace,
+  post_shelf_layers(2). */
 
+test('facing ') :-
+  post_facing(2).
+
+% test('post shelf layer') :-
+%   k4r_get_core_link(Link),
+%   k4r_post_shelf_layer(Link, 1, 2.5, [0.345, 0.234, 0.01], 1, "Ext_1", "Bottom_Layer"). 
 
 :- end_tests(k4r_db_client).
