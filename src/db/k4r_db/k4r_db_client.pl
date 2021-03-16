@@ -114,28 +114,24 @@ post_shelf_layers(StoreId) :-
 
 post_facing(StoreId) :-
     k4r_get_search_link(SearchLink),
-    % k4r_get_entity_property_by_properties(SearchLink, 'shelf', [['storeId'], [2]], "id", ShelfIdValues),
-    %forall((member(Id, ShelfIdValues)), 
-    % convert_string_to_int(Id, ShelfIdInt)),
-    k4r_get_entity_property_by_properties(SearchLink, 'shelflayers', [['shelfId'], [7]], "id", ShelfLayerIdValues), 
-    forall((member(Id, ShelfLayerIdValues) , convert_string_to_int(Id, ShelfLayerIdInt)), writeln(ShelfLayerIdInt)),
-    writeln(ShelfLayerIdValues).
-
-
-  % get_facings_in_shelflayer(ShelfId, Facings) :-  %% ShelfLayer_Facings -- [ShelfLayerId, Facings]
-%     k4r_get_core_link(Link), 
-%     k4r_get_shelf_layers(Link, ShelfId, ShelfLayers), 
-%     %findall(ShelfLayerId, Facings,
-%     member(ShelfLayer, ShelfLayers),
-%     k4r_get_entity_id(ShelfLayer, ShelfLayerId),
-%         k4r_get_facings(Link, ShelfLayerId, Facing)),
-%         Facing.
-
-% get_products_in_shelflayer(ShelfId, FacingAndProduct) :- %% FacingAndProduct -- [FacingId, ProductId]
-%     get_facings_in_shelflayer(ShelfId, LayersAndFacings),
-%     %findall([FacingId, ProductId], 
-%     (member([Layer, Facing], LayersAndFacings),
-%     k4r_get_entity_id(Facing, FacingId),
-%     k4r_get_value_from_key(Facing, "productId", ProductId)).
-%     %FacingAndProduct).
-
+    ProductId = 'id1',
+    k4r_get_core_link(Link),
+    forall(
+        ( triple(Facing, shop:erpFacingId, FacingId),
+          triple(Facing, shop:layerOfFacing, Layer),
+          triple(Layer, shop:erpShelfLayerId, ErpLayerId),
+          triple(Shelf, soma:hasPhysicalComponent, Layer),
+          triple(Shelf, shop:erpShelfId, SId)),
+        ( convert_string_to_int(Id, ShelfIdInt),
+        number_string(SId, StringId),
+        k4r_get_entity_property_by_properties(SearchLink, 'shelf', [['storeId', 'externalReferenceId'], [2, StringId]], "id", ShelfIdList),
+        member(ShelfId, ShelfIdList),
+        convert_string_to_int(ShelfId, ShelfIdInt),
+        k4r_get_entity_property_by_properties(SearchLink, 'shelflayer', [['shelfId'], [ShelfIdInt]], "id", ShelfLayerIdValues)
+        )), 
+    forall(
+        member(Id, ShelfLayerIdValues) , 
+        (convert_string_to_int(Id, ShelfLayerIdInt),
+        get_number_of_items_in_facing(Facing, Quantity),
+        k4r_post_facing(Link, ShelfLayerIdInt, ProductId, FacingId, Quantity))
+    ).
