@@ -5,6 +5,9 @@
 @license BSD
 */
 
+
+%%% TODO : Check if you are able to get the user
+
 :- module( shopping_fridge,
     [
         user_login(r, r, r),
@@ -26,30 +29,37 @@
 
 
 user_login(UserId, DeviceId, TimeStamp) :-
-    %% Device might be another participant in the first action
-   tell(is_action(ParentAct)),
-   tell(
-       [ is_action(Action),
-        has_subevent(ParentAct, Action),
+   tell([is_action(ParentAct),
+        has_type(Fridge, shop:'SmartFridge'),
+        has_participant(ParentAct, Fridge),
         instance_of(User, shop:'Customer'),
-        triple(User, shop:hasUserId, UserId),
-        triple(User, shop:hasDeviceId, DeviceId),
-        instance_of(Tsk1,shop:'LoggingIn'),
-        executes_task(Action, Tsk1),
-        is_performed_by(Action, User),
-        % occurs(Action) during [TimeStamp, TimeStamp+1]
-        is_action(ParentAct),
-        instance_of(Tsk2,shop:'Shopping'),
+        instance_of(Task,shop:'Shopping'),
+        has_type(Role, soma:'Location'),
+        has_task_role(Task, Role),
+        is_performed_by(ParentAct, User),
+        
         instance_of(ShoppingBasket, shop:'ShopperBasket'),
         has_participant(ParentAct, ShoppingBasket),
+        has_type(Role1, soma:'Patient'),
+        has_task_role(Task, Role1),
         has_type(Motion, soma:'Holding'),
-        is_performed_by(ParentAct, User),
         is_classified_by(ParentAct, Motion),
-        triple(Tsk1, soma:starts, Tsk2),
-        executes_task(ParentAct, Tsk2),
-        triple(ParentAct, soma:hasExecutionState, soma:'ExecutionState_Active')
+        triple(ParentAct, soma:hasExecutionState, soma:'ExecutionState_Active'),
+        executes_task(ParentAct, Task)
+   ]),
+
+   tell(
+       [ is_action(LoggingInAction),
+        has_subevent(ParentAct, LoggingInAction), 
+        triple(User, shop:hasUserId, UserId),
+        has_type(Device, shop:'MobileDevice'),
+        has_participant(LoggingInAction, Device),
+        triple(Device, shop:hasDeviceId, DeviceId),
+        instance_of(Tsk1,shop:'LoggingIn'),
+        executes_task(LoggingInAction, Tsk1),
+        is_performed_by(LoggingInAction, User)
         ]),
-        time_interval_tell(Action, Timestamp, Timestamp).
+        time_interval_tell(LoggingInAction, Timestamp, Timestamp).
        
 
 
@@ -59,7 +69,7 @@ pick_object(UserId, ItemId, ObjectType, Timestamp, Position) :-
     executes_task(ShoppingAct, Tsk), 
     instance_of(Tsk, shop:'Shopping'),
     has_participant(ShoppingAct, Basket),
-    %% TODO : create a shopping basket, assign it to user, user holds basket, basket contains item
+    instance_of(Basket, shop:'ShopperBasket'),
     tell(
         [  
             is_action(PickAct),
@@ -68,7 +78,7 @@ pick_object(UserId, ItemId, ObjectType, Timestamp, Position) :-
             executes_task(PickAct, Task1),
             has_participant(PickAct, soma:'Hand'),
             is_performed_by(PickAct, User),
-            has_type(Motion, soma:'PuttingProductInABasket'), % Not sure if it is picking up or putting product in a basket
+            has_type(Motion, soma:'PuttingProductInABasket'),
             is_classified_by(PickAct, Motion),
             %% TODO : create an instance of a Product. find Product type with object id or object type.
             triple(Basket, soma:containsObject, ItemId)
@@ -81,6 +91,7 @@ put_back_object(UserId, ItemId, ObjectType, Timestamp, Position) :-
     executes_task(ShoppingAct, Tsk), 
     instance_of(Tsk, shop:'Shopping'),
     has_participant(ShoppingAct, Basket),
+    instance_of(Basket, shop:'ShopperBasket'),
     %% TODO : create a shopping basket, assign it to user, user holds basket, basket contains item
     tell(
         [    
@@ -103,7 +114,6 @@ user_logout(UserId, DeviceId, Timestamp) :-
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk), 
     instance_of(Tsk, shop:'Shopping'),
-    has_participant(ShoppingAct, Basket),
 
     has_subevent(ShoppingAct, LoginAct),
     executes_task(LoginAct, LoginTsk),
@@ -127,8 +137,9 @@ items_bought(UserId, Items) :-
     executes_task(ShoppingAct, Tsk), 
     instance_of(Tsk, shop:'Shopping'),
     has_participant(ShoppingAct, Basket),
+    instance_of(Basket, shop:'ShopperBasket'),
     findall(ItemId,
-    triple(Basket, soma:containsObject, ItemId),
+        triple(Basket, soma:containsObject, ItemId),
     Items).
 
 % items_bought(UserId, TimeStamp, Items) :-
