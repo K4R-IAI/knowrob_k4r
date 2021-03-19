@@ -5,6 +5,9 @@
 @license BSD
 */
 
+
+%%% TODO : Check if you are able to get the user
+
 :- module( shopping_fridge,
     [
         user_login(r, r, r),
@@ -26,28 +29,35 @@
 
 
 user_login(UserId, DeviceId, TimeStamp) :-
-    %% Device might be another participant in the first action
-   tell(is_action(ParentAct)),
-   tell(
-       [ is_action(Action),
-        has_subevent(ParentAct, Action),
+   tell([is_action(ParentAct),
+        has_type(Fridge, shop:'SmartFridge'),
+        has_participant(ParentAct, Fridge),
         instance_of(User, shop:'Customer'),
+        instance_of(Task,shop:'Shopping'),
+        has_type(Role, soma:'Location'),
+        has_task_role(Task, Role),
+        is_performed_by(ParentAct, User),
+        executes_task(ParentAct, Task),
+        triple(ParentAct, soma:hasExecutionState, soma:'ExecutionState_Active')
+        /* has_type(Motion, soma:'Holding'),
+        is_classified_by(ParentAct, Motion), */
+   ]),
+   tell(
+       [ is_action(LoggingInAction),
+        has_subevent(ParentAct, LoggingInAction), 
         triple(User, shop:hasUserId, UserId),
-        triple(User, shop:hasDeviceId, DeviceId),
+        has_type(Device, shop:'MobileDevice'),
+        has_participant(LoggingInAction, Device),
+        triple(Device, shop:hasDeviceId, DeviceId),
         instance_of(Tsk1,shop:'LoggingIn'),
         executes_task(Action, Tsk1),
         is_performed_by(Action, User),
         % occurs(Action) during [TimeStamp, TimeStamp+1]
-        is_action(ParentAct),
-        instance_of(Tsk2,shop:'Shopping'),
         instance_of(ShoppingBasket, shop:'ShopperBasket'),
         has_participant(ParentAct, ShoppingBasket),
-        has_type(Motion, soma:'Holding'),
-        is_performed_by(ParentAct, User),
-        is_classified_by(ParentAct, Motion),
+        
         triple(Tsk1, soma:starts, Tsk2),
-        executes_task(ParentAct, Tsk2),
-        triple(ParentAct, soma:hasExecutionState, soma:'ExecutionState_Active')
+        
         ]),
         time_interval_tell(Action, Timestamp, Timestamp).
        
@@ -132,3 +142,6 @@ items_bought(UserId, Items) :-
     Items).
 
 % items_bought(UserId, TimeStamp, Items) :-
+
+
+
