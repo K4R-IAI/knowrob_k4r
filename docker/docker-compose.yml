@@ -1,18 +1,12 @@
-# Small file to test if docker compose up works 
 version: '3'
 services:
   mongo:
-    tty: false
     image: mongo:4.4.3-bionic
     container_name: mongo_container
 
   knowrob:
-    tty: true
-    image: "knowrob/k4r"
+    image: k4riai/knowrob:latest
     container_name: knowrob_container
-    build:
-      context: ./
-      dockerfile: Dockerfile
     depends_on:
       - 'mongo'
     environment:
