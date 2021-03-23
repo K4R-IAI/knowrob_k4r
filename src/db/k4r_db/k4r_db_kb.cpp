@@ -30,6 +30,13 @@ Json::Value char_to_json(const char *entity_in)
   return entity_out;
 }
 
+// convert_string_to_int(StringVal, IntegerVal)
+PREDICATE(convert_string_to_int, 2) 
+{
+  int integer_val = std::stoi(std::string(PL_A1));
+  PL_A2 = integer_val;
+}
+
 PREDICATE(k4r_get_value_from_key, 3)
 {
   Json::Value entity = char_to_json((char *)PL_A1);
@@ -99,7 +106,9 @@ PREDICATE(k4r_get_entities_by_properties, 4)
   PlTail entities(PL_A4);
   for (const Json::Value &entity_value : entity_controller.get_entity("entityName/" + std::string(PL_A2) + link_tail))
   {
+    //formatted_data = format_data(std::string(PL_A2), entity_value)
     entities.append(entity_value.toStyledString().c_str());
+    //entities.append(formatted_data)
   }
   return entities.close();
 }
@@ -124,12 +133,17 @@ PREDICATE(k4r_get_entity_property_by_properties, 5)
   
   EntityController entity_controller(PL_A1);
   PlTail entity_values_out(PL_A5);
+  std::cout << "value out: " << std::endl;
   for (const Json::Value &entity_value_out : entity_controller.get_entity("entityName/" + std::string(PL_A2) + "/" + std::string(PL_A4) + link_tail))
   {
-    entity_values_out.append(entity_value_out.toStyledString().c_str());
+    std::string value_out = entity_value_out.toStyledString();
+    remove_new_line(value_out);
+    entity_values_out.append(value_out.c_str());
   }
+  std::cout << "value out end " << std::endl;
   return entity_values_out.close();
 }
+
 
 // Customer
 
@@ -680,7 +694,35 @@ PREDICATE(k4r_post_shelf, 7)
   return shelves.post_shelf(shelf_data);
 }
 
+
 // Shelf layer
+
+// k4r_post_shelf_layer(Link, ShelfId, Z, [D, W, H], Level, ExtRefId, Type)
+PREDICATE(k4r_post_shelf_layer, 7)
+{
+  ShelfLayerController shelf_layer_controller(PL_A1, std::string(PL_A2));
+
+  Json::Value shelf_layer; 
+  shelf_layer["positionZ"] =  double(PL_A3);
+  
+  PlTerm traversal_term;
+  PlTail dimension(PL_A4);
+  
+  dimension.next(traversal_term);
+  double temp = double(traversal_term);
+  shelf_layer["depth"]  = int(temp *1000);
+  dimension.next(traversal_term);
+  temp = double(traversal_term);
+  shelf_layer["width"] = int(temp *1000);
+  dimension.next(traversal_term);
+  temp = double(traversal_term);
+  shelf_layer["height"] = int(temp*1000);
+  shelf_layer["level"] = int (PL_A5);
+  shelf_layer["externalReferenceId"] = (std::string) PL_A6;
+  shelf_layer["type"] = (std::string) PL_A7;
+  std::cout << shelf_layer << std::endl;
+  return shelf_layer_controller.post_shelf_layer(shelf_layer);
+}
 
 // k4r_get_layers(Link, ShelfId, ShelfLayers)
 PREDICATE(k4r_get_shelf_layers, 3)
@@ -749,7 +791,7 @@ PREDICATE(k4r_post_shelf_layer, 3)
   }
 }
 
-// k4r_post_shelf_layer(Link, ShelfLayerId)
+// k4r_delete_shelf_layer(Link, ShelfLayerId)
 PREDICATE(k4r_delete_shelf_layer, 2)
 {
   ShelfLayerController shelf_layer_controller(PL_A1);
