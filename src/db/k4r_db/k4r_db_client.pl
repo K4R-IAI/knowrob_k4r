@@ -151,11 +151,16 @@ post_shelves_and_parts(StoreId) :-
 
 post_facings(ShelfLayer, ShelfLayerId) :-
     k4r_get_core_link(Link),
-    ProductId = 'id1',
+    k4r_get_search_link(SearchLink),
     forall(
         (triple(Facing, shop:layerOfFacing, Layer)), 
         (get_number_of_items_in_facing(Facing, Quantity),
-        triple(Facing, shop:erpFacingId, FacingId)
+        triple(Facing, shop:erpFacingId, FacingId),
+        shelf_facing_product_type(Facing, ProductType),
+        subclass_of(ProductType, S),
+        has_description(S ,value(shop:articleNumberOfProduct,ArticleNumber)),
+        k4r_get_entity_property_by_properties(SearchLink, 'product', [['gtin'],[ArticleNumber]], "id", ProductIdList),
+        member(ProductId, ProductIdList),
         k4r_post_facing(Link, ShelfLayerId, ProductId, FacingId, Quantity))
     ).
 
