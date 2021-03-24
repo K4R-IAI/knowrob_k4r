@@ -139,7 +139,7 @@ post_shelf_layers(StoreId) :-
 post_shelves_and_parts(StoreId) :-
     k4r_get_core_link(Link), 
     k4r_get_search_link(SearchLink),
-    forall((instance_of(Shelf,dmshop:'DMShelfFrame'),
+    forall((instance_of(Shelf,dmshop:'DMShelfFrame')),
       ( triple(Shelf, shop:erpShelfId, Id),
       post_shelf(StoreId, Shelf, ShelfERPId),
       k4r_get_entity_property_by_properties(SearchLink, 'shelf', [['storeId', 'externalReferenceId'], 
