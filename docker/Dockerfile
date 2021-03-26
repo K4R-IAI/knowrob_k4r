@@ -3,13 +3,17 @@ FROM openease/knowrob:latest
 USER root
 
 # Initialize the catkin workspace
+RUN cd /home/ros/src/knowrob \
+    && git remote add k4r https://github.com/K4R-IAI/knowrob \
+    && git pull k4r v0.0
+
 RUN cd /home/ros/src \
-    && git clone https://github.com/K4R-IAI/knowrob_k4r.git \
-    && git clone -b neems https://github.com/refills-project/knowrob_refills
+    && git clone -b v0.0 https://github.com/K4R-IAI/knowrob_k4r.git \
+    && git clone -b v0.0 https://github.com/K4R-IAI/knowrob_refills
 
 RUN cd /home/ros/src/rosprolog \
-    && git remote add giang https://github.com/HoangGiang93/rosprolog.git \
-    && git pull giang master
+    && git remote add k4r https://github.com/K4R-IAI/rosprolog \
+    && git pull k4r v0.0
 
 WORKDIR /home/ros
 RUN apt-get update && apt-get install -y \
@@ -29,6 +33,7 @@ RUN sed -i 's/werkzeug import cached_property/werkzeug.utils import cached_prope
 # Build the catkin workspace
 RUN . /opt/ros/melodic/setup.sh && catkin_make
 
+USER ros
+
 SHELL ["/bin/bash", "-c"]
 COPY ./entrypoint.bash /entrypoint.bash
-RUN chmod +x /entrypoint.bash
