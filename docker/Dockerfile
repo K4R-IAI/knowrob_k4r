@@ -1,5 +1,8 @@
 FROM openease/knowrob:latest
 
+ENV ROS_DISTRO=melodic
+ENV ROS_PYTHON_VERSION=2
+
 USER root
 
 # Initialize the catkin workspace
@@ -8,7 +11,7 @@ RUN cd /home/ros/src/knowrob \
     && git pull k4r v0.0
 
 RUN cd /home/ros/src \
-    && git clone -b v0.0 https://github.com/K4R-IAI/knowrob_k4r.git \
+    && git clone -b v0.0 https://github.com/K4R-IAI/knowrob_k4r \
     && git clone -b v0.0 https://github.com/K4R-IAI/knowrob_refills
 
 RUN cd /home/ros/src/rosprolog \
@@ -25,13 +28,13 @@ RUN apt-get update && apt-get install -y \
     && rosdep install --from-paths src --ignore-src -r -y \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install flask flask_restplus gevent rospkg catkin_pkg
+RUN sudo -H pip3 install flask flask_restplus gevent rospkg
 
 RUN sed -i 's/werkzeug import cached_property/werkzeug.utils import cached_property/' /usr/local/lib/python3.6/dist-packages/flask_restplus/fields.py \
  && sed -i 's/werkzeug import cached_property/werkzeug.utils import cached_property/' /usr/local/lib/python3.6/dist-packages/flask_restplus/api.py
 
 # Build the catkin workspace
-RUN . /opt/ros/melodic/setup.sh && catkin_make
+RUN . /opt/ros/${ROS_DISTRO}/setup.sh && catkin_make
 
 USER ros
 
