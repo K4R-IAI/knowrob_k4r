@@ -11,6 +11,9 @@ RUN cd /home/ros/src/rosprolog \
     && git remote add giang https://github.com/HoangGiang93/rosprolog.git \
     && git pull giang master
 
+RUN mkdir /home/data
+COPY simulation_data/ /home/data/
+
 WORKDIR /home/ros
 RUN apt-get update && apt-get install -y \
     apt-utils \
