@@ -5,7 +5,7 @@ services:
     container_name: mongo_container
 
   knowrob:
-    image: k4riai/knowrob:latest
+    image: iaik4r/knowrob:latest
     container_name: knowrob_container
     depends_on:
       - 'mongo'
