@@ -21,6 +21,9 @@ RUN cd /home/ros/src/rosprolog \
 RUN mkdir /home/data
 COPY simulation_data/ /home/data/
 
+COPY test.sh /home/ros
+RUN chmod +x test.sh
+
 WORKDIR /home/ros
 RUN apt-get update && apt-get install -y \
     apt-utils \
@@ -42,4 +45,8 @@ RUN . /opt/ros/${ROS_DISTRO}/setup.sh && catkin_make
 SHELL ["/bin/bash", "-c"]
 COPY ./entrypoint.bash /entrypoint.bash
 RUN chmod +x /entrypoint.bash
+
+HEALTHCHECK --interval=5m --timeout=3s \
+  CMD /bin/bash -c ./test.sh || exit 1
+
 USER ros
