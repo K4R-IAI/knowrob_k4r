@@ -7,8 +7,11 @@
             k4r_get_product_by_shelf/3,
             post_shelf_location/1,
             post_shelf_layers/1,
-            post_shelf_layers/3,
-            post_facing/1
+            post_facings/2,
+            post_shelves_and_parts/1,
+            post_facings/2,
+            post_shelf_layers/2,
+            post_shelf/3
           ]).
 /** <module> A client for the k4r db for Prolog.
 
@@ -77,83 +80,38 @@ post_shelf_location(StoreId):-
       ),
       _).
 
-%%%%% TODO: Data must be formatted before assigned to a term
-post_shelf_layers(StoreId, Shelf, ShelfId) :- %% shelfId is the primary key of the shelf table
-    k4r_get_core_link(Link),
-    forall(triple(Shelf, soma:hasPhysicalComponent, Layer),
-        (writeln('in post shelf'),
-        is_at(Layer, ['map', [_,_,Z], _]),
-        instance_of(Layer, LayerType),
-        rdf_split_url(_,LayerFrame,LayerType),
-        writeln('got layer type, pose'),
-        triple(Layer, shop:erpShelfLayerId, LayerLevel),
-        object_dimensions(Layer, D, W, H),
-        writeln('got layer level and dim'),
-        writeln(Link), 
-        writeln(ShelfId),
-        writeln(Z),writeln([D, W, H]), writeln(LayerLevel), writeln(LayerLevel), writeln(LayerFrame),
-        k4r_post_shelf_layer(Link, ShelfId, Z, [D, W, H], LayerLevel, LayerLevel, LayerFrame)
-        )).
-    
-
 post_shelf_layers(StoreId) :-
     k4r_get_search_link(SearchLink),
     forall(
         (instance_of(Shelf,dmshop:'DMShelfFrame'), 
         shelf_with_erp_id(Shelf, ExtRefId)),
         (number_string(ExtRefId, StringId),
-        k4r_get_entity_property_by_properties(SearchLink, 'shelf', [['storeId', 'externalReferenceId'], [2, StringId]], "id", ShelfIdList),
-        writeln("id list"),
-        writeln(ShelfIdList),
-        member(ShelfId, ShelfIdList),writeln(ShelfId),
+        k4r_get_entity_property_by_properties(SearchLink, 'shelf', [['storeId', 'externalReferenceId'], [StoreId, StringId]], "id", ShelfIdList),
+        member(ShelfId, ShelfIdList),
         convert_string_to_int(ShelfId, ShelfIdInt),
-        writeln(ShelfIdInt),
         assert_layer_id(Shelf),
-        post_shelf_layers(StoreId, Shelf, ShelfIdInt))
+        post_shelf_layers(Shelf, ShelfIdInt))
         ).
 
-/* post_facing(StoreId) :-
-    k4r_get_search_link(SearchLink),
-    ProductId = 'id1',
-    k4r_get_core_link(Link),
-    forall(
-        ( triple(Facing, shop:erpFacingId, FacingId),
-          triple(Facing, shop:layerOfFacing, Layer),
-          triple(Layer, shop:erpShelfLayerId, ErpLayerId),
-          triple(Shelf, soma:hasPhysicalComponent, Layer),
-          triple(Shelf, shop:erpShelfId, SId)),
-        ( convert_string_to_int(Id, ShelfIdInt),
-        number_string(SId, StringId),
-        k4r_get_entity_property_by_properties(SearchLink, 'shelf', [['storeId', 'externalReferenceId'], [2, StringId]], "id", ShelfIdList),
-        member(ShelfId, ShelfIdList),
-        convert_string_to_int(ShelfId, ShelfIdInt),
-        k4r_get_entity_property_by_properties(SearchLink, 'shelflayer', [['shelfId'], [ShelfIdInt]], "id", ShelfLayerIdValues)
-        )), 
-    forall(
-        member(Id, ShelfLayerIdValues) , 
-        (convert_string_to_int(Id, ShelfLayerIdInt),
-        get_number_of_items_in_facing(Facing, Quantity),
-        k4r_post_facing(Link, ShelfLayerIdInt, ProductId, FacingId, Quantity))
-    ). */
 
 post_shelves_and_parts(StoreId) :-
-    k4r_get_core_link(Link), 
     k4r_get_search_link(SearchLink),
     forall((instance_of(Shelf,dmshop:'DMShelfFrame')),
-      ( triple(Shelf, shop:erpShelfId, Id),
+      ( triple(Shelf, shop:erpShelfId, ShelfERPId),
       post_shelf(StoreId, Shelf, ShelfERPId),
+      number_string(ShelfERPId, StringId),
       k4r_get_entity_property_by_properties(SearchLink, 'shelf', [['storeId', 'externalReferenceId'], 
-          [2, StringId]], "id", ShelfIdList),
+          [StoreId, StringId]], "id", ShelfIdList),
         member(ShelfId, ShelfIdList),
         convert_string_to_int(ShelfId, ShelfIdInt),
-        post_shelf_layers(Shelf, ShelfId))
+        post_shelf_layers(Shelf, ShelfIdInt))
       ).
 
 post_facings(ShelfLayer, ShelfLayerId) :-
     k4r_get_core_link(Link),
     k4r_get_search_link(SearchLink),
     forall(
-        (triple(Facing, shop:layerOfFacing, Layer)), 
+        (triple(Facing, shop:layerOfFacing, ShelfLayer)), 
         (get_number_of_items_in_facing(Facing, Quantity),
         triple(Facing, shop:erpFacingId, FacingId),
         shelf_facing_product_type(Facing, ProductType),
@@ -175,7 +133,7 @@ post_shelf_layers(Shelf, ShelfId) :-
         object_dimensions(Layer, D, W, H),
         k4r_post_shelf_layer(Link, ShelfId, Z, [D, W, H], LayerLevel, LayerLevel, LayerFrame),
         k4r_get_entity_property_by_properties(SearchLink, 
-            'shelflayer', [['shelfId', 'level'], [ShelfIdInt, LayerLevel]], "id", ShelfLayerIdValues),
+            'shelflayer', [['shelfId', 'level'], [ShelfId, LayerLevel]], "id", ShelfLayerIdValues),
         member(LayerId, ShelfLayerIdValues),
         convert_string_to_int(LayerId, LayerIdInt),
         post_facings(Layer, LayerIdInt))
