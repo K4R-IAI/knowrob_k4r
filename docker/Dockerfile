@@ -39,7 +39,7 @@ RUN sed -i 's/werkzeug import cached_property/werkzeug.utils import cached_prope
 # Build the catkin workspace
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh && catkin_make
 
-USER ros
-
 SHELL ["/bin/bash", "-c"]
 COPY ./entrypoint.bash /entrypoint.bash
+RUN chmod +x /entrypoint.bash
+USER ros
