@@ -11,7 +11,7 @@ RUN cd /home/ros/src/knowrob \
     && git pull k4r v0.0
 
 RUN cd /home/ros/src \
-    && git clone -b master https://github.com/K4R-IAI/knowrob_k4r \
+    && git clone -b v0.0 https://github.com/K4R-IAI/knowrob_k4r \
     && git clone -b v0.0 https://github.com/K4R-IAI/knowrob_refills
 
 RUN cd /home/ros/src/rosprolog \
