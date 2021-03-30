@@ -11,7 +11,7 @@ RUN cd /home/ros/src/knowrob \
     && git pull k4r v0.0
 
 RUN cd /home/ros/src \
-    && git clone -b v0.0 https://github.com/K4R-IAI/knowrob_k4r \
+    && git clone -b master https://github.com/K4R-IAI/knowrob_k4r \
     && git clone -b v0.0 https://github.com/K4R-IAI/knowrob_refills
 
 RUN cd /home/ros/src/rosprolog \
@@ -39,7 +39,7 @@ RUN sed -i 's/werkzeug import cached_property/werkzeug.utils import cached_prope
 # Build the catkin workspace
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh && catkin_make
 
-USER ros
-
 SHELL ["/bin/bash", "-c"]
 COPY ./entrypoint.bash /entrypoint.bash
+RUN chmod +x /entrypoint.bash
+USER ros
