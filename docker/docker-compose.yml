@@ -15,3 +15,9 @@ services:
       - "62226:62226"
     entrypoint: /entrypoint.bash
     command: roslaunch knowrob_k4r knowrob_k4r.launch
+    volumes:
+      - lft:/home/data
+
+volumes:
+  # volume to transfer scanned data
+  lft:
