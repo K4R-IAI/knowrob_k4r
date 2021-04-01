@@ -16,7 +16,7 @@ RUN cd /home/ros/src \
 
 RUN cd /home/ros/src/rosprolog \
     && git remote add k4r https://github.com/K4R-IAI/rosprolog \
-    && git pull k4r v0.0
+    && git pull k4r v0.1
 
 RUN mkdir /home/data
 COPY simulation_data/ /home/data/
