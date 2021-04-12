@@ -12,7 +12,7 @@ RUN cd /home/ros/src/knowrob \
     && git checkout v0.0
 
 RUN cd /home/ros/src \
-    && git clone -b v0.0 https://github.com/K4R-IAI/knowrob_k4r \
+    && git clone -b v0.1 https://github.com/K4R-IAI/knowrob_k4r \
     && git clone -b v0.0 https://github.com/K4R-IAI/knowrob_refills
 
 RUN cd /home/ros/src/rosprolog \
@@ -47,6 +47,8 @@ RUN . /opt/ros/${ROS_DISTRO}/setup.sh && catkin_make
 SHELL ["/bin/bash", "-c"]
 COPY ./entrypoint.bash /entrypoint.bash
 RUN chmod +x /entrypoint.bash
+
+USER ros
 
 HEALTHCHECK --interval=10s --timeout=3s --start-period=60s \
   CMD python3 test.py
