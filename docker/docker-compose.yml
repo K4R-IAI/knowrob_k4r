@@ -5,7 +5,7 @@ services:
     container_name: mongo_container
 
   knowrob-init:
-    image: knowrob-init:latest
+    image: iaik4r/knowrob-init:v0.2
     container_name: knowrob_init_container
 
   knowrob:
