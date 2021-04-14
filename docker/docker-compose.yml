@@ -4,8 +4,12 @@ services:
     image: mongo:4.4.3-bionic
     container_name: mongo_container
 
+  knowrob-init:
+    image: knowrob-init:latest
+    container_name: knowrob_init_container
+
   knowrob:
-    image: iaik4r/knowrob:v0.1
+    image: iaik4r/knowrob:v0.2
     container_name: knowrob_container
     depends_on:
       - 'mongo'
