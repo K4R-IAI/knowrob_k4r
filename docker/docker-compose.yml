@@ -17,8 +17,10 @@ services:
     depends_on:
       - 'mongo'
     environment:
-        - KNOWROB_MONGODB_URI=${KNOWROB_MONGODB_URI}
+      - KNOWROB_VERSION=${KNOWROB_VERSION}
+      - KNOWROB_PORT=${KNOWROB_PORT}
+      - KNOWROB_MONGODB_URI=${KNOWROB_MONGODB_URI}
     ports:
-      - "62226:62226"
+      - "${KNOWROB_PORT}:${KNOWROB_PORT}"
     entrypoint: /entrypoint.bash
     command: roslaunch knowrob_k4r knowrob_k4r.launch
