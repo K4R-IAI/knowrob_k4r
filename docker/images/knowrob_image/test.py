@@ -12,9 +12,9 @@ else:
 
 KNOWROB_PORT = os.getenv('KNOWROB_PORT')
 if KNOWROB_PORT is None:
-    KNOWROB_PORT = 62226
+    KNOWROB_PORT = str(62226)
 else:
-    KNOWROB_PORT = int(KNOWROB_PORT)
+    KNOWROB_PORT = str(KNOWROB_PORT)
 
 link = 'http://localhost:' + KNOWROB_PORT + '/knowrob/api/' + KNOWROB_VERSION + '/query'
 data = {}
@@ -22,9 +22,7 @@ data['query'] = 'member(A, [2]), B is A+2'
 data['maxSolutionCount'] = 10
 
 try:
-  print(link)
   resp = requests.post(link, data=json.dumps(data), headers={'Content-Type': 'application/json'})
-  print(resp.text)
   if resp.status_code == 200:
     sys.exit(0)
   else:
