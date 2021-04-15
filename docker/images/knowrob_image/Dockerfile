@@ -8,12 +8,12 @@ USER root
 # Initialize the catkin workspace
 RUN cd /home/ros/src/knowrob \
     && git remote add k4r https://github.com/K4R-IAI/knowrob \
-    && git pull k4r v0.0 \
-    && git checkout v0.0
+    && git pull k4r v0.2 \
+    && git checkout v0.2
 
 RUN cd /home/ros/src \
     && git clone -b v0.2 https://github.com/K4R-IAI/knowrob_k4r \
-    && git clone -b v0.0 https://github.com/K4R-IAI/knowrob_refills
+    && git clone -b v0.2 https://github.com/K4R-IAI/knowrob_refills
 
 RUN cd /home/ros/src/rosprolog \
     && git remote add k4r https://github.com/K4R-IAI/rosprolog \
@@ -50,7 +50,7 @@ SHELL ["/bin/bash", "-c"]
 COPY ./entrypoint.bash /entrypoint.bash
 RUN chmod +x /entrypoint.bash
 
-USER ros
+# USER ros
 
 HEALTHCHECK --interval=10s --timeout=3s --start-period=60s \
     CMD python3 test.py
