@@ -2,14 +2,15 @@ version: '3'
 services:
   mongo:
     image: mongo:4.4.3-bionic
-    container_name: ${MONGO}
+    container_name: ${MONGODB}
 
   knowrob-init:
     image: iaik4r/knowrob-init:v0.2
+    container_name: ${KNOWROB_INIT}
+    depends_on:
+      - 'mongo'
     environment:
       - KNOWROB_MONGODB_PKG_URI=${KNOWROB_MONGODB_PKG_URI}
-    entrypoint: /entrypoint.bash
-    container_name: ${KNOWROB_INIT}
     
   knowrob:
     image: iaik4r/knowrob:v0.2
