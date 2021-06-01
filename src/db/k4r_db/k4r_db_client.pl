@@ -11,19 +11,24 @@
             post_shelves_and_parts/1,
             post_facings/2,
             post_shelf_layers/2,
-            post_shelf/3
+            post_shelf/3,
+            get_products/0,
+            get_dict_from_json/2
           ]).
-/** <module> A client for the k4r db for Prolog.
 
+/** <module> A client for the k4r db for Prolog.
 @author Sascha Jongebloed
+@author Kaviya Dhanabalachandran
 @license BSD
 */
 
 :- use_foreign_library('libk4r_db_client.so').
 :- use_module(library(http/json)).
+:- use_module(library(http/json_convert)).
 :- use_module(library('semweb/rdf_db'),
 	[ rdf_split_url/3 ]).
 :- use_module(library('shop')).
+:- use_module(library('planogram')).
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -139,8 +144,6 @@ post_shelf_layers(Shelf, ShelfId) :-
         post_facings(Layer, LayerIdInt))
         ).
         
-
-
 post_shelf(StoreId, Shelf, ShelfERPId) :-
     k4r_get_core_link(Link),
     ProductGroupId = 3,
@@ -152,3 +155,69 @@ post_shelf(StoreId, Shelf, ShelfERPId) :-
         [D1,W2,H1], ProductGroupId,  ShelfERPId, CadPlanId).
 
 
+% Planogram data
+get_products:-
+    k4r_get_core_link(Link),
+    k4r_get_products(Link, Products),
+    StoreId is 1,
+    create_planogram(StoreId),
+    forall(member(P, Products),
+            (get_dict_from_json_(P, Dict),
+            get_product_attr_from_dict_(Dict, Name, Gtin, Dimension, Weight, Position, NumberOfFacing),
+            create_product_type(Name, Gtin, Dimension, Weight, Position, NumberOfFacing, StoreId, ProductName))).
+
+get_dict_from_json_(P, Dict) :-
+    atom_to_chars(P,Chars),
+    open_chars_stream(Chars,Stream),
+    json_read_dict(Stream,Dict).
+
+get_product_attr_from_dict_(Dict, Name, Gtin, Dimension, Weight, Position, NumberOfFacing) :-
+    get_dict(depth, Dict, D),
+    get_dict(weight, Dict, Weight),
+    get_dict(length, Dict, W),
+    get_dict(height, Dict, H),
+    get_dict(name, Dict, Name),
+    get_dict(gtin, Dict, Gtin),
+    get_dict(description, Dict, Disc),
+    get_dict(shelf, Disc, ShelfNum),
+    get_dict(shelflayer, Disc, LayerNum),
+    get_dict(order, Disc, ProductOrder),
+    get_dict(facings, Disc, NumberOfFacing),
+    D_meter is D/1000,
+    H_meter is H/1000,
+    W_meter is W/1000,
+    Dimension = [D_meter, W_meter, H_meter],
+    Position = [ShelfNum, LayerNum, ProductOrder].
+
+
+/* 
+
+Example Data: 
+{ 
+    "id":"000000000100002324", 
+    "gtin":"4010355055774", 
+    "description":
+    {  
+        "shelf":17, 
+        "shelflayer":5, 
+        "order":3, 
+        "facings":2 
+    }, 
+    "length":"45", 
+    "depth":"205", 
+    "height":"95", 
+    "weight":"51", 
+    "name":"Denkmit Backofen Grillreiniger 500ml" 
+}
+    {
+        "depth" : 85,
+        "shelf" : "17",
+        "shelflayer" : 5,
+        "facing":7,
+        "gtin" : "4010355410016",
+        "height" : 210,
+        "id" : "000000000100002321",
+        "length" : 45,
+        "name" : "Balea Bodylotion Urea 400ml",
+        "weight" : 452
+} */
