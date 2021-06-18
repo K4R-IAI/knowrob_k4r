@@ -1,0 +1,53 @@
+#pragma once
+
+#include "DataController.cpp"
+
+class ProductCharacteristicController : public DataController
+{
+public:
+  ProductCharacteristicController();
+
+public:
+  const bool check_product_characteristic_id(const std::string &);
+
+  const Json::Value get_product_characteristics();
+
+  const bool post_product_characteristic(const std::string &, Json::Value &);
+
+  const bool delete_product_characteristic(const std::string &);
+};
+
+ProductCharacteristicController::ProductCharacteristicController() : DataController::DataController("productcharacteristics/")
+{
+}
+
+const bool ProductCharacteristicController::check_product_characteristic_id(const std::string &product_characteristic_id)
+{
+  Json::Value product_characteristics = this->get_product_characteristics();
+  for (const Json::Value product_characteristic : product_characteristics)
+  {
+    if (product_characteristic["id"].asString() == product_characteristic_id)
+    {
+      return true;
+    }
+  }
+  std::cout << "Product characteristic with Id " << product_characteristic_id << " not found" << std::endl;
+  return false;
+}
+
+const Json::Value ProductCharacteristicController::get_product_characteristics()
+{
+  return this->get_data();
+}
+
+const bool ProductCharacteristicController::post_product_characteristic(const std::string &in_name, Json::Value &out_product_characteristic)
+{
+  Json::Value in_product_characteristic;
+  in_product_characteristic["name"] = in_name;
+  return this->post_data(in_product_characteristic, out_product_characteristic);
+}
+
+const bool ProductCharacteristicController::delete_product_characteristic(const std::string &product_characteristic_id)
+{
+  return this->delete_data(product_characteristic_id) || this->check_product_characteristic_id(product_characteristic_id);
+}

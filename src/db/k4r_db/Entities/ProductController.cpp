@@ -1,82 +1,109 @@
 #pragma once
 
-#include "EntityController.cpp"
+#include "MaterialGroupController.cpp"
 
-class ProductController : public EntityController
+class ProductController : public DataController
 {
 public:
-  ProductController(const char*);
+  ProductController();
 
-  bool check_product(const Json::Value&);
+public:
+  const bool check_product_id(const std::string &);
 
-  Json::Value get_product(const std::string&);
-  Json::Value get_products();
+  const Json::Value get_product(const std::string &);
+  const Json::Value get_products();
 
-  bool post_product(const std::string&, const Json::Value&);
-  bool post_products(const Json::Value&);
+  const bool post_product(const std::string &, const Json::Value &, Json::Value &);
+  const bool post_product(const std::string &, const std::string &, const Json::Value &, Json::Value &);
+  const bool post_products(const Json::Value &, Json::Value &);
 
-  bool put_product(const std::string&, const Json::Value&);
+  const bool put_product(const std::string &, const Json::Value &, Json::Value &);
+  const bool put_product(const std::string &, const std::string &, const Json::Value &, Json::Value &);
 
-  bool delete_product(const std::string&);
+  const bool delete_product(const std::string &);
+
+private:
+  MaterialGroupController material_group_controller;
 };
 
-ProductController::ProductController(const char* link) : EntityController::EntityController((std::string(link) + "products/").c_str())
+ProductController::ProductController() : DataController::DataController("products/")
 {
 }
 
-Json::Value ProductController::get_product(const std::string& product_id)
+const bool ProductController::check_product_id(const std::string &product_id)
 {
-  return this->get_entity(product_id);
-}
-
-bool ProductController::check_product(const Json::Value& product)
-{
-  if (product["depth"].isInt() &&
-      product["description"].isString() &&
-      product["gtin"].isString() &&
-      product["height"].isInt() &&
-      product["length"].isInt() &&
-      product["name"].isString() &&
-      product["weight"].isInt())
+  Json::Value product = this->get_product(product_id);
+  if (product["id"].asString() == product_id)
   {
     return true;
   }
   else
   {
-    std::cout << "Invalid products" << std::endl;
+    std::cout << "Product with id " << product_id << " not found" << std::endl;
     return false;
   }
 }
 
-bool ProductController::post_product(const std::string& product_id, const Json::Value& product)
+const Json::Value ProductController::get_product(const std::string &product_id)
 {
-  return this->check_product(product) && this->post_entity(product, product_id);
+  return this->get_data(product_id);
 }
 
-bool ProductController::put_product(const std::string& product_id, const Json::Value& product)
+const Json::Value ProductController::get_products()
 {
-  return this->check_product(product) && this->put_entity(product, product_id);
+  return this->get_data();
 }
 
-bool ProductController::delete_product(const std::string& product_id)
+const bool ProductController::post_product(const std::string &in_product_id, const Json::Value &in_product, Json::Value &out_product)
 {
-  return this->delete_entity(product_id);
-}
-
-Json::Value ProductController::get_products()
-{
-  return this->get_entity();
-}
-
-bool ProductController::post_products(const Json::Value& products)
-{
-  if (!products["products"].isNull())
+  std::string in_material_group_id = in_product["materialGroupId"].toStyledString();
+  if (in_material_group_id.compare("null"))
   {
-    return this->post_entity(products, "list");
+    return this->post_data(in_product, out_product, in_product_id);
+  }
+  else
+  {
+    return this->post_product(in_product_id, in_material_group_id, in_product, out_product);
+  }
+}
+
+const bool ProductController::post_product(const std::string &in_product_id, const std::string &in_material_group_id, const Json::Value &in_product, Json::Value &out_product)
+{
+  Json::Value in_product_tmp = in_product;
+  in_product_tmp["materialGroupId"] = in_material_group_id;
+  return this->post_data(in_product_tmp, out_product, in_product_id) ||
+         this->material_group_controller.check_material_group_id(in_material_group_id);
+}
+
+const bool ProductController::post_products(const Json::Value &in_products, Json::Value &out_products)
+{
+  if (!in_products["products"].isNull())
+  {
+    return this->post_data(in_products, out_products, "list");
   }
   else
   {
     std::cout << "Invalid products" << std::endl;
     return false;
   }
+}
+
+const bool ProductController::put_product(const std::string &in_product_id, const Json::Value &in_product, Json::Value &out_product)
+{
+  return this->put_data(in_product, out_product, in_product_id) ||
+         this->check_product_id(in_product_id);
+}
+
+const bool ProductController::put_product(const std::string &in_product_id, const std::string &in_material_group_id, const Json::Value &in_product, Json::Value &out_product)
+{
+  Json::Value in_product_tmp = in_product;
+  in_product_tmp["materialGroupId"] = in_material_group_id;
+  return this->put_data(in_product_tmp, out_product, in_product_id) ||
+         (this->check_product_id(in_product_id) &&
+          this->material_group_controller.check_material_group_id(in_material_group_id));
+}
+
+const bool ProductController::delete_product(const std::string &product_id)
+{
+  return this->delete_data(product_id) || this->check_product_id(product_id);
 }

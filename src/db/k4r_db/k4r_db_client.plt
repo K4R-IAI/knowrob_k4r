@@ -6,28 +6,47 @@
 
 % post_test_customer(Link, CustomerId) :-
 %   k4r_post_customer(Link, "anonymisedName Test"),
-%   k4r_get_customers(Link, CustomerList),
+%   k4r_get_customers(Link, CustomerList).
 %   k4r_get_entity_by_key_value(CustomerList, "anonymisedName", "anonymisedName Test", Customer),
 %   k4r_get_entity_id(Customer, CustomerId).
 
-% post_test_store(Link, StoreId) :-
-%   k4r_post_store(Link, 
-%     ["addressAdditional test", 
-%     "addressCity test", 
-%     "addressCountry test", 
-%     "addressPostcode test", 
-%     "addressState test", 
-%     "addressStreet test", 
-%     "addressStreetNumber test", 
-%     "cadPlanId test",
-%     1.1,
-%     1.2,
-%     "storeName test",
-%     "storeNumber test"]),
-%   get_store_id_by_store_name(Link, "storeName test", StoreId).
+post_test_store(StoreId) :-
+  post_store(
+    ["addressAdditional test", 
+    "addressCity test", 
+    "addressCountry test", 
+    "addressPostcode test", 
+    "addressState test", 
+    "addressStreet test", 
+    "addressStreetNumber test", 
+    "cadPlanId test",
+    1.1,
+    1.2,
+    "storeName test",
+    "storeNumber test"], 
+    Store),
+  get_entity_id(Store, StoreId).
 
-% post_test_product(Link, "idTest") :-
-%   k4r_post_product(Link, [10, "description test", "gtin test", 11, 12, "name test", 13], "idTest").
+post_test_product("idTest") :-
+  post_product("idTest", ["description test", "name test", "productType test", "productUnit test"], _).
+post_test_product2("idTest2") :-
+  post_product("idTest2", ["description test", "name test2", "productType test2", "productUnit test2"], _).
+
+post_test_logistical_unit1(ProductId1, ProductId2, LogisticalUnitId1, LogisticalUnitId2) :-
+  post_logistical_unit(ProductId1, [true, true, "dimensionUnit 1", 1.1, 1.2, 1, 1.3, true, 1.4, "quantityUnit 1", "quantityUnitIso 1", true, 1.5, 1.6], LogisticalUnit1),
+  get_entity_id(LogisticalUnit1, LogisticalUnitId1),
+  post_logistical_unit(ProductId2, [true, true, "dimensionUnit 2", 2.1, 2.2, 2, 2.3, true, 2.4, "quantityUnit 2", "quantityUnitIso 2", true, 2.5, 2.6], LogisticalUnit2),
+  get_entity_id(LogisticalUnit2, LogisticalUnitId2).
+
+post_test_product_characteristics(ProductCharacteristicId1, ProductCharacteristicId2, ProductCharacteristicId3, ProductCharacteristicId4) :-
+  post_product_characteristic("name 1", ProductCharacteristic1),
+  get_entity_id(ProductCharacteristic1, ProductCharacteristicId1),
+  post_product_characteristic("name 2", ProductCharacteristic2),
+  get_entity_id(ProductCharacteristic2, ProductCharacteristicId2),
+  post_product_characteristic("name 3", ProductCharacteristic3),
+  get_entity_id(ProductCharacteristic3, ProductCharacteristicId3),
+  post_product_characteristic("name 4", ProductCharacteristic4),
+  get_entity_id(ProductCharacteristic4, ProductCharacteristicId4).
 
 % post_test_product_group(Link, StoreId, ProductGroupId) :-
 %   post_test_store(Link, StoreId),
@@ -50,30 +69,26 @@
 % get_test_customer_id(Link, CustomerId) :-
 %   get_customer_id_by_customer_name(Link, "anonymisedName Test", CustomerId).
 
-% get_customer_id_by_customer_name(Link, CustomerName, CustomerId) :-
-%   k4r_get_customers(Link, CustomerList),
-%   k4r_get_entity_by_key_value(CustomerList, "anonymisedName", CustomerName, Customer),
-%   k4r_get_entity_id(Customer, CustomerId).
+get_material_group_id_by_name(MaterialGroupList, Name, MaterialGroupId) :-
+  get_entity_by_key_value(MaterialGroupList, "name", Name, MaterialGroup),
+  get_entity_id(MaterialGroup, MaterialGroupId).
 
-% get_store_id_by_store_name(Link, StoreName, StoreId) :-
-%   k4r_get_stores(Link, StoreList),
-%   k4r_get_entity_by_key_value(StoreList, "storeName", StoreName, Store),
-%   k4r_get_entity_id(Store, StoreId).
+get_customer_id_by_anonymised_name(CustomerList, CustomerName, CustomerId) :-
+  get_entity_by_key_value(CustomerList, "anonymisedName", CustomerName, Customer),
+  get_entity_id(Customer, CustomerId).
 
-% get_test_store_id(Link, StoreId) :-
-%   get_store_id_by_store_name(Link, "storeName test", StoreId).
+get_store_id_by_store_name(StoreList, StoreName, StoreId) :-
+  get_entity_by_key_value(StoreList, "storeName", StoreName, Store),
+  get_entity_id(Store, StoreId).
 
-% get_characteristic_id_by_characteristic_name(Link, CharacteristicName, CharacteristicId) :-
-%   k4r_get_characteristics(Link, CharacteristicList),
-%   k4r_get_entity_by_key_value(CharacteristicList, "name", CharacteristicName, Characteristic),
-%   k4r_get_entity_id(Characteristic, CharacteristicId).
+get_product_characteristic_id_by_name(ProductCharacteristicList, Name, ProductCharacteristicId) :-
+  get_entity_by_key_value(ProductCharacteristicList, "name", Name, ProductCharacteristic),
+  get_entity_id(ProductCharacteristic, ProductCharacteristicId).
 
 % get_product_group_id_by_product_group_name(Link, StoreId, ProductGroupName, ProductGroupId) :-
 %   k4r_get_product_groups(Link, StoreId, ProductGroupList),
 %   k4r_get_entity_by_key_value(ProductGroupList, "name", ProductGroupName, ProductGroup),
 %   k4r_get_entity_id(ProductGroup, ProductGroupId).
-
-% get_test_product_id("idTest").
 
 % get_test_product_group_id(Link, StoreId, ProductGroupId) :-
 %   get_test_store_id(Link, StoreId),
@@ -114,9 +129,6 @@
 %   k4r_get_entity_by_key_value(PlanogramList, "numberOfFacings", NumberOfFacings, Planogram),
 %   k4r_get_entity_id(Planogram, PlanogramId).
 
-% delete_test_product(Link) :-
-%   k4r_delete_product(Link, "idTest").
-
 % delete_test_product_group_and_store(Link) :-
 %   get_test_product_group_id(Link, StoreId, ProductGroupId),
 %   k4r_delete_product_group(Link, ProductGroupId),
@@ -138,43 +150,40 @@
 % %            Customer           %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% test('customer_post_test') :-
-%   k4r_get_core_link(Link),
-%   k4r_post_customer(Link, "Giang"),
-%   k4r_post_customer(Link, "Kaviya"),
-%   k4r_post_customer(Link, "Gautam"),
-%   k4r_post_customer(Link, "Nils").
+% test('customer_test') :-
+%   % POST
+%   post_customer("HoangGiang", Customer),
 
-% test('customer_put_test') :-
-%   k4r_get_core_link(Link),
-%   k4r_post_customer(Link, "TaylorSwift"),
-%   get_customer_id_by_customer_name(Link, "TaylorSwift", CustomerId),
-%   k4r_get_customer(Link, CustomerId, Customer),
+%   % GET ONE
+%   get_entity_id(Customer, CustomerId),
+%   get_customer(CustomerId, CustomerSame),
 %   write('Return customer with id '), writeln(CustomerId),
-%   writeln(Customer),
-%   k4r_put_customer(Link, CustomerId, "Taylor Swift"),
-%   k4r_get_customers(Link, CustomerList),
-%   writeln('Return customer list with name Taylor Swift:'),
-%   writeln(CustomerList).
+%   writeln(CustomerSame),
 
-% test('customer_delete_test') :-
-%   k4r_get_core_link(Link),
-%   get_customer_id_by_customer_name(Link, "Giang", CustomerId1),
-%   k4r_delete_customer(Link, CustomerId1),
-%   get_customer_id_by_customer_name(Link, "Kaviya", CustomerId2),
-%   k4r_delete_customer(Link, CustomerId2),
-%   get_customer_id_by_customer_name(Link, "Gautam", CustomerId3),
-%   k4r_delete_customer(Link, CustomerId3),
-%   get_customer_id_by_customer_name(Link, "Nils", CustomerId4),
-%   k4r_delete_customer(Link, CustomerId4).
+%   % PUT
+%   put_customer(CustomerId, "Hoang Giang", _),
+
+%   % GET ALL
+%   post_customer("Gautam", Customer2),
+%   get_customers(CustomerList),
+%   writeln('Return customer list:'),
+%   writeln(CustomerList),
+
+%   % DELETE
+%   delete_customer(CustomerId),
+%   get_entity_id(Customer2, CustomerId2),
+%   delete_customer(CustomerId2),
+%   get_customers(CustomerListNew),
+%   writeln('Return empty customer list:'),
+%   writeln(CustomerListNew).
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % %             Store             %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% test('store_post_test') :-
-%   k4r_get_core_link(Link),
-%   k4r_post_store(Link, 
+% test('store_test') :-
+%   % POST
+%   post_store(
 %     ["addressAdditional 1", 
 %     "addressCity 1", 
 %     "addressCountry 1", 
@@ -186,8 +195,9 @@
 %     1.1,
 %     1.2,
 %     "storeName 1",
-%     "storeNumber 1"]),
-%   k4r_post_store(Link,
+%     "storeNumber 1"], 
+%     Store1),
+%   post_store(
 %     ["addressAdditional 2", 
 %     "addressCity 2", 
 %     "addressCountry 2", 
@@ -199,233 +209,449 @@
 %     2.1, 
 %     2.2,
 %     "storeName 2",
-%     "storeNumber 2"]),
-%     k4r_post_store(Link,
-%     ["addressAdditional 3", 
-%     "addressCity 3", 
-%     "addressCountry 3", 
-%     "addressPostcode 3", 
-%     "addressState 3", 
-%     "addressStreet 3", 
-%     "addressStreetNumber 3", 
-%     "cadPlanId 3", 
-%     3.1, 
-%     3.2,
-%     "storeName 3",
-%     "storeNumber 3"]),
-%   k4r_post_store(Link,
-%     ["addressAdditional 4", 
-%     "addressCity 4", 
-%     "addressCountry 4", 
-%     "addressPostcode 4", 
-%     "addressState 4", 
-%     "addressStreet 4", 
-%     "addressStreetNumber 4", 
-%     "cadPlanId 4", 
-%     4.1, 
-%     4.2,
-%     "storeName 4",
-%     "storeNumber 4"]).
-
-% test('store_put_and_get_test') :-
-%   k4r_get_core_link(Link),
-%   get_store_id_by_store_name(Link, "storeName 4", StoreId),
-%   k4r_put_store(Link, StoreId, "{
-%     \"addressAdditional\" : \"Changed\",
-%     \"addressCity\" : \"REFD\",
-%     \"addressCountry\" : \"DE\",
-%     \"addressPostcode\" : \"23232\",
-%     \"addressState\" : \"EDFG\",
-%     \"addressStreet\" : \"ABCD\",
-%     \"addressStreetNumber\" : \"19\",
-%     \"cadPlanId\" : \"123CAD321\",
-%     \"latitude\" : 12.43,
-%     \"longitude\" : 32.435,
+%     "storeNumber 2"], 
+%     Store2),
+%   post_store(
+%     "{\"addressAdditional\" : \"addressAdditional 3\",
+%     \"addressCity\" : \"addressCity 3\",
+%     \"addressCountry\" : \"addressCountry 3\",
+%     \"addressPostcode\" : \"addressPostcode 3\",
+%     \"addressState\" : \"addressState 3\",
+%     \"addressStreet\" : \"addressStreet 3\",
+%     \"addressStreetNumber\" : \"addressStreetNumber 3\",
+%     \"cadPlanId\" : \"cadPlanId 3\",
+%     \"latitude\" : 3.1,
+%     \"longitude\" : 3.2,
+%     \"storeName\" : \"storeName 3\",
+%     \"storeNumber\" : \"storeNumber 3\"}",
+%     Store3),
+%   post_store(
+%     "{\"addressAdditional\" : \"addressAdditional 4\",
+%     \"addressCity\" : \"addressCity 4\",
+%     \"addressCountry\" : \"addressCountry 4\",
+%     \"addressPostcode\" : \"addressPostcode 4\",
+%     \"addressState\" : \"addressState 4\",
+%     \"addressStreet\" : \"addressStreet 4\",
+%     \"addressStreetNumber\" : \"addressStreetNumber 4\",
+%     \"cadPlanId\" : \"cadPlanId 4\",
+%     \"latitude\" : 4.1,
+%     \"longitude\" : 4.2,
 %     \"storeName\" : \"storeName 4\",
-%     \"storeNumber\" : \"ABC123\"
-%   }"),
-%   k4r_put_store(Link, StoreId, 
-%     ["addressAdditional changed", 
-%     "addressCity changed", 
-%     "addressCountry changed", 
-%     "addressPostcode changed", 
-%     "addressState changed", 
-%     "addressStreet changed", 
-%     "addressStreetNumber changed", 
-%     "cadPlanId changed", 
-%     4.1, 
-%     4.2,
-%     "storeName 4",
-%     "storeNumber changed"]),
-%   get_store_id_by_store_name(Link, "storeName 4", StoreId),
-%   k4r_get_store(Link, StoreId, Store),
-%   writeln('Return changed store with name storeName 4:'),
-%   writeln(Store).
+%     \"storeNumber\" : \"storeNumber 4\"}",
+%     Store4),
 
-% test('store_delete_test') :-
-%   k4r_get_core_link(Link),
-%   get_store_id_by_store_name(Link, "storeName 1", StoreId1),
-%   k4r_delete_store(Link, StoreId1),
-%   get_store_id_by_store_name(Link, "storeName 2", StoreId2),
-%   k4r_delete_store(Link, StoreId2),
-%   get_store_id_by_store_name(Link, "storeName 3", StoreId3),
-%   k4r_delete_store(Link, StoreId3),
-%   get_store_id_by_store_name(Link, "storeName 4", StoreId4),
-%   k4r_delete_store(Link, StoreId4).
+%   % GET ONE
+%   get_entity_id(Store1, StoreId1),
+%   get_entity_id(Store2, StoreId2),
+%   get_entity_id(Store3, StoreId3),
+%   get_entity_id(Store4, StoreId4),
+%   get_store(StoreId1, StoreSame1),
+%   write('Return store with id:'), writeln(StoreId1),
+%   writeln(StoreSame1),
+
+%   % PUT
+%   put_store(StoreId1, 
+%     "{\"addressAdditional\" : \"Changed\",
+%       \"addressCity\" : \"REFD\",
+%       \"addressCountry\" : \"DE\",
+%       \"addressPostcode\" : \"23232\",
+%       \"addressState\" : \"EDFG\",
+%       \"addressStreet\" : \"ABCD\",
+%       \"addressStreetNumber\" : \"19\",
+%       \"cadPlanId\" : \"123CAD321\",
+%       \"latitude\" : 12.43,
+%       \"longitude\" : 32.435,
+%       \"storeName\" : \"storeName 4\",
+%       \"storeNumber\" : \"ABC123\"}",
+%       _),
+%   put_store(StoreId2, 
+%     ["addressAdditional changed", 
+%       "addressCity changed", 
+%       "addressCountry changed", 
+%       "addressPostcode changed", 
+%       "addressState changed", 
+%       "addressStreet changed", 
+%       "addressStreetNumber changed", 
+%       "cadPlanId changed", 
+%       4.1, 
+%       4.2,
+%       "storeName 4",
+%       "storeNumber changed"], 
+%       _),
+
+%   % GET ALL
+%   get_stores(StoreList),
+%   writeln('Return store list:'),
+%   writeln(StoreList),
+
+%   % DELETE
+%   delete_store(StoreId1),
+%   delete_store(StoreId2),
+%   delete_store(StoreId3),
+%   delete_store(StoreId4),
+%   get_stores(StoreListNew),
+%   writeln('Return empty store list:'),
+%   writeln(StoreListNew).
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %         MaterialGroup         %
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% test('material_group_test') :-
+%   % POST
+%   post_material_group("Group 1", MaterialGroup1),
+%   post_material_group("Group2", MaterialGroup2),
+%   get_entity_id(MaterialGroup1, MaterialGroupId1),
+%   get_entity_id(MaterialGroup2, MaterialGroupId2),
+%   post_material_group(MaterialGroupId1, "Group3", MaterialGroup3),
+%   post_material_group(MaterialGroupId2, "Group 4", MaterialGroup4),
+
+%   % GET ONE
+%   get_entity_id(MaterialGroup3, MaterialGroupId3),
+%   get_entity_id(MaterialGroup4, MaterialGroupId4),
+%   get_material_group(MaterialGroupId1, MaterialGroupSame1),
+%   write('Return material group at Id:'), writeln(MaterialGroupId1),
+%   writeln(MaterialGroupSame1),
+
+%   % PUT
+%   put_material_group(MaterialGroupId3, "Group 3", _),
+%   put_material_group(MaterialGroupId2, MaterialGroupId1, "Group 2", _),
+
+%   % GET ALL
+%   get_material_groups(MaterialGroupList),
+%   writeln('Return full material group list:'),
+%   writeln(MaterialGroupList),
+
+%   % DELETE
+%   delete_material_group(MaterialGroupId4),
+%   delete_material_group(MaterialGroupId3),
+%   delete_material_group(MaterialGroupId2),
+%   delete_material_group(MaterialGroupId1),
+%   get_material_groups(MaterialGroupListNew),
+%   writeln('Return empty material list:'),
+%   writeln(MaterialGroupListNew).
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % %            Product            %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% test('product_post_test') :-
-%   k4r_get_core_link(Link),
-%   k4r_post_product(Link, [10, "description 1", "gtin 1", 11, 12, "name 1", 13], "id1"),
-%   k4r_post_product(Link, [20, "description 2", "gtin 2", 21, 22, "name 2", 23], "id2"),
-%   k4r_post_product(Link, [30, "description 3", "gtin 3", 31, 32, "name 3", 33], "id3"),
-%   k4r_post_product(Link, [40, "description 4", "gtin 4", 41, 42, "name 4", 43], "id4").
+% test('product_test') :-
+%   % POST ONE
+%   post_material_group("GroupTest1", MaterialGroup1),
+%   get_entity_id(MaterialGroup1, MaterialGroupId1),
+%   post_material_group(MaterialGroupId1, "GroupTest2", MaterialGroup2),
+%   get_entity_id(MaterialGroup2, MaterialGroupId2),
+%   ProductId1 = "id1",
+%   post_product(ProductId1, ["description 1", "name 1", "productType 1", "productUnit 1"], _),
+%   ProductId2 = "id2",
+%   post_product(ProductId2, 
+%     "{\"description\" : \"description 2\",
+%       \"name\" : \"name 2\",
+%       \"productType\" : \"productType 2\",
+%       \"productUnit\" : \"productUnit 2\"}", 
+%       _),
+%   ProductId3 = "id3",
+%   post_product(ProductId3, MaterialGroupId1, ["description 3", "name 3", "productType 3", "productUnit 3"], _),
+%   ProductId4 = "id4",
+%   post_product(ProductId4, MaterialGroupId2,
+%     "{\"description\" : \"description 4\",
+%       \"name\" : \"name 4\",
+%       \"productType\" : \"productType 4\",
+%       \"productUnit\" : \"productUnit 4\"}", 
+%       _),
 
-% test('product_get_test') :-
-%   k4r_get_core_link(Link),
-%   k4r_get_product(Link, "id1", Product),
-%   writeln('Return product with id id1:'),
-%   writeln(Product).
-
-% test('product_put_test') :-
-%   k4r_get_core_link(Link),
-%   k4r_put_product(Link, "{
-%     \"depth\" : 3,
-%     \"description\" : \"a new changed product\",
-%     \"gtin\" : \"whatisthis\",
-%     \"height\" : 2,
-%     \"length\" : 12,
-%     \"name\" : \"new changed product\",
-%     \"weight\" : 111
-%   }", "id4"),
-%   k4r_put_product(Link, [40, "description changed", "gtin changed", 41, 42, "name changed", 43], "id4"),
-%   k4r_get_products(Link, ProductList),
-%   writeln('Return products with product new changed product at id id4:'),
-%   writeln(ProductList).
-
-% test('product_posts_test') :-
-%   k4r_get_core_link(Link),
-%   k4r_post_products(Link, "{
-%     \"products\": 
+%   % POST MANY
+%   post_products(
+%     "{\"products\": 
 %       [
 %         {
-%           \"depth\" : 50,
 %           \"description\" : \"description 5\",
-%           \"gtin\" : \"gtin 5\",
-%           \"height\" : 51,
 %           \"id\" : \"id5\",
-%           \"length\" : 52,
 %           \"name\" : \"name 5\",
-%           \"weight\" : 53
+%           \"productType\" : \"productType 5\",
+%           \"productUnit\" : \"productUnit 5\"
 %         }
 %         ,{
-%           \"depth\" : 60,
 %           \"description\" : \"description 6\",
-%           \"gtin\" : \"gtin 6\",
-%           \"height\" : 61,
 %           \"id\" : \"id6\",
-%           \"length\" : 62,
 %           \"name\" : \"name 6\",
-%           \"weight\" : 63
+%           \"productType\" : \"productType 6\",
+%           \"productUnit\" : \"productUnit 6\"
 %         }
-%       ]
-%     }"
-%   ),
-%   k4r_post_products(Link, [
-%     [70, "description 7", "gtin 7", 71, "id7", 72, "name 7", 73],
-%     [80, "description 8", "gtin 8", 81, "id8", 82, "name 8", 83]
-%   ]),
-%   k4r_get_products(Link, ProductList),
-%   writeln('Return products with products at id id5 to id8:'),
-%   writeln(ProductList).
+%       ]}", 
+%     _),
+%   post_products([
+%     ["description 7", "id7", "name 7", "productType 7", "productUnit 7"],
+%     ["description 8", "id8", "name 8", "productType 8", "productUnit 8"]], 
+%     _),
 
-% test('product_delete_test') :-
-%   k4r_get_core_link(Link),
-%   k4r_delete_product(Link, "id1"),
-%   k4r_delete_product(Link, "id2"),
-%   k4r_delete_product(Link, "id3"),
-%   k4r_delete_product(Link, "id4"),
-%   k4r_delete_product(Link, "id5"),
-%   k4r_delete_product(Link, "id6"),
-%   k4r_delete_product(Link, "id7"),
-%   k4r_delete_product(Link, "id8").
+%   % GET ONE
+%   get_product("id1", ProductSame1),
+%   writeln('Return product with id id1:'),
+%   writeln(ProductSame1),
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %         Characteristic        %
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   % PUT
+%   put_product(ProductId1, MaterialGroupId1, ["description 1 changed", "name 1 changed", "productType 1 changed", "productUnit 1 changed"], _),
+%   put_product(ProductId2, MaterialGroupId1,
+%     "{\"description\" : \"description 2 changed\",
+%       \"name\" : \"name 2 changed\",
+%       \"productType\" : \"productType 2 changed\",
+%       \"productUnit\" : \"productUnit 2 changed\"}", 
+%       _),
+%   put_product(ProductId3,
+%     "{\"description\" : \"description 3 changed\",
+%       \"name\" : \"name 3 changed\",
+%       \"productType\" : \"productType 3 changed\",
+%       \"productUnit\" : \"productUnit 3 changed\"}", 
+%       _),
+%   put_product(ProductId4, ["description 4 changed", "name 4 changed", "productType 4 changed", "productUnit 4 changed"], _),
+  
+%   % GET ALL
+%   get_products(ProductList),
+%   writeln('Return product list:'),
+%   writeln(ProductList),
 
-% test('characteristic_post_and_get_test') :-
-%   k4r_get_core_link(Link),
-%   k4r_post_characteristic(Link, "New Characteristic"),
-%   k4r_get_characteristics(Link, CharacteristicList),
-%   writeln('Return characteristics with New Characteristic'),
-%   writeln(CharacteristicList).
-
-% test('characteristic_delete_test') :-
-%   k4r_get_core_link(Link),
-%   k4r_get_characteristics(Link, CharacteristicList),
-%   k4r_get_entity_by_key_value(CharacteristicList, "name", "New Characteristic", Characteristic),
-%   k4r_get_entity_id(Characteristic, CharacteristicId),
-%   k4r_delete_characteristic(Link, CharacteristicId),
-%   k4r_get_characteristics(Link, CharacteristicListNew),
-%   writeln('Return characteristics without New Characteristic'),
-%   writeln(CharacteristicListNew).
-
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %           Property            %
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% test('property_post_test') :-
-%   k4r_get_core_link(Link),
-%   post_test_store(Link, StoreId),
-%   post_test_product(Link, ProductId),
-%   k4r_post_characteristic(Link, "name 1"),
-%   k4r_post_characteristic(Link, "name 2"),
-%   k4r_post_characteristic(Link, "name 3"),
-%   k4r_post_characteristic(Link, "name 4"),
-%   get_characteristic_id_by_characteristic_name(Link, "name 1", CharacteristicId1),
-%   get_characteristic_id_by_characteristic_name(Link, "name 2", CharacteristicId2),
-%   get_characteristic_id_by_characteristic_name(Link, "name 3", CharacteristicId3),
-%   get_characteristic_id_by_characteristic_name(Link, "name 4", CharacteristicId4),
-%   k4r_post_property(Link, StoreId, ProductId, CharacteristicId1, "value 1"),
-%   k4r_post_property(Link, StoreId, ProductId, CharacteristicId2, "value 2"),
-%   k4r_post_property(Link, StoreId, ProductId, CharacteristicId3, "value 3"),
-%   k4r_post_property(Link, StoreId, ProductId, CharacteristicId4, "value 4").
-
-% test('property_get_test') :-
-%   k4r_get_core_link(Link),
-%   k4r_get_stores(Link, StoreList),
-%   k4r_get_entity_by_key_value(StoreList, "storeName", "storeName test", Store),
-%   k4r_get_entity_id(Store, StoreId),
-%   k4r_get_properties(Link, StoreId, "idTest", PropertyList),
-%   writeln('Return properties of product idTest in store name storeName test:'),
-%   writeln(PropertyList).
-
-% test('property_delete_test') :-
-%   k4r_get_core_link(Link),
-%   get_test_store_id(Link, StoreId),
-%   k4r_get_characteristics(Link, CharacteristicList),
-%   get_characteristic_id_by_characteristic_name(Link, "name 1", CharacteristicId1),
-%   get_characteristic_id_by_characteristic_name(Link, "name 2", CharacteristicId2),
-%   get_characteristic_id_by_characteristic_name(Link, "name 3", CharacteristicId3),
-%   get_characteristic_id_by_characteristic_name(Link, "name 4", CharacteristicId4),
-%   get_test_product_id(ProductId),
-%   k4r_delete_property(Link, StoreId, ProductId, CharacteristicId1),
-%   k4r_delete_property(Link, StoreId, ProductId, CharacteristicId2),
-%   k4r_delete_property(Link, StoreId, ProductId, CharacteristicId3),
-%   k4r_delete_property(Link, StoreId, ProductId, CharacteristicId4),
-%   k4r_delete_characteristic(Link, CharacteristicId1),
-%   k4r_delete_characteristic(Link, CharacteristicId2),
-%   k4r_delete_characteristic(Link, CharacteristicId3),
-%   k4r_delete_characteristic(Link, CharacteristicId4),
-%   k4r_delete_product(Link, ProductId),
-%   k4r_delete_store(Link, StoreId).
+%   % DELETE
+%   delete_product(ProductId1),
+%   delete_product(ProductId2),
+%   delete_product(ProductId3),
+%   delete_product(ProductId4),
+%   delete_product("id5"),
+%   delete_product("id6"),
+%   delete_product("id7"),
+%   delete_product("id8"),
+%   delete_material_group(MaterialGroupId2),
+%   delete_material_group(MaterialGroupId1),
+%   get_products(ProductListNew),
+%   writeln('Return empty product list:'),
+%   writeln(ProductListNew).
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %         Product group         %
+% %     ProductCharacteristic     %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% test('product_characteristic_post_test') :-
+%   % POST
+%   post_product_characteristic("Characteristic 1", ProductCharacteristic),
+
+%   % GET ALL
+%   get_product_characteristics(ProductCharacteristicList),
+%   writeln('Return product characteristic list:'),
+%   writeln(ProductCharacteristicList),
+
+%   % DELETE
+%   get_entity_id(ProductCharacteristic, ProductCharacteristicId),
+%   delete_product_characteristic(ProductCharacteristicId),
+%   get_product_characteristics(ProductCharacteristicListNew),
+%   writeln('Return empty product characteristic list:'),
+%   writeln(ProductCharacteristicListNew).
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %        ProductProperty        %
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% test('product_property_test') :-
+%   % POST
+%   post_test_store(StoreId),
+%   post_test_product(ProductId),
+%   post_test_product_characteristics(ProductCharacteristicId1, ProductCharacteristicId2, ProductCharacteristicId3, ProductCharacteristicId4),
+%   post_product_property(StoreId, ProductId, ProductCharacteristicId1, "value 1", _),
+%   post_product_property(StoreId, ProductId, ProductCharacteristicId2, "value 2", _),
+%   post_product_property(StoreId, ProductId, ProductCharacteristicId3, "value 3", _),
+%   post_product_property(StoreId, ProductId, ProductCharacteristicId4, "value 4", _),
+
+%   % GET ALL
+%   get_product_properties(StoreId, ProductId, ProductPropertyList),
+%   writeln('Return product property list:'),
+%   writeln(ProductPropertyList),
+
+%   % DELETE
+%   delete_product_property(StoreId, ProductId, ProductCharacteristicId1),
+%   delete_product_property(StoreId, ProductId, ProductCharacteristicId2),
+%   delete_product_property(StoreId, ProductId, ProductCharacteristicId3),
+%   delete_product_property(StoreId, ProductId, ProductCharacteristicId4),
+%   get_product_properties(StoreId, ProductId, ProductPropertyListNew),
+%   writeln('Return empty product property list:'),
+%   writeln(ProductPropertyListNew),
+%   delete_product_characteristic(ProductCharacteristicId1),
+%   delete_product_characteristic(ProductCharacteristicId2),
+%   delete_product_characteristic(ProductCharacteristicId3),
+%   delete_product_characteristic(ProductCharacteristicId4),
+%   delete_product(ProductId),
+%   delete_store(StoreId).
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %        LogisticalUnit         %
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% test('logistical_unit_test') :-
+%   % POST
+%   post_test_product(ProductId),
+%   post_logistical_unit(ProductId, [true, true, "dimensionUnit 1", 1.1, 1.2, 1, 1.3, true, 1.4, "quantityUnit 1", "quantityUnitIso 1", true, 1.5, 1.6], LogisticalUnit1),
+%   get_entity_id(LogisticalUnit1, LogisticalUnitId1),
+%   post_logistical_unit(LogisticalUnitId1, ProductId, [false, false, "dimensionUnit 2", 2.1, 2.2, 2, 2.3, false, 2.4, "quantityUnit 2", "quantityUnitIso 2", false, 2.5, 2.6], LogisticalUnit2),
+%   get_entity_id(LogisticalUnit2, LogisticalUnitId2),
+%   post_logistical_unit(ProductId, 
+%     "{\"basicUnit\" : true,
+%       \"deliveryExpanseUnit\" : false,
+%       \"dimensionUnit\" : \"dimensionUnit 3\",
+%       \"height\" : 3.1,
+%       \"length\" : 3.2,
+%       \"maxStackSize\" : 3,
+%       \"netWeight\" : 3.3,
+%       \"orderUnit\" : true,
+%       \"quantityOfPredecessors\" : 3.4,
+%       \"quantityUnit\" : \"quantityUnit 3\",
+%       \"quantityUnitIso\" : \"quantityUnitIso 3\",
+%       \"retailUnit\" : false,
+%       \"weightUnit\" : 3.6,
+%       \"width\" : 3.6}", 
+%       LogisticalUnit3),
+%   get_entity_id(LogisticalUnit3, LogisticalUnitId3),
+%   post_logistical_unit(LogisticalUnitId3, ProductId, 
+%     "{\"basicUnit\" : false,
+%       \"deliveryExpanseUnit\" : true,
+%       \"dimensionUnit\" : \"dimensionUnit 4\",
+%       \"height\" : 4.1,
+%       \"length\" : 4.2,
+%       \"maxStackSize\" : 4,
+%       \"netWeight\" : 4.3,
+%       \"orderUnit\" : false,
+%       \"quantityOfPredecessors\" : 4.4,
+%       \"quantityUnit\" : \"quantityUnit 4\",
+%       \"quantityUnitIso\" : \"quantityUnitIso 4\",
+%       \"retailUnit\" : true,
+%       \"weightUnit\" : 4.6,
+%       \"width\" : 4.6
+%       }", 
+%       LogisticalUnit4),
+%   get_entity_id(LogisticalUnit4, LogisticalUnitId4),
+
+%   % GET ONE
+%   get_logistical_unit(LogisticalUnitId1, LogisticalUnitSame1),
+%   write('Return logistical unit at Id '), writeln(LogisticalUnitId1),
+%   writeln(LogisticalUnitSame1),
+
+%   % PUT
+%   put_logistical_unit(LogisticalUnitId4, ProductId, [true, true, "dimensionUnit 4 changed", 4.1, 4.2, 4, 4.3, true, 4.4, "quantityUnit 4 changed", "quantityUnitIso 4 changed", true, 4.5, 4.6], _),
+%   put_logistical_unit(LogisticalUnitId3, LogisticalUnitId2, ProductId, 
+%     "{\"basicUnit\" : true,
+%       \"deliveryExpanseUnit\" : false,
+%       \"dimensionUnit\" : \"dimensionUnit 3\",
+%       \"height\" : 3.1,
+%       \"length\" : 3.2,
+%       \"maxStackSize\" : 3,
+%       \"netWeight\" : 3.3,
+%       \"orderUnit\" : true,
+%       \"quantityOfPredecessors\" : 3.4,
+%       \"quantityUnit\" : \"quantityUnit 3\",
+%       \"quantityUnitIso\" : \"quantityUnitIso 3\",
+%       \"retailUnit\" : false,
+%       \"weightUnit\" : 3.6,
+%       \"width\" : 3.6}",
+%       _),
+%   put_logistical_unit(LogisticalUnitId2, LogisticalUnitId1, ProductId, [true, true, "dimensionUnit 2 changed", 2.1, 2.2, 2, 2.3, true, 2.4, "quantityUnit 2 changed", "quantityUnitIso 2 changed", true, 2.5, 2.6], _),
+%   put_logistical_unit(LogisticalUnitId1,
+%     "{\"basicUnit\" : true,
+%       \"deliveryExpanseUnit\" : false,
+%       \"dimensionUnit\" : \"dimensionUnit 1 changed\",
+%       \"height\" : 1.1,
+%       \"productId\" : \"idTest\",
+%       \"length\" : 1.2,
+%       \"maxStackSize\" : 1,
+%       \"netWeight\" : 1.3,
+%       \"orderUnit\" : true,
+%       \"quantityOfPredecessors\" : 1.4,
+%       \"quantityUnit\" : \"quantityUnit 1 changed\",
+%       \"quantityUnitIso\" : \"quantityUnitIso 1 changed\",
+%       \"retailUnit\" : false,
+%       \"weightUnit\" : 1.6,
+%       \"width\" : 1.6}", 
+%       _),
+
+%   % GET ALL
+%   get_logistical_units(LogisticalUnitList),
+%   writeln('Return logistical unit list:'),
+%   writeln(LogisticalUnitList),
+
+%   % DELETE
+%   delete_logistical_unit(LogisticalUnitId4),
+%   delete_logistical_unit(LogisticalUnitId3),
+%   delete_logistical_unit(LogisticalUnitId2),
+%   delete_logistical_unit(LogisticalUnitId1),
+%   get_logistical_units(LogisticalUnitListNew),
+%   writeln('Return empty logistical unit list:'),
+%   writeln(LogisticalUnitListNew),
+%   delete_product(ProductId).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%         Product gtin          %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+test('product_gtin_test') :-
+  % POST
+  % post_test_product(ProductId1),
+  % post_test_product2(ProductId2),
+  % post_test_logistical_unit1(ProductId1, ProductId2, LogisticalUnitId1, LogisticalUnitId2),
+
+  ProductGtinId1 = "id1",
+  ProductGtinId2 = "id2",
+  ProductGtinId3 = "id3",
+  ProductGtinId4 = "id4",
+  % post_product_gtin(ProductGtinId1, LogisticalUnitId1, ProductId1, ["gtinType1", true], _),
+  % post_product_gtin(ProductGtinId2, LogisticalUnitId1, ProductId2, ["gtinType2", false], _),
+  % post_product_gtin(ProductGtinId3, LogisticalUnitId2, ProductId1, 
+  %   "{\"gtinType\" : \"gtinType 3\",
+  %     \"mainGtin\" : true}", 
+  %   _),
+  % post_product_gtin(ProductGtinId4, LogisticalUnitId2, ProductId2, 
+  %   "{\"gtinType\" : \"gtinType 4\",
+  %     \"mainGtin\" : false}", 
+  %   _),
+
+  LogisticalUnitId1 = "167",
+  LogisticalUnitId2 = "168",
+  ProductId1 = "idTest",
+  ProductId2 = "idTest2",
+  
+  % GET ONE
+  get_product_gtin(ProductGtinId1, ProductGtinSame1),
+  write('Return product gtin at Id '), writeln(ProductGtinId1),
+  writeln(ProductGtinSame1),
+
+  % PUT
+  put_product_gtin(ProductGtinId1, LogisticalUnitId2, ProductId2, ["gtinType 1 changed", false], _),
+  % put_product_gtin(ProductGtinId2, LogisticalUnitId1, ProductId2, ["gtinType 2 changed", true], _),
+  % put_product_gtin(ProductGtinId3, LogisticalUnitId2, ProductId1, 
+  %   "{\"gtinType\" : \"gtinType 3 changed\",
+  %     \"mainGtin\" : false}", 
+  %   _),
+  % put_product_gtin(ProductGtinId4, LogisticalUnitId2, ProductId2, 
+  %   "{\"gtinType\" : \"gtinType 4 changed\",
+  %     \"mainGtin\" : true}", 
+  %   _),
+
+  % GET ALL
+  get_product_gtins(ProductGtinList),
+  writeln('Return product gtin list'),
+  writeln(ProductGtinList).
+
+  % % DELETE
+  % delete_product_gtin(ProductGtinId1),
+  % delete_product_gtin(ProductGtinId2),
+  % delete_product_gtin(ProductGtinId3),
+  % delete_product_gtin(ProductGtinId4),
+  % get_product_gtins(ProductGtinListNew),
+  % writeln('Return empty product gtin list'),
+  % writeln(ProductGtinListNew),
+  % delete_logistical_unit(LogisticalUnitId1),
+  % delete_logistical_unit(LogisticalUnitId2),
+  % delete_product(ProductId1),
+  % delete_product(ProductId2).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%         Product group         %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % test('product_group_post_test') :-
 %   k4r_get_core_link(Link),
@@ -786,8 +1012,8 @@ test('shelf layer') :-
   gtrace,
   post_shelf_layers(2). */
 
-test('facing ') :-
-  post_facing(2).
+% test('facing ') :-
+%   post_facing(2).
 
 % test('post shelf layer') :-
 %   k4r_get_core_link(Link),

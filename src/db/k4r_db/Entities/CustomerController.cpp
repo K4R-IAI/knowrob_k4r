@@ -1,64 +1,57 @@
 #pragma once
 
-#include "EntityController.cpp"
+#include "DataController.cpp"
 
-class CustomerController : public EntityController
+class CustomerController : public DataController
 {
 public:
-  CustomerController(const char*);
+  CustomerController();
 
-  Json::Value create_customer(const std::string&);
+public:
+  const Json::Value create_customer(const std::string &);
 
-  Json::Value get_customer(const std::string&);
-  Json::Value get_customers();
+  const Json::Value get_customer(const std::string &);
+  const Json::Value get_customers();
 
-  bool post_customer(const std::string&);
+  const bool post_customer(const std::string &, Json::Value &);
 
-  bool put_customer(const std::string&, const std::string&); // Not working, will be fixed
+  const bool put_customer(const std::string &, const std::string &, Json::Value &);
 
-  bool delete_customer(const std::string&);
+  const bool delete_customer(const std::string &);
 };
 
-CustomerController::CustomerController(const char* link) : EntityController::EntityController((std::string(link) + "customers/").c_str())
+CustomerController::CustomerController() : DataController::DataController("customers/")
 {
 }
 
-Json::Value CustomerController::get_customer(const std::string& customer_id)
-{
-  return this->get_entity(customer_id);
-}
-
-Json::Value CustomerController::create_customer(const std::string& customer_name)
+const Json::Value CustomerController::create_customer(const std::string &anonymised_name)
 {
   Json::Value costumer;
-  costumer["anonymisedName"] = customer_name;
+  costumer["anonymisedName"] = anonymised_name;
   return costumer;
 }
 
-bool CustomerController::post_customer(const std::string& customer_name)
+const Json::Value CustomerController::get_customer(const std::string &customer_id)
 {
-  return this->post_entity(this->create_customer(customer_name));
+  return this->get_data(customer_id);
 }
 
-bool CustomerController::put_customer(const std::string& customer_id, const std::string& customer_name)
+const Json::Value CustomerController::get_customers()
 {
-  if (this->get_customer(customer_id).isNull())
-  {
-    std::cout << "Customer with id " << customer_id << " not found" << std::endl;
-    return false;
-  }
-  else
-  {
-    return this->put_entity(this->create_customer(customer_name), customer_id);
-  }
+  return this->get_data();
 }
 
-bool CustomerController::delete_customer(const std::string& customer_id)
+const bool CustomerController::post_customer(const std::string &in_anonymised_name, Json::Value &out_customer)
 {
-  return this->delete_entity(customer_id);
+  return this->post_data(this->create_customer(in_anonymised_name), out_customer);
 }
 
-Json::Value CustomerController::get_customers()
+const bool CustomerController::put_customer(const std::string &in_customer_id, const std::string &in_anonymised_name, Json::Value &out_customer)
 {
-  return this->get_entity();
+  return this->put_data(this->create_customer(in_anonymised_name), out_customer, in_customer_id) || this->check_customer_id(in_customer_id);
+}
+
+const bool CustomerController::delete_customer(const std::string &customer_id)
+{
+  return this->delete_data(customer_id) || this->check_customer_id(customer_id);
 }

@@ -1,35 +1,46 @@
 #pragma once
 
-#include "EntityController.cpp"
+#include "DataController.cpp"
 
-class StoreController : public EntityController
+class StoreController : public DataController
 {
 public:
-  StoreController(const char*);
+  StoreController();
 
-  bool check_store(const Json::Value&);
+public:
+  const bool check_store_id(const std::string&);
 
-  Json::Value get_store(const std::string&);
-  Json::Value get_stores();
+  const bool check_store(const Json::Value&);
 
-  bool post_store(const Json::Value&);
-  bool post_stores(const Json::Value&);
+  const Json::Value get_store(const std::string&);
+  const Json::Value get_stores();
 
-  bool put_store(const std::string&, const Json::Value&);
+  const bool post_store(const Json::Value&, Json::Value&);
 
-  bool delete_store(const std::string&);
+  const bool put_store(const std::string&, const Json::Value&, Json::Value&);
+
+  const bool delete_store(const std::string&);
 };
 
-StoreController::StoreController(const char* link) : EntityController::EntityController((std::string(link) + "stores/").c_str())
+StoreController::StoreController() : DataController::DataController("stores/")
 {
 }
 
-Json::Value StoreController::get_store(const std::string& store_id)
+const bool StoreController::check_store_id(const std::string& store_id)
 {
-  return this->get_entity(store_id);
+  Json::Value store = this->get_store(store_id);
+  if (store["id"].asString() == store_id)
+  {
+    return true;
+  }
+  else
+  {
+    std::cout << "Store with id " << store_id << " not found" << std::endl;
+    return false;
+  }
 }
 
-bool StoreController::check_store(const Json::Value& store)
+const bool StoreController::check_store(const Json::Value& store)
 {
   if (store["addressAdditional"].isString() &&
       store["addressCity"].isString() &&
@@ -53,35 +64,27 @@ bool StoreController::check_store(const Json::Value& store)
   }
 }
 
-bool StoreController::post_store(const Json::Value& store)
+const Json::Value StoreController::get_store(const std::string& store_id)
 {
-  return this->check_store(store) && this->post_entity(store);
+  return this->get_data(store_id);
 }
 
-bool StoreController::put_store(const std::string& store_id, const Json::Value& store)
+const Json::Value StoreController::get_stores()
 {
-  return this->check_store(store) && this->put_entity(store, store_id);
+  return this->get_data();
 }
 
-bool StoreController::delete_store(const std::string& store_id)
+const bool StoreController::post_store(const Json::Value& in_store, Json::Value& out_store)
 {
-  return this->delete_entity(store_id);
+  return this->post_data(in_store, out_store) || this->check_store(in_store);
 }
 
-Json::Value StoreController::get_stores()
+const bool StoreController::put_store(const std::string& in_store_id, const Json::Value& in_store, Json::Value& out_store)
 {
-  return this->get_entity();
+  return this->put_data(in_store, out_store, in_store_id) || (this->check_store_id(in_store_id) && this->check_store(in_store));
 }
 
-bool StoreController::post_stores(const Json::Value& stores)
+const bool StoreController::delete_store(const std::string& store_id)
 {
-  if (!stores["products"].isNull())
-  {
-    return this->post_entity(stores);
-  }
-  else
-  {
-    std::cout << "Invalid stores" << std::endl;
-    return false;
-  }
+  return this->delete_data(store_id) || this->check_store_id(store_id);
 }
