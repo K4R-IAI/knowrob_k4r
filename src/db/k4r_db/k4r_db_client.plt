@@ -4,11 +4,11 @@
 :- begin_tests(
         'k4r_db_client').
 
-% post_test_customer(Link, CustomerId) :-
-%   k4r_post_customer(Link, "anonymisedName Test"),
-%   k4r_get_customers(Link, CustomerList).
-%   k4r_get_entity_by_key_value(CustomerList, "anonymisedName", "anonymisedName Test", Customer),
-%   k4r_get_entity_id(Customer, CustomerId).
+post_test_customer(CustomerId1, CustomerId2) :-
+  post_customer("anonymisedName Test1", Customer1),
+  get_entity_id(Customer1, CustomerId1),
+  post_customer("anonymisedName Test2", Customer2),
+  get_entity_id(Customer2, CustomerId2).
 
 post_test_store(StoreId) :-
   post_store(
@@ -27,6 +27,16 @@ post_test_store(StoreId) :-
     Store),
   get_entity_id(Store, StoreId).
 
+post_test_store_characteristics(StoreCharacteristicId1, StoreCharacteristicId2, StoreCharacteristicId3, StoreCharacteristicId4) :-
+  post_store_characteristic("name 1", StoreCharacteristic1),
+  get_entity_id(StoreCharacteristic1, StoreCharacteristicId1),
+  post_store_characteristic("name 2", StoreCharacteristic2),
+  get_entity_id(StoreCharacteristic2, StoreCharacteristicId2),
+  post_store_characteristic("name 3", StoreCharacteristic3),
+  get_entity_id(StoreCharacteristic3, StoreCharacteristicId3),
+  post_store_characteristic("name 4", StoreCharacteristic4),
+  get_entity_id(StoreCharacteristic4, StoreCharacteristicId4).
+
 post_test_product("idTest") :-
   post_product("idTest", ["description test", "name test", "productType test", "productUnit test"], _).
 post_test_product2("idTest2") :-
@@ -39,10 +49,12 @@ post_test_products("idTest1", "idTest2", "idTest3", "idTest4", "idTest5", "idTes
   post_product("idTest5", ["description test5", "name test5", "productType test5", "productUnit test5"], _),
   post_product("idTest6", ["description test6", "name test6", "productType test6", "productUnit test6"], _).
 
-post_test_logistical_unit1(ProductId1, ProductId2, LogisticalUnitId1, LogisticalUnitId2) :-
-  post_logistical_unit(ProductId1, [true, true, "dimensionUnit 1", 1.1, 1.2, 1, 1.3, true, 1.4, "quantityUnit 1", "quantityUnitIso 1", true, 1.5, 1.6], LogisticalUnit1),
+post_test_logistical_unit(ProductId1, ProductId2, LogisticalUnitId1, LogisticalUnitId2) :-
+  post_test_product(ProductId1),
+  post_test_product2(ProductId2),
+  post_logistical_unit("", ProductId1, [true, true, "dimensionUnit 1", 1.1, 1.2, 1, 1.3, true, 1.4, "quantityUnit 1", "quantityUnitIso 1", true, 1.5, 1.6], LogisticalUnit1),
   get_entity_id(LogisticalUnit1, LogisticalUnitId1),
-  post_logistical_unit(ProductId2, [true, true, "dimensionUnit 2", 2.1, 2.2, 2, 2.3, true, 2.4, "quantityUnit 2", "quantityUnitIso 2", true, 2.5, 2.6], LogisticalUnit2),
+  post_logistical_unit("", ProductId2, [true, true, "dimensionUnit 2", 2.1, 2.2, 2, 2.3, true, 2.4, "quantityUnit 2", "quantityUnitIso 2", true, 2.5, 2.6], LogisticalUnit2),
   get_entity_id(LogisticalUnit2, LogisticalUnitId2).
 
 post_test_product_characteristics(ProductCharacteristicId1, ProductCharacteristicId2, ProductCharacteristicId3, ProductCharacteristicId4) :-
@@ -71,69 +83,20 @@ post_test_shelf_layer(StoreId, ProductGroupId, ShelfId, ShelfLayerId) :-
   post_shelf_layer(ShelfId, [10, "externalReferenceId Test", 11, 12, 13.13, "type Test", 14], ShelfLayer),
   get_entity_id(ShelfLayer, ShelfLayerId).
 
-% get_test_customer_id(Link, CustomerId) :-
-%   get_customer_id_by_customer_name(Link, "anonymisedName Test", CustomerId).
+post_test_facings(StoreId, ProductGroupId, ShelfId, ShelfLayerId, FacingId1, FacingId2) :-
+  post_test_shelf_layer(StoreId, ProductGroupId, ShelfId, ShelfLayerId),
+  post_facing(ShelfLayerId, [10, 11, 12], Facing1),
+  get_entity_id(Facing1, FacingId1),
+  post_facing(ShelfLayerId, [20, 21, 22], Facing2),
+  get_entity_id(Facing2, FacingId2).
 
-% get_product_group_id_by_product_group_name(Link, StoreId, ProductGroupName, ProductGroupId) :-
-%   k4r_get_product_groups(Link, StoreId, ProductGroupList),
-%   k4r_get_entity_by_key_value(ProductGroupList, "name", ProductGroupName, ProductGroup),
-%   k4r_get_entity_id(ProductGroup, ProductGroupId).
-
-% get_test_product_group_id(Link, StoreId, ProductGroupId) :-
-%   get_test_store_id(Link, StoreId),
-%   k4r_get_product_groups(Link, StoreId, ProductGroupList),
-%   k4r_get_entity_by_key_value(ProductGroupList, "name", "name Test", ProductGroup),
-%   k4r_get_entity_id(ProductGroup, ProductGroupId).
-
-% get_shelf_id_by_shelf_ext_id(Link, StoreId, ShelfExtId, ShelfId) :-
-%   k4r_get_shelves(Link, StoreId, ShelfList),
-%   k4r_get_entity_by_key_value(ShelfList, "externalReferenceId", ShelfExtId, Shelf),
-%   k4r_get_entity_id(Shelf, ShelfId).
-
-% get_test_shelf_id(Link, ShelfId) :-
-%   get_test_store_id(Link, StoreId),
-%   get_shelf_id_by_shelf_ext_id(Link, StoreId, "externalReferenceId Test", ShelfId).
-
-% get_shelf_layer_id_by_shelf_layer_ext_id(Link, ShelfId, ShelfLayerExtId, ShelfLayerId) :-
-%   k4r_get_shelf_layers(Link, ShelfId, ShelfLayerList),
-%   k4r_get_entity_by_key_value(ShelfLayerList, "externalReferenceId", ShelfLayerExtId, ShelfLayer),
-%   k4r_get_entity_id(ShelfLayer, ShelfLayerId).
-
-% get_shopping_basket_position_id_by_product_id(Link, StoreId, CustomerId, ProductId, ShoppingBasketId) :-
-%   k4r_get_shopping_basket_positions(Link, StoreId, CustomerId, ShoppingBasketList),
-%   k4r_get_entity_by_key_value(ShoppingBasketList, "productId", ProductId, ShoppingBasket),
-%   k4r_get_entity_id(ShoppingBasket, ShoppingBasketId).
-
-% get_test_shelf_layer_id(Link, ShelfLayerId) :-
-%   get_test_shelf_id(Link, ShelfId),
-%   get_shelf_layer_id_by_shelf_layer_ext_id(Link, ShelfId, "externalReferenceId Test", ShelfLayerId).
-
-% get_facing_id_by_layer_rel_pos(Link, ShelfLayerId, LayerRelativePosition, FacingId) :-
-%   k4r_get_facings(Link, ShelfLayerId, FacingList),
-%   k4r_get_entity_by_key_value(FacingList, "layerRelativePosition", LayerRelativePosition, Facing),
-%   k4r_get_entity_id(Facing, FacingId).
-
-% get_planogram_id_by_number_of_facing(Link, NumberOfFacings, PlanogramId) :-
-%   k4r_get_planograms(Link, PlanogramList),
-%   k4r_get_entity_by_key_value(PlanogramList, "numberOfFacings", NumberOfFacings, Planogram),
-%   k4r_get_entity_id(Planogram, PlanogramId).
-
-% delete_test_product_group_and_store(Link) :-
-%   get_test_product_group_id(Link, StoreId, ProductGroupId),
-%   k4r_delete_product_group(Link, ProductGroupId),
-%   k4r_delete_store(Link, StoreId).
-
-% delete_test_shelf_layer_and_shelf(Link) :-
-%   get_test_shelf_id(Link, ShelfId),
-%   get_shelf_layer_id_by_shelf_layer_ext_id(Link, ShelfId, "externalReferenceId Test", ShelfLayerId),
-%   k4r_delete_shelf_layer(Link, ShelfLayerId),
-%   k4r_delete_shelf(Link, ShelfId).
-
-% delete_test_data(Link) :-
-%   delete_test_product(Link),
-%   delete_test_shelf_layer_and_shelf(Link),
-%   delete_test_product_group_and_store(Link).
-
+post_test_item_groups(StoreId, ProductId1, ProductId2, LogisticalUnitId1, LogisticalUnitId2, ProductGroupId, ShelfId, ShelfLayerId, FacingId1, FacingId2, ItemGroupId1, ItemGroupId2) :-
+  post_test_logistical_unit(ProductId1, ProductId2, LogisticalUnitId1, LogisticalUnitId2),
+  post_test_facings(StoreId, ProductGroupId, ShelfId, ShelfLayerId, FacingId1, FacingId2),
+  post_item_group(FacingId1, LogisticalUnitId1, 10, ItemGroup1),
+  get_entity_id(ItemGroup1, ItemGroupId1),
+  post_item_group(FacingId2, LogisticalUnitId2, 20, ItemGroup2),
+  get_entity_id(ItemGroup2, ItemGroupId2).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %            Customer           %
@@ -283,28 +246,84 @@ test('store_test') :-
   writeln(StoreListNew).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     StoreCharacteristic     %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+test('store_characteristic_test') :-
+  % POST
+  post_store_characteristic("Characteristic 1", StoreCharacteristic),
+
+  % GET ALL
+  get_store_characteristics(StoreCharacteristicList),
+  writeln('Return store characteristic list:'),
+  writeln(StoreCharacteristicList),
+
+  % DELETE
+  get_entity_id(StoreCharacteristic, StoreCharacteristicId),
+  delete_store_characteristic(StoreCharacteristicId),
+  get_store_characteristics(StoreCharacteristicListNew),
+  writeln('Return empty store characteristic list:'),
+  writeln(StoreCharacteristicListNew).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%       StoreProperty        %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+test('store_property_test') :-
+  % Post mockup data
+  post_test_store(StoreId),
+  post_test_store_characteristics(StoreCharacteristicId1, StoreCharacteristicId2, StoreCharacteristicId3, StoreCharacteristicId4),
+
+  % POST
+  post_store_property(StoreId, StoreCharacteristicId1, "value 1", _),
+  post_store_property(StoreId, StoreCharacteristicId2, "value 2", _),
+  post_store_property(StoreId, StoreCharacteristicId3, "value 3", _),
+  post_store_property(StoreId, StoreCharacteristicId4, "value 4", _),
+
+  % GET ALL
+  get_store_properties(StoreId, StorePropertyList),
+  writeln('Return store property list:'),
+  writeln(StorePropertyList),
+
+  % DELETE
+  delete_store_property(StoreId, StoreCharacteristicId1),
+  delete_store_property(StoreId, StoreCharacteristicId2),
+  delete_store_property(StoreId, StoreCharacteristicId3),
+  delete_store_property(StoreId, StoreCharacteristicId4),
+  get_store_properties(StoreId, StorePropertyListNew),
+  writeln('Return empty store property list:'),
+  writeln(StorePropertyListNew),
+
+  % Delete mockup data
+  delete_store_characteristic(StoreCharacteristicId1),
+  delete_store_characteristic(StoreCharacteristicId2),
+  delete_store_characteristic(StoreCharacteristicId3),
+  delete_store_characteristic(StoreCharacteristicId4),
+  delete_store(StoreId).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %         MaterialGroup         %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 test('material_group_test') :-
   % POST
-  post_material_group("Group 1", MaterialGroup1),
-  post_material_group("Group2", MaterialGroup2),
+  post_material_group(["Group 1"], MaterialGroup1),
+  post_material_group("{\"name\" : \"name Group 2\"}", MaterialGroup2),
   get_entity_id(MaterialGroup1, MaterialGroupId1),
   get_entity_id(MaterialGroup2, MaterialGroupId2),
-  post_material_group(MaterialGroupId1, "Group3", MaterialGroup3),
-  post_material_group(MaterialGroupId2, "Group 4", MaterialGroup4),
+  post_material_group(MaterialGroupId1, ["Group3"], MaterialGroup3),
+  post_material_group(MaterialGroupId2, "{\"name\" : \"name Group 4\"}", MaterialGroup4),
 
   % GET ONE
   get_entity_id(MaterialGroup3, MaterialGroupId3),
   get_entity_id(MaterialGroup4, MaterialGroupId4),
   get_material_group(MaterialGroupId1, MaterialGroupSame1),
-  write('Return material group at Id:'), writeln(MaterialGroupId1),
+  write('Return material group at Id: '), writeln(MaterialGroupId1),
   writeln(MaterialGroupSame1),
 
   % PUT
-  put_material_group(MaterialGroupId3, "Group 3", _),
-  put_material_group(MaterialGroupId2, MaterialGroupId1, "Group 2", _),
+  put_material_group(MaterialGroupId3, ["Group 3"], _),
+  put_material_group(MaterialGroupId2, MaterialGroupId1, "{\"name\" : \"name Group 2\"}", _),
 
   % GET ALL
   get_material_groups(MaterialGroupList),
@@ -317,7 +336,7 @@ test('material_group_test') :-
   delete_material_group(MaterialGroupId2),
   delete_material_group(MaterialGroupId1),
   get_material_groups(MaterialGroupListNew),
-  writeln('Return empty material list:'),
+  writeln('Return empty material group list:'),
   writeln(MaterialGroupListNew).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -325,10 +344,12 @@ test('material_group_test') :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 test('product_test') :-
+  % Post mockup data
+  post_material_group(["GroupTest1"], MaterialGroup1),
+
   % POST ONE
-  post_material_group("GroupTest1", MaterialGroup1),
   get_entity_id(MaterialGroup1, MaterialGroupId1),
-  post_material_group(MaterialGroupId1, "GroupTest2", MaterialGroup2),
+  post_material_group(MaterialGroupId1, ["GroupTest2"], MaterialGroup2),
   get_entity_id(MaterialGroup2, MaterialGroupId2),
   ProductId1 = "id1",
   post_product(ProductId1, ["description 1", "name 1", "productType 1", "productUnit 1"], _),
@@ -409,11 +430,13 @@ test('product_test') :-
   delete_product("id6"),
   delete_product("id7"),
   delete_product("id8"),
-  delete_material_group(MaterialGroupId2),
-  delete_material_group(MaterialGroupId1),
   get_products(ProductListNew),
   writeln('Return empty product list:'),
-  writeln(ProductListNew).
+  writeln(ProductListNew),
+
+  % Delete mockup data
+  delete_material_group(MaterialGroupId2),
+  delete_material_group(MaterialGroupId1).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     ProductCharacteristic     %
@@ -435,15 +458,17 @@ test('product_characteristic_post_test') :-
   writeln('Return empty product characteristic list:'),
   writeln(ProductCharacteristicListNew).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%        ProductProperty        %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %       ProductProperty        %
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 test('product_property_test') :-
-  % POST
+  % Post mockup data
   post_test_store(StoreId),
   post_test_product(ProductId),
   post_test_product_characteristics(ProductCharacteristicId1, ProductCharacteristicId2, ProductCharacteristicId3, ProductCharacteristicId4),
+
+  % POST
   post_product_property(StoreId, ProductId, ProductCharacteristicId1, "value 1", _),
   post_product_property(StoreId, ProductId, ProductCharacteristicId2, "value 2", _),
   post_product_property(StoreId, ProductId, ProductCharacteristicId3, "value 3", _),
@@ -462,6 +487,8 @@ test('product_property_test') :-
   get_product_properties(StoreId, ProductId, ProductPropertyListNew),
   writeln('Return empty product property list:'),
   writeln(ProductPropertyListNew),
+
+  % Delete mockup data
   delete_product_characteristic(ProductCharacteristicId1),
   delete_product_characteristic(ProductCharacteristicId2),
   delete_product_characteristic(ProductCharacteristicId3),
@@ -474,13 +501,15 @@ test('product_property_test') :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 test('logistical_unit_test') :-
-  % POST
+  % Post mockup data
   post_test_product(ProductId),
-  post_logistical_unit(ProductId, [true, true, "dimensionUnit 1", 1.1, 1.2, 1, 1.3, true, 1.4, "quantityUnit 1", "quantityUnitIso 1", true, 1.5, 1.6], LogisticalUnit1),
+
+  % POST
+  post_logistical_unit("", ProductId, [true, true, "dimensionUnit 1", 1.1, 1.2, 1, 1.3, true, 1.4, "quantityUnit 1", "quantityUnitIso 1", true, 1.5, 1.6], LogisticalUnit1),
   get_entity_id(LogisticalUnit1, LogisticalUnitId1),
   post_logistical_unit(LogisticalUnitId1, ProductId, [false, false, "dimensionUnit 2", 2.1, 2.2, 2, 2.3, false, 2.4, "quantityUnit 2", "quantityUnitIso 2", false, 2.5, 2.6], LogisticalUnit2),
   get_entity_id(LogisticalUnit2, LogisticalUnitId2),
-  post_logistical_unit(ProductId, 
+  post_logistical_unit("", ProductId, 
     "{\"basicUnit\" : true,
       \"deliveryExpanseUnit\" : false,
       \"dimensionUnit\" : \"dimensionUnit 3\",
@@ -522,7 +551,7 @@ test('logistical_unit_test') :-
   writeln(LogisticalUnitSame1),
 
   % PUT
-  put_logistical_unit(LogisticalUnitId4, ProductId, [true, true, "dimensionUnit 4 changed", 4.1, 4.2, 4, 4.3, true, 4.4, "quantityUnit 4 changed", "quantityUnitIso 4 changed", true, 4.5, 4.6], _),
+  put_logistical_unit(LogisticalUnitId4, "", ProductId, [true, true, "dimensionUnit 4 changed", 4.1, 4.2, 4, 4.3, true, 4.4, "quantityUnit 4 changed", "quantityUnitIso 4 changed", true, 4.5, 4.6], _),
   put_logistical_unit(LogisticalUnitId3, LogisticalUnitId2, ProductId, 
     "{\"basicUnit\" : true,
       \"deliveryExpanseUnit\" : false,
@@ -571,6 +600,8 @@ test('logistical_unit_test') :-
   get_logistical_units(LogisticalUnitListNew),
   writeln('Return empty logistical unit list:'),
   writeln(LogisticalUnitListNew),
+
+  % Delete mockup data
   delete_product(ProductId).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -578,11 +609,10 @@ test('logistical_unit_test') :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 test('product_gtin_test') :-
-  % POST
-  post_test_product(ProductId1),
-  post_test_product2(ProductId2),
-  post_test_logistical_unit1(ProductId1, ProductId2, LogisticalUnitId1, LogisticalUnitId2),
+  % Post mockup data
+  post_test_logistical_unit(ProductId1, ProductId2, LogisticalUnitId1, LogisticalUnitId2),
 
+  % POST
   ProductGtinId1 = "id1",
   ProductGtinId2 = "id2",
   ProductGtinId3 = "id3",
@@ -628,6 +658,8 @@ test('product_gtin_test') :-
   get_product_gtins(ProductGtinListNew),
   writeln('Return empty product gtin list'),
   writeln(ProductGtinListNew),
+
+  % Delete mockup data
   delete_logistical_unit(LogisticalUnitId1),
   delete_logistical_unit(LogisticalUnitId2),
   delete_product(ProductId1),
@@ -638,11 +670,13 @@ test('product_gtin_test') :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 test('product_group_test') :-
-  % POST
+  % Post mockup data
   post_test_store(StoreId),
+  post_test_products(ProductId1, ProductId2, ProductId3, ProductId4, ProductId5, ProductId6),
+
+  % POST
   post_product_group(StoreId, "{\"name\" : \"name 1\"}", ProductGroup1),
   post_product_group(StoreId, "{\"name\" : \"name 2\"}", ProductGroup2),
-  post_test_products(ProductId1, ProductId2, ProductId3, ProductId4, ProductId5, ProductId6),
   get_entity_id(ProductGroup1, ProductGroupId1),
   get_entity_id(ProductGroup2, ProductGroupId2),
   post_product_to_product_group(ProductGroupId1, ProductId1, _),
@@ -671,6 +705,8 @@ test('product_group_test') :-
   get_product_groups(StoreId, ProductGroupListNew),
   writeln('Return empty product group list:'),
   writeln(ProductGroupListNew),
+
+  % Delete mockup data
   delete_product(ProductId6),
   delete_product(ProductId5),
   delete_product(ProductId4),
@@ -684,8 +720,10 @@ test('product_group_test') :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 test('shelf_test') :-
-  % POST
+  % Post mockup data
   post_test_product_group(StoreId, ProductGroupId),
+
+  % POST
   post_shelf(StoreId, ProductGroupId,
     ["cadPlanId 1", 10, "externalReferenceId 1", 11, 12.12, 13.13, 14.14, 15.15, 16.16, 17.17, 18.18, 19], Shelf1),
   post_shelf(StoreId, ProductGroupId,
@@ -736,42 +774,19 @@ test('shelf_test') :-
   writeln('Return empty shelf list:'),
   writeln(ShelfListNew),
 
+  % Delete mockup data
   delete_product_group(ProductGroupId),
   delete_store(StoreId).
-
-%%%%%%%%%%%%%% Kaviya %%%%%%%%%%%%%%%%%%%
-% test('shelf_get_data_test') :-
-%   k4r_get_core_link(Link),
-%   get_test_store_id(Link, StoreId),
-%   get_shelf_id_by_shelf_ext_id(Link, StoreId, "externalReferenceId 1", ShelfId),
-%   k4r_get_shelf(Link, ShelfId, Shelf),
-%   k4r_get_shelf_data(
-%     Shelf,
-%     [ShelfPositionX, ShelfPositionY, ShelfPositionZ], 
-%     [ShelfOrientationX, ShelfOrientationY, ShelfOrientationZ, ShelfOrientationW], 
-%     [ShelfDepth, ShelfWidth, ShelfHeight]),
-%   writeln('Position:'),
-%   writeln(ShelfPositionX),
-%   writeln(ShelfPositionY),
-%   writeln(ShelfPositionZ),
-%   writeln('Orientation:'),
-%   writeln(ShelfOrientationX),
-%   writeln(ShelfOrientationY),
-%   writeln(ShelfOrientationZ),
-%   writeln(ShelfOrientationW),
-%   writeln('Dimention:'),
-%   writeln(ShelfDepth),
-%   writeln(ShelfWidth),
-%   writeln(ShelfHeight).
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %          Shelf layer          %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 test('shelf_layer_test') :-
-  % POST
+  % Post mockup data
   post_test_shelf(StoreId, ProductGroupId, ShelfId),
+
+  % POST
   post_shelf_layer(ShelfId, [10, "externalReferenceId 1", 11, 12, 13.13, "type 1", 14], ShelfLayer1),
   post_shelf_layer(ShelfId, [20, "externalReferenceId 2", 21, 22, 23.23, "type 2", 24], ShelfLayer2),
   post_shelf_layer(ShelfId, [30, "externalReferenceId 3", 31, 32, 33.33, "type 3", 34], ShelfLayer3),
@@ -796,6 +811,11 @@ test('shelf_layer_test') :-
   delete_shelf_layer(ShelfLayerId2),
   delete_shelf_layer(ShelfLayerId3),
   delete_shelf_layer(ShelfLayerId4),
+  get_shelf_layers(ShelfId, ShelfLayerListNew),
+  writeln('Return empty shelf layer list:'),
+  writeln(ShelfLayerListNew),
+
+  % Delete mockup data
   delete_shelf(ShelfId),
   delete_product_group(ProductGroupId),
   delete_store(StoreId).
@@ -805,8 +825,10 @@ test('shelf_layer_test') :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 test('facing_test') :-
-  % POST
+  % Post mockup data
   post_test_shelf_layer(StoreId, ProductGroupId, ShelfId, ShelfLayerId),
+
+  % POST
   post_facing(ShelfLayerId, [10, 11, 12], Facing1),
   post_facing(ShelfLayerId, [20, 21, 22], Facing2),
   post_facing(ShelfLayerId, [30, 31, 32], Facing3),
@@ -840,142 +862,373 @@ test('facing_test') :-
   delete_facing(FacingId2),
   delete_facing(FacingId3),
   delete_facing(FacingId4),
+  get_facings(ShelfLayerId, FacingListNew),
+  writeln('Return empty facing list:'),
+  writeln(FacingListNew),
+
+  % Delete mockup data
   delete_shelf_layer(ShelfLayerId),
   delete_shelf(ShelfId),
   delete_product_group(ProductGroupId),
   delete_store(StoreId).
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %        Shopping basket        %
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%           ItemGroup           %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% test('shopping_basket_post_test') :-
-%   k4r_get_core_link(Link),
-%   post_test_store(Link, StoreId),
-%   post_test_customer(Link, CustomerId), 
-%   k4r_post_product(Link, [10, "description 1", "gtin 1", 11, 12, "name 1", 13], "id1"),
-%   k4r_post_product(Link, [20, "description 2", "gtin 2", 21, 22, "name 2", 23], "id2"),
-%   k4r_post_product(Link, [30, "description 3", "gtin 3", 31, 32, "name 3", 33], "id3"),
-%   k4r_post_product(Link, [40, "description 4", "gtin 4", 41, 42, "name 4", 43], "id4"),
-%   k4r_post_shopping_basket_position(Link, StoreId, CustomerId, "id1", ["currency 1", 10, 11.11]),
-%   k4r_post_shopping_basket_position(Link, StoreId, CustomerId, "id2", ["currency 2", 20, 21.21]),
-%   k4r_post_shopping_basket_position(Link, StoreId, CustomerId, "id3", ["currency 3", 30, 31.31]),
-%   k4r_post_shopping_basket_position(Link, StoreId, CustomerId, "id4", ["currency 4", 40, 41.41]).
+test('item_group_test') :-
+  % Post mockup data
+  post_test_logistical_unit(ProductId1, ProductId2, LogisticalUnitId1, LogisticalUnitId2),
+  post_test_facings(StoreId, ProductGroupId, ShelfId, ShelfLayerId, FacingId1, FacingId2),
 
-% test('shopping_basket_get_test') :-
+  % POST
+  post_item_group(FacingId1, LogisticalUnitId1, 10, ItemGroup1),
+  post_item_group(FacingId1, LogisticalUnitId2, 20, ItemGroup2),
+  post_item_group(FacingId2, LogisticalUnitId1, 30, ItemGroup3),
+  post_item_group(FacingId2, LogisticalUnitId2, 40, ItemGroup4),
+  get_entity_id(ItemGroup1, ItemGroupId1),
+  get_entity_id(ItemGroup2, ItemGroupId2),
+  get_entity_id(ItemGroup3, ItemGroupId3),
+  get_entity_id(ItemGroup4, ItemGroupId4),
+  
+  % GET ONE
+  get_item_group(ItemGroupId1, ItemGroupSame1),
+  write('Return item group with id '), writeln(ItemGroupId1),
+  writeln(ItemGroupSame1),
+
+  % PUT
+  put_item_group(ItemGroupId3, FacingId1, LogisticalUnitId1, 33, _),
+  put_item_group(ItemGroupId4, FacingId1, LogisticalUnitId2, 45, _),
+
+  % GET ALL
+  get_item_groups(ItemGroupList),
+  writeln('Return item group list:'),
+  writeln(ItemGroupList),
+
+  % DELETE
+  delete_item_group(ItemGroupId1),
+  delete_item_group(ItemGroupId2),
+  delete_item_group(ItemGroupId3),
+  delete_item_group(ItemGroupId4),
+  get_item_groups(ItemGroupListNew),
+  writeln('Return empty item group list:'),
+  writeln(ItemGroupListNew),
+
+  % Delete mockup data
+  delete_facing(FacingId2),
+  delete_facing(FacingId1),
+  delete_shelf_layer(ShelfLayerId),
+  delete_shelf(ShelfId),
+  delete_product_group(ProductGroupId),
+  delete_logistical_unit(LogisticalUnitId2),
+  delete_logistical_unit(LogisticalUnitId1),
+  delete_product(ProductId2),
+  delete_product(ProductId1),
+  delete_store(StoreId).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%             Item              %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+test('item_test') :-
+  % Post mockup data
+  post_test_item_groups(StoreId, 
+    ProductId1, 
+    ProductId2, 
+    LogisticalUnitId1, 
+    LogisticalUnitId2, 
+    ProductGroupId, 
+    ShelfId, 
+    ShelfLayerId, 
+    FacingId1, 
+    FacingId2, 
+    ItemGroupId1, 
+    ItemGroupId2),
+
+  % POST
+  post_item(ItemGroupId1, [10, 11, 12], Item1),
+  post_item(ItemGroupId1, [20, 21, 22], Item2),
+  post_item(ItemGroupId2, 
+    "{\"positionInFacingX\" : 30,
+      \"positionInFacingY\" : 31,
+      \"positionInFacingZ\" : 32}", 
+      Item3),
+  post_item(ItemGroupId2, 
+    "{\"positionInFacingX\" : 40,
+      \"positionInFacingY\" : 41,
+      \"positionInFacingZ\" : 42}", 
+      Item4),
+  get_entity_id(Item1, ItemId1),
+  get_entity_id(Item2, ItemId2),
+  get_entity_id(Item3, ItemId3),
+  get_entity_id(Item4, ItemId4),
+  
+  % GET ONE
+  get_item(ItemId1, ItemSame1),
+  write('Return item with id '), writeln(ItemId1),
+  writeln(ItemSame1),
+
+  % PUT
+  put_item(ItemId3, ItemGroupId1, [300, 310, 320], _),
+  put_item(ItemId4, ItemGroupId1, 
+    "{\"positionInFacingX\" : 400,
+      \"positionInFacingY\" : 410,
+      \"positionInFacingZ\" : 420}", 
+      _),
+
+  % GET ALL
+  get_items(ItemList),
+  writeln('Return item list:'),
+  writeln(ItemList),
+
+  % DELETE
+  delete_item(ItemId4),
+  delete_item(ItemId3),
+  delete_item(ItemId2),
+  delete_item(ItemId1),
+  get_items(ItemListNew),
+  writeln('Return empty item list:'),
+  writeln(ItemListNew),
+
+  % Delete mockup data
+  delete_item_group(ItemGroupId2),
+  delete_item_group(ItemGroupId1),
+  delete_facing(FacingId2),
+  delete_facing(FacingId1),
+  delete_shelf_layer(ShelfLayerId),
+  delete_shelf(ShelfId),
+  delete_product_group(ProductGroupId),
+  delete_logistical_unit(LogisticalUnitId2),
+  delete_logistical_unit(LogisticalUnitId1),
+  delete_product(ProductId2),
+  delete_product(ProductId1),
+  delete_store(StoreId).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%          Planogram            %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+test('planogram_test') :-
+  % Post mockup data
+  post_test_logistical_unit(ProductId1, ProductId2, LogisticalUnitId1, LogisticalUnitId2),
+  post_test_shelf_layer(StoreId, ProductGroupId, ShelfId, ShelfLayerId),
+
+  % POST
+  post_planogram(LogisticalUnitId1, ShelfLayerId, [10, 11.11, 12, 13], Planogram1),
+  post_planogram(LogisticalUnitId2, ShelfLayerId, [20, 21.21, 22, 23], Planogram2),
+  post_planogram(LogisticalUnitId1, ShelfLayerId, 
+    "{\"numberOfFacings\" : 30,
+      \"orientationYaw\" : 31.31,
+      \"positionX\" : 32,
+      \"versionTimestamp\" : 33}", 
+      Planogram3),
+  post_planogram(LogisticalUnitId2, ShelfLayerId, 
+    "{\"numberOfFacings\" : 40,
+      \"orientationYaw\" : 41.41,
+      \"positionX\" : 42,
+      \"versionTimestamp\" : 43}", 
+      Planogram4),
+  get_entity_id(Planogram1, PlanogramId1),
+  get_entity_id(Planogram2, PlanogramId2),
+  get_entity_id(Planogram3, PlanogramId3),
+  get_entity_id(Planogram4, PlanogramId4),
+
+  % PUT
+  put_planogram(PlanogramId3, LogisticalUnitId2, ShelfLayerId, [300, 310.310, 320, 330], _),
+  put_planogram(PlanogramId4, LogisticalUnitId1, ShelfLayerId, 
+    "{\"numberOfFacings\" : 400,
+      \"orientationYaw\" : 410.410,
+      \"positionX\" : 420,
+      \"versionTimestamp\" : 430}", 
+      _),
+
+  % GET ALL
+  get_planograms(PlanogramList),
+  writeln('Return planogram list:'),
+  writeln(PlanogramList),
+
+  % DELETE
+  delete_planogram(PlanogramId4),
+  delete_planogram(PlanogramId3),
+  delete_planogram(PlanogramId2),
+  delete_planogram(PlanogramId1),
+  get_planograms(PlanogramListNew),
+  writeln('Return empty planogram list:'),
+  writeln(PlanogramListNew),
+
+  % Delete mockup data
+  delete_shelf_layer(ShelfLayerId),
+  delete_shelf(ShelfId),
+  delete_product_group(ProductGroupId),
+  delete_logistical_unit(LogisticalUnitId2),
+  delete_logistical_unit(LogisticalUnitId1),
+  delete_product(ProductId2),
+  delete_product(ProductId1),
+  delete_store(StoreId).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%    ShoppingBasketPosition     %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+test('shopping_basket_test') :-
+  % Post mockup data
+  post_test_store(StoreId),
+  post_test_customer(CustomerId1, CustomerId2),
+  post_test_product(ProductId1),
+  post_test_product2(ProductId2),
+  
+  % POST
+  post_shopping_basket_position(StoreId, CustomerId1, ["currency 1", "idTest", 10, 11.11], _),
+  post_shopping_basket_position(StoreId, CustomerId1, ProductId2, ["currency 2", 20, 21.21], _),
+  post_shopping_basket_position(StoreId, CustomerId2, 
+    "{\"currency\" : 30,
+      \"productId\" : \"idTest2\",
+      \"quantity\" : 32,
+      \"sellingPrice\" : 33}", 
+      ShoppingBasketPosition3),
+  post_shopping_basket_position(StoreId, CustomerId2, ProductId2,
+    "{\"currency\" : 40,
+      \"quantity\" : 42,
+      \"sellingPrice\" : 43}", 
+      ShoppingBasketPosition4),
+  get_entity_id(ShoppingBasketPosition3, ShoppingBasketPositionId3),
+  get_entity_id(ShoppingBasketPosition4, ShoppingBasketPositionId4),
+
+  % GET ALL
+  get_shopping_basket_positions(StoreId, CustomerId1, ShoppingBasketPositionList),
+  writeln('Return shopping basket position list:'),
+  writeln(ShoppingBasketPositionList),
+
+  % DELETE
+  delete_shopping_basket_position(ShoppingBasketPositionId4),
+  delete_shopping_basket_position(ShoppingBasketPositionId3),
+  delete_shopping_basket_positions(StoreId, CustomerId1),
+
+  % Delete mockup data
+  delete_product(ProductId1),
+  delete_product(ProductId2),
+  delete_customer(CustomerId1),
+  delete_customer(CustomerId2),
+  delete_store(StoreId).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%           Delivery            %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+test('delivery_test') :-
+  % Post mockup data
+  post_test_store(StoreId),
+  post_test_logistical_unit(ProductId1, ProductId2, LogisticalUnitId1, LogisticalUnitId2),
+  
+  % POST
+  post_delivery(LogisticalUnitId1, StoreId, [10, "handlingUnit 1", "orderUnit 1", 11, "source 1"], Delivery1),
+  post_delivery(LogisticalUnitId1, StoreId, [20, "handlingUnit 2", "orderUnit 1", 21, "source 2"], Delivery2),
+  post_delivery(LogisticalUnitId2, StoreId, 
+    "{\"amount\" : 30,
+      \"handlingUnit\" : \"handlingUnit 3\",
+      \"orderUnit\" : \"orderUnit 3\",
+      \"plannedDelivery\" : 31,
+      \"source\" : \"source 3\"}", 
+      Delivery3),
+  post_delivery(LogisticalUnitId2, StoreId, 
+    "{\"amount\" : 40,
+      \"handlingUnit\" : \"handlingUnit 4\",
+      \"orderUnit\" : \"orderUnit 4\",
+      \"plannedDelivery\" : 41,
+      \"source\" : \"source 4\"}", 
+      Delivery4),
+  get_entity_id(Delivery1, DeliveryId1),
+  get_entity_id(Delivery2, DeliveryId2),
+  get_entity_id(Delivery3, DeliveryId3),
+  get_entity_id(Delivery4, DeliveryId4),
+
+  % GET ALL
+  get_deliveries(DeliveryList),
+  writeln('Return delivery list:'),
+  writeln(DeliveryList),
+
+  % DELETE
+  delete_delivery(DeliveryId4),
+  delete_delivery(DeliveryId3),
+  delete_delivery(DeliveryId2),
+  delete_delivery(DeliveryId1),
+  get_deliveries(DeliveryListNew),
+  writeln('Return empty delivery list:'),
+  writeln(DeliveryListNew),
+
+  % Delete mockup data
+  delete_logistical_unit(LogisticalUnitId2),
+  delete_logistical_unit(LogisticalUnitId1),
+  delete_product(ProductId2),
+  delete_product(ProductId1),
+  delete_store(StoreId).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%            Device             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+test('device_test') :-
+  % Post mockup data
+  post_test_store(StoreId),
+  
+  % POST
+  DeviceId1 = "id 1",
+  DeviceId2 = "id 2",
+  DeviceId3 = "id 3",
+  DeviceId4 = "id 4",
+  post_device(DeviceId1, StoreId, ["description 1", "deviceType 1"], _),
+  post_device(DeviceId2, StoreId, ["description 2", "deviceType 1"], _),
+  post_device(DeviceId3, StoreId, 
+    "{\"description\" : \"description 3\",
+      \"deviceType\" : \"deviceType 3\"}", 
+      _),
+  post_device(DeviceId4, StoreId, 
+    "{\"description\" : \"description 4\",
+      \"deviceType\" : \"deviceType 4\"}", 
+      _),
+
+  % GET ALL
+  get_devices(DeviceList),
+  writeln('Return device list:'),
+  writeln(DeviceList),
+
+  % DELETE
+  delete_device(DeviceId4),
+  delete_device(DeviceId3),
+  delete_device(DeviceId2),
+  delete_device(DeviceId1),
+  get_devices(DeviceListNew),
+  writeln('Return empty device list:'),
+  writeln(DeviceListNew),
+
+  % Delete mockup data
+  delete_store(StoreId).
+
+%%%%%%%%%%%%%% Kaviya %%%%%%%%%%%%%%%%%%%
+% test('shelf_get_data_test') :-
 %   k4r_get_core_link(Link),
 %   get_test_store_id(Link, StoreId),
-%   get_test_customer_id(Link, CustomerId),
-%   get_shopping_basket_position_id_by_product_id(Link, StoreId, CustomerId, "id1", ShoppingBasketId),
-%   k4r_get_shopping_basket_position(Link, ShoppingBasketId, ShoppingBasket),
-%   writeln('Return shopping basket with productId id1:'),
-%   writeln(ShoppingBasket).
-
-% test('shopping_basket_deletes_test') :-
-%   k4r_get_core_link(Link),
-%   get_test_store_id(Link, StoreId),
-%   k4r_post_customer(Link, "anonymisedName 2"),
-%   get_customer_id_by_customer_name(Link, "anonymisedName 2", CustomerId),
-%   k4r_post_shopping_basket_position(Link, StoreId, CustomerId, "id1", ["currency 1", 10, 11.11]),
-%   k4r_post_shopping_basket_position(Link, StoreId, CustomerId, "id2", ["currency 2", 20, 21.21]),
-%   k4r_delete_shopping_basket_positions(Link, StoreId, CustomerId),
-%   k4r_delete_customer(Link, CustomerId).
-
-% test('shopping_basket_delete_test') :-
-%   k4r_get_core_link(Link),
-%   get_test_store_id(Link, StoreId),
-%   get_test_customer_id(Link, CustomerId),
-%   get_shopping_basket_position_id_by_product_id(Link, StoreId, CustomerId, "id1", ShoppingBasketId1),
-%   k4r_delete_shopping_basket_position(Link, ShoppingBasketId1),
-%   get_shopping_basket_position_id_by_product_id(Link, StoreId, CustomerId, "id2", ShoppingBasketId2),
-%   k4r_delete_shopping_basket_position(Link, ShoppingBasketId2),
-%   get_shopping_basket_position_id_by_product_id(Link, StoreId, CustomerId, "id3", ShoppingBasketId3),
-%   k4r_delete_shopping_basket_position(Link, ShoppingBasketId3),
-%   get_shopping_basket_position_id_by_product_id(Link, StoreId, CustomerId, "id4", ShoppingBasketId4),
-%   k4r_delete_shopping_basket_position(Link, ShoppingBasketId4),
-%   k4r_delete_product(Link, "id1"),
-%   k4r_delete_product(Link, "id2"),
-%   k4r_delete_product(Link, "id3"),
-%   k4r_delete_product(Link, "id4"),
-%   k4r_delete_customer(Link, CustomerId),
-%   k4r_delete_store(Link, StoreId).
-
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %           Planogram           %
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% test('planogram_post_test') :-
-%   k4r_get_core_link(Link),
-%   post_test_shelf_layer(Link, _, _, _, ShelfLayerId),
-%   post_test_product(Link, ProductId),
-%   k4r_post_planogram(Link, ProductId, ShelfLayerId, [10, 11.11, 12, 13]),
-%   k4r_post_planogram(Link, ProductId, ShelfLayerId, [20, 21.21, 22, 23]),
-%   k4r_post_planogram(Link, ProductId, ShelfLayerId, [30, 31.31, 32, 33]),
-%   k4r_post_planogram(Link, ProductId, ShelfLayerId, [40, 41.41, 42, 43]).
-
-% test('planogram_put_test') :-
-%   k4r_get_core_link(Link),
-%   get_test_shelf_layer_id(Link, ShelfLayerId),
-%   get_planogram_id_by_number_of_facing(Link, 10, PlanogramId),
-%   k4r_put_planogram(Link, "idTest", ShelfLayerId, PlanogramId, 
-%     "{
-%       \"numberOfFacings\": 321,
-%       \"orientationYaw\": 132.43,
-%       \"positionX\": 35,
-%       \"versionTimestamp\": 321
-%     }"),
-%   k4r_put_planogram(Link, "idTest", ShelfLayerId, PlanogramId, [10, 110.11, 120, 130]),
-%   k4r_get_planograms(Link, PlanogramListNew),
-%   writeln('Return new planogram list:'),
-%   writeln(PlanogramListNew).
-
-% test('planogram_delete_test') :-
-%   k4r_get_core_link(Link),
-%   get_test_shelf_layer_id(Link, ShelfLayerId),
-%   get_planogram_id_by_number_of_facing(Link, 10, PlanogramId1),
-%   k4r_delete_planogram(Link, PlanogramId1),
-%   get_planogram_id_by_number_of_facing(Link, 20, PlanogramId2),
-%   k4r_delete_planogram(Link, PlanogramId2),
-%   get_planogram_id_by_number_of_facing(Link, 30, PlanogramId3),
-%   k4r_delete_planogram(Link, PlanogramId3),
-%   get_planogram_id_by_number_of_facing(Link, 40, PlanogramId4),
-%   k4r_delete_planogram(Link, PlanogramId4),
-%   delete_test_data(Link).
-
-%% ATTENTION: These tests can only show results with mockup data!!!
-
-% test('get_entities_test') :-
-%   k4r_get_search_link(Link),
-%   k4r_get_entities(Link, 'product', Products),
-%   k4r_get_entities(Link, 'shelf', Shelves),
-%   k4r_get_entities(Link, 'facing', Facings),
-%   writeln('Return product list:'),
-%   forall(member(Product, Products), writeln(Product)),
-%   writeln('Return shelf list:'),
-%   forall(member(Shelf, Shelves), writeln(Shelf)),
-%   writeln('Return facing list:'),
-%   forall(member(Facing, Facings), writeln(Facing)).
-
-% test('get_entities_by_properties_test') :-
-%   k4r_get_search_link(Link),
-%   k4r_get_entities_by_properties(Link, 'product', [['length'], [21]], Products1),
-%   writeln('Return product list with length 21:'),
-%   forall(member(Product, Products1), writeln(Product)),
-%   k4r_get_entities_by_properties(Link, 'product', [['length', 'height'], [21, 41]], Products2),
-%   writeln('Return product list with length 21 and height 41:'),
-%   forall(member(Product, Products2), writeln(Product)),
-%   k4r_get_entities_by_properties(Link, 'facing', [['layerRelativePosition', 'quantity'], [40, 11]], Facings),
-%   writeln('Return facing list with layerRelativePosition 40 and quantity 11:'),
-%   forall(member(Facing, Facings), writeln(Facing)).
-
-% test('get_products_in_store_test') :-
-%   k4r_get_search_link(Link),
-%   k4r_get_entities_by_properties(Link, 'store', [['storeName'], ['storeName%20Test']], [Store]), % %20 means space, 'storename%20Test' means 'storename Test'
-%   k4r_get_value_from_key(Store, 'id', StoreId),
-%   k4r_get_entity_property_by_properties(Link, 'product_group', [['storeId'], [StoreId]], 'products', Products), % get products on product_group in store that has store id StoreId
-%   writeln('Return product list:'),
-%   forall(member(Product, Products), writeln(Product)).
-
+%   get_shelf_id_by_shelf_ext_id(Link, StoreId, "externalReferenceId 1", ShelfId),
+%   k4r_get_shelf(Link, ShelfId, Shelf),
+%   k4r_get_shelf_data(
+%     Shelf,
+%     [ShelfPositionX, ShelfPositionY, ShelfPositionZ], 
+%     [ShelfOrientationX, ShelfOrientationY, ShelfOrientationZ, ShelfOrientationW], 
+%     [ShelfDepth, ShelfWidth, ShelfHeight]),
+%   writeln('Position:'),
+%   writeln(ShelfPositionX),
+%   writeln(ShelfPositionY),
+%   writeln(ShelfPositionZ),
+%   writeln('Orientation:'),
+%   writeln(ShelfOrientationX),
+%   writeln(ShelfOrientationY),
+%   writeln(ShelfOrientationZ),
+%   writeln(ShelfOrientationW),
+%   writeln('Dimention:'),
+%   writeln(ShelfDepth),
+%   writeln(ShelfWidth),
+%   writeln(ShelfHeight).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 /* test('shelf location') :-
   post_shelf_location(2). */

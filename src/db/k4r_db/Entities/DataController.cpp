@@ -10,16 +10,20 @@
 #include <sstream>
 #include <string>
 #include <unistd.h>
-#define CERT_TYPE "P12"
-// #define URL "https://dt-api.dev.knowledge4retail.org/k4r/api/v0/"
-// #define CERT_PATH "src/knowrob_k4r/src/db/k4r_db/Entities/K4R_DEV_CERTs/k4r-dev-keystore.p12"
-// #define CERT_PASSWD "8FdseHr0wCHwfuDmMv7QdKYWvnZg"
-// #define VERIFY_PEER true
 
-#define URL "https://dt-api.sandbox.knowledge4retail.org/k4r/api/v0/"
-#define CERT_PATH "src/knowrob_k4r/src/db/k4r_db/Entities/K4R_DEV_CERTs/k4r-sandbox-client.p12"
-#define CERT_PASSWD "q7WgPL3OnopoyU4abkrw97LD3iqD"
-#define VERIFY_PEER false
+#define CERT_TYPE "P12"
+#define SANDBOX
+#ifdef SANDBOX
+  #define URL "https://dt-api.sandbox.knowledge4retail.org/k4r/api/v0/"
+  #define CERT_PATH "src/knowrob_k4r/src/db/k4r_db/Entities/K4R_DEV_CERTs/k4r-sandbox-client.p12"
+  #define CERT_PASSWD "q7WgPL3OnopoyU4abkrw97LD3iqD"
+  #define VERIFY_PEER false
+#else
+  #define URL "https://dt-api.dev.knowledge4retail.org/k4r/api/v0/"
+  #define CERT_PATH "src/knowrob_k4r/src/db/k4r_db/Entities/K4R_DEV_CERTs/k4r-dev-keystore.p12"
+  #define CERT_PASSWD "8FdseHr0wCHwfuDmMv7QdKYWvnZg"
+  #define VERIFY_PEER true
+#endif
 
 void remove_new_line(std::string &str)
 {

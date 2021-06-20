@@ -10,7 +10,6 @@ public:
 public:
   const Json::Value get_facing(const std::string &);
   const Json::Value get_facings(const std::string &);
-  const Json::Value get_facings();
 
   const bool post_facing(const std::string &, const Json::Value &, Json::Value &);
 
