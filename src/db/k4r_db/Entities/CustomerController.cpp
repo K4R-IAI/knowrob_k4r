@@ -26,9 +26,9 @@ CustomerController::CustomerController() : DataController::DataController("custo
 
 const Json::Value CustomerController::create_customer(const std::string &anonymised_name)
 {
-  Json::Value costumer;
-  costumer["anonymisedName"] = anonymised_name;
-  return costumer;
+  Json::Value customer;
+  customer["anonymisedName"] = anonymised_name;
+  return customer;
 }
 
 const Json::Value CustomerController::get_customer(const std::string &customer_id)
@@ -48,10 +48,10 @@ const bool CustomerController::post_customer(const std::string &in_anonymised_na
 
 const bool CustomerController::put_customer(const std::string &in_customer_id, const std::string &in_anonymised_name, Json::Value &out_customer)
 {
-  return this->put_data(this->create_customer(in_anonymised_name), out_customer, in_customer_id) || this->check_customer_id(in_customer_id);
+  return this->put_data(this->create_customer(in_anonymised_name), out_customer, in_customer_id);
 }
 
 const bool CustomerController::delete_customer(const std::string &customer_id)
 {
-  return this->delete_data(customer_id) || this->check_customer_id(customer_id);
+  return this->delete_data(customer_id);
 }

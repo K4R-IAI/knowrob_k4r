@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ProductController.cpp"
+#include "DataController.cpp"
 
 class LogisticalUnitController : public DataController
 {
@@ -25,9 +25,6 @@ public:
   const bool put_logistical_unit(const std::string &, const std::string &, const std::string &, const Json::Value &, Json::Value &);
 
   const bool delete_logistical_unit(const std::string &);
-
-private:
-  ProductController product_controller;
 };
 
 LogisticalUnitController::LogisticalUnitController() : DataController::DataController("logisticalunits/")
@@ -79,40 +76,30 @@ const bool LogisticalUnitController::post_logistical_unit(const Json::Value &in_
 
 const bool LogisticalUnitController::post_logistical_unit(const std::string &in_product_id, const Json::Value &in_logistical_unit, Json::Value &out_logistical_unit)
 {
-  return this->post_data(this->create_logistical_unit(in_product_id, in_logistical_unit), out_logistical_unit) ||
-         this->product_controller.check_product_id(in_product_id);
+  return this->post_data(this->create_logistical_unit(in_product_id, in_logistical_unit), out_logistical_unit);
 }
 
 const bool LogisticalUnitController::post_logistical_unit(const std::string &in_predecessor_id, const std::string &in_product_id, const Json::Value &in_logistical_unit, Json::Value &out_logistical_unit)
 {
-  return this->post_data(this->create_logistical_unit(in_predecessor_id, in_product_id, in_logistical_unit), out_logistical_unit) ||
-         (this->check_logistical_unit_id(in_predecessor_id) &&
-          this->product_controller.check_product_id(in_product_id));
+  return this->post_data(this->create_logistical_unit(in_predecessor_id, in_product_id, in_logistical_unit), out_logistical_unit);
 }
 
 const bool LogisticalUnitController::put_logistical_unit(const std::string &in_logistical_unit_id, const Json::Value &in_logistical_unit, Json::Value &out_logistical_unit)
 {
-  return this->put_data(in_logistical_unit, out_logistical_unit, in_logistical_unit_id) ||
-         this->check_logistical_unit_id(in_logistical_unit_id);
+  return this->put_data(in_logistical_unit, out_logistical_unit, in_logistical_unit_id);
 }
 
 const bool LogisticalUnitController::put_logistical_unit(const std::string &in_logistical_unit_id, const std::string &in_product_id, const Json::Value &in_logistical_unit, Json::Value &out_logistical_unit)
 {
-  return this->put_data(this->create_logistical_unit(in_product_id, in_logistical_unit), out_logistical_unit, in_logistical_unit_id) ||
-         (this->check_logistical_unit_id(in_logistical_unit_id) &&
-          this->product_controller.check_product_id(in_product_id));
+  return this->put_data(this->create_logistical_unit(in_product_id, in_logistical_unit), out_logistical_unit, in_logistical_unit_id);
 }
 
 const bool LogisticalUnitController::put_logistical_unit(const std::string &in_logistical_unit_id, const std::string &in_predecessor_id, const std::string &in_product_id, const Json::Value &in_logistical_unit, Json::Value &out_logistical_unit)
 {
-  return this->put_data(this->create_logistical_unit(in_predecessor_id, in_product_id, in_logistical_unit), out_logistical_unit, in_logistical_unit_id) ||
-         (this->check_logistical_unit_id(in_logistical_unit_id) &&
-          this->check_logistical_unit_id(in_predecessor_id) &&
-          this->product_controller.check_product_id(in_product_id));
+  return this->put_data(this->create_logistical_unit(in_predecessor_id, in_product_id, in_logistical_unit), out_logistical_unit, in_logistical_unit_id);
 }
 
 const bool LogisticalUnitController::delete_logistical_unit(const std::string &logistical_unit_id)
 {
-  return this->delete_data(logistical_unit_id) ||
-         this->check_logistical_unit_id(logistical_unit_id);
+  return this->delete_data(logistical_unit_id);
 }

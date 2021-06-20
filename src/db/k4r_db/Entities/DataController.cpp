@@ -38,14 +38,6 @@ void remove_new_line(std::string &str)
   str.erase(std::remove(str.begin(), str.end(), '"'), str.end());
 }
 
-Json::Value char_to_json(const char *entity_in)
-{
-  Json::Value entity_out;
-  Json::Reader reader;
-  reader.parse(entity_in, entity_out);
-  return entity_out;
-}
-
 Json::Value string_to_json(const std::string &entity_in)
 {
   Json::Value entity_out;
@@ -57,7 +49,7 @@ Json::Value string_to_json(const std::string &entity_in)
 class DataController
 {
 public:
-  DataController(const char *link_tail) : link(URL + std::string(link_tail))
+  DataController(const char *link_tail="") : link(URL + std::string(link_tail))
   {
     this->request.setOpt<curlpp::options::SslVerifyPeer>(VERIFY_PEER);
     this->request.setOpt(new curlpp::options::SslCertType(CERT_TYPE));
@@ -88,7 +80,7 @@ protected:
       }
       else
       {
-        std::cout << this->link + link_tail << " : " << status_code << std::endl;
+        std::cerr << "GET failed - " << this->link + link_tail << " : " << status_code << std::endl;
       }
     }
 
@@ -129,6 +121,11 @@ protected:
       {
         out_data = string_to_json(response.str());
       }
+      else
+      {
+        std::cerr << "POST failed - " << this->link + link_tail << " : " << status_code << std::endl;
+        std::cerr << "data:\n" << in_data << std::endl;
+      }
     }
 
     catch (curlpp::RuntimeError &e)
@@ -164,12 +161,15 @@ protected:
 
       this->request.perform();
 
-      out_data = string_to_json(response.str());
-
       status_code = curlpp::infos::ResponseCode::get(this->request);
       if (status_code == 200)
       {
         out_data = string_to_json(response.str());
+      }
+      else
+      {
+        std::cerr << "PUT failed - " << this->link + link_tail << " : " << status_code << std::endl;
+        std::cerr << "data:\n" << in_data << std::endl;
       }
     }
 
@@ -202,6 +202,10 @@ protected:
 
       this->request.perform();
       status_code = curlpp::infos::ResponseCode::get(this->request);
+      if (status_code != 200)
+      {
+        std::cerr << "DELETE failed - " << this->link + link_tail << " : " << status_code << std::endl;
+      }
     }
 
     catch (curlpp::RuntimeError &e)

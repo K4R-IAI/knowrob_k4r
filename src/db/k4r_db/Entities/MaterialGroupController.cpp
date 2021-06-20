@@ -8,8 +8,6 @@ public:
   MaterialGroupController();
 
 public:
-  const bool check_material_group_id(const std::string &);
-
   const Json::Value create_material_group(const std::string &);
   const Json::Value create_material_group(const std::string &, const std::string &);
 
@@ -27,20 +25,6 @@ public:
 
 MaterialGroupController::MaterialGroupController() : DataController::DataController("materialgroups/")
 {
-}
-
-const bool MaterialGroupController::check_material_group_id(const std::string &material_group_id)
-{
-  Json::Value material_group = this->get_material_group(material_group_id);
-  if (material_group["id"].asString() == material_group_id)
-  {
-    return true;
-  }
-  else
-  {
-    std::cout << "MaterialGroup with id " << material_group_id << " not found" << std::endl;
-    return false;
-  }
 }
 
 const Json::Value MaterialGroupController::create_material_group(const std::string &name)
@@ -74,20 +58,20 @@ const bool MaterialGroupController::post_material_group(const std::string &in_na
 
 const bool MaterialGroupController::post_material_group(const std::string &in_parent_id, const std::string &in_name, Json::Value &out_material_group)
 {
-  return this->post_data(this->create_material_group(in_parent_id, in_name), out_material_group) || this->check_material_group_id(in_parent_id);
+  return this->post_data(this->create_material_group(in_parent_id, in_name), out_material_group);
 }
 
 const bool MaterialGroupController::put_material_group(const std::string &in_material_group_id, const std::string &in_name, Json::Value &out_material_group)
 {
-  return this->put_data(this->create_material_group(in_name), out_material_group, in_material_group_id) || this->check_material_group_id(in_material_group_id);
+  return this->put_data(this->create_material_group(in_name), out_material_group, in_material_group_id);
 }
 
 const bool MaterialGroupController::put_material_group(const std::string &in_material_group_id, const std::string &in_parent_id, const std::string &in_name, Json::Value &out_material_group)
 {
-  return this->put_data(this->create_material_group(in_parent_id, in_name), out_material_group, in_material_group_id) || (this->check_material_group_id(in_material_group_id) && this->check_material_group_id(in_parent_id));
+  return this->put_data(this->create_material_group(in_parent_id, in_name), out_material_group, in_material_group_id);
 }
 
 const bool MaterialGroupController::delete_material_group(const std::string &material_group_id)
 {
-  return this->delete_data(material_group_id) || this->check_material_group_id(material_group_id);
+  return this->delete_data(material_group_id);
 }

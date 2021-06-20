@@ -8,8 +8,6 @@ public:
   ProductCharacteristicController();
 
 public:
-  const bool check_product_characteristic_id(const std::string &);
-
   const Json::Value get_product_characteristics();
 
   const bool post_product_characteristic(const std::string &, Json::Value &);
@@ -19,20 +17,6 @@ public:
 
 ProductCharacteristicController::ProductCharacteristicController() : DataController::DataController("productcharacteristics/")
 {
-}
-
-const bool ProductCharacteristicController::check_product_characteristic_id(const std::string &product_characteristic_id)
-{
-  Json::Value product_characteristics = this->get_product_characteristics();
-  for (const Json::Value product_characteristic : product_characteristics)
-  {
-    if (product_characteristic["id"].asString() == product_characteristic_id)
-    {
-      return true;
-    }
-  }
-  std::cout << "Product characteristic with Id " << product_characteristic_id << " not found" << std::endl;
-  return false;
 }
 
 const Json::Value ProductCharacteristicController::get_product_characteristics()
@@ -49,5 +33,5 @@ const bool ProductCharacteristicController::post_product_characteristic(const st
 
 const bool ProductCharacteristicController::delete_product_characteristic(const std::string &product_characteristic_id)
 {
-  return this->delete_data(product_characteristic_id) || this->check_product_characteristic_id(product_characteristic_id);
+  return this->delete_data(product_characteristic_id);
 }
