@@ -308,8 +308,8 @@ test('store_property_test') :-
 test('material_group_test') :-
   % POST
   post_material_group(["Group 1"], MaterialGroup1),
-  post_material_group("{\"name\" : \"name Group 2\"}", MaterialGroup2),
   get_entity_id(MaterialGroup1, MaterialGroupId1),
+  post_material_group("{\"name\" : \"name Group 2\"}", MaterialGroup2),
   get_entity_id(MaterialGroup2, MaterialGroupId2),
   post_material_group(MaterialGroupId1, ["Group3"], MaterialGroup3),
   post_material_group(MaterialGroupId2, "{\"name\" : \"name Group 4\"}", MaterialGroup4),
@@ -346,11 +346,11 @@ test('material_group_test') :-
 test('product_test') :-
   % Post mockup data
   post_material_group(["GroupTest1"], MaterialGroup1),
-
-  % POST ONE
   get_entity_id(MaterialGroup1, MaterialGroupId1),
   post_material_group(MaterialGroupId1, ["GroupTest2"], MaterialGroup2),
   get_entity_id(MaterialGroup2, MaterialGroupId2),
+
+  % POST ONE
   ProductId1 = "id1",
   post_product(ProductId1, ["description 1", "name 1", "productType 1", "productUnit 1"], _),
   ProductId2 = "id2",
@@ -676,8 +676,8 @@ test('product_group_test') :-
 
   % POST
   post_product_group(StoreId, "{\"name\" : \"name 1\"}", ProductGroup1),
-  post_product_group(StoreId, "{\"name\" : \"name 2\"}", ProductGroup2),
   get_entity_id(ProductGroup1, ProductGroupId1),
+  post_product_group(StoreId, "{\"name\" : \"name 2\"}", ProductGroup2),
   get_entity_id(ProductGroup2, ProductGroupId2),
   post_product_to_product_group(ProductGroupId1, ProductId1, _),
   post_product_to_product_group(ProductGroupId1, ProductId2, _),
@@ -726,15 +726,15 @@ test('shelf_test') :-
   % POST
   post_shelf(StoreId, ProductGroupId,
     ["cadPlanId 1", 10, "externalReferenceId 1", 11, 12.12, 13.13, 14.14, 15.15, 16.16, 17.17, 18.18, 19], Shelf1),
+  get_entity_id(Shelf1, ShelfId1),
   post_shelf(StoreId, ProductGroupId,
     ["cadPlanId 2", 20, "externalReferenceId 2", 21, 22.22, 23.23, 24.24, 25.25, 26.26, 27.27, 28.28, 29], Shelf2),
+  get_entity_id(Shelf2, ShelfId2),
   post_shelf(StoreId, ProductGroupId,
     ["cadPlanId 3", 30, "externalReferenceId 3", 31, 32.32, 33.33, 34.34, 35.35, 36.36, 37.37, 38.38, 39], Shelf3),
+  get_entity_id(Shelf3, ShelfId3),
   post_shelf(StoreId, ProductGroupId,
     ["cadPlanId 4", 40, "externalReferenceId 4", 41, 42.42, 43.43, 44.44, 45.45, 46.46, 47.47, 48.48, 49], Shelf4),
-  get_entity_id(Shelf1, ShelfId1),
-  get_entity_id(Shelf2, ShelfId2),
-  get_entity_id(Shelf3, ShelfId3),
   get_entity_id(Shelf4, ShelfId4),
 
   % GET ONE
@@ -788,12 +788,12 @@ test('shelf_layer_test') :-
 
   % POST
   post_shelf_layer(ShelfId, [10, "externalReferenceId 1", 11, 12, 13.13, "type 1", 14], ShelfLayer1),
-  post_shelf_layer(ShelfId, [20, "externalReferenceId 2", 21, 22, 23.23, "type 2", 24], ShelfLayer2),
-  post_shelf_layer(ShelfId, [30, "externalReferenceId 3", 31, 32, 33.33, "type 3", 34], ShelfLayer3),
-  post_shelf_layer(ShelfId, [40, "externalReferenceId 4", 41, 42, 43.43, "type 4", 44], ShelfLayer4),
   get_entity_id(ShelfLayer1, ShelfLayerId1),
+  post_shelf_layer(ShelfId, [20, "externalReferenceId 2", 21, 22, 23.23, "type 2", 24], ShelfLayer2),
   get_entity_id(ShelfLayer2, ShelfLayerId2),
+  post_shelf_layer(ShelfId, [30, "externalReferenceId 3", 31, 32, 33.33, "type 3", 34], ShelfLayer3),
   get_entity_id(ShelfLayer3, ShelfLayerId3),
+  post_shelf_layer(ShelfId, [40, "externalReferenceId 4", 41, 42, 43.43, "type 4", 44], ShelfLayer4),
   get_entity_id(ShelfLayer4, ShelfLayerId4),
 
   % GET ONE
@@ -830,12 +830,12 @@ test('facing_test') :-
 
   % POST
   post_facing(ShelfLayerId, [10, 11, 12], Facing1),
-  post_facing(ShelfLayerId, [20, 21, 22], Facing2),
-  post_facing(ShelfLayerId, [30, 31, 32], Facing3),
-  post_facing(ShelfLayerId, [40, 41, 42], Facing4),
   get_entity_id(Facing1, FacingId1),
+  post_facing(ShelfLayerId, [20, 21, 22], Facing2),
   get_entity_id(Facing2, FacingId2),
+  post_facing(ShelfLayerId, [30, 31, 32], Facing3),
   get_entity_id(Facing3, FacingId3),
+  post_facing(ShelfLayerId, [40, 41, 42], Facing4),
   get_entity_id(Facing4, FacingId4),
   
   % GET ONE
@@ -883,12 +883,12 @@ test('item_group_test') :-
 
   % POST
   post_item_group(FacingId1, LogisticalUnitId1, 10, ItemGroup1),
-  post_item_group(FacingId1, LogisticalUnitId2, 20, ItemGroup2),
-  post_item_group(FacingId2, LogisticalUnitId1, 30, ItemGroup3),
-  post_item_group(FacingId2, LogisticalUnitId2, 40, ItemGroup4),
   get_entity_id(ItemGroup1, ItemGroupId1),
+  post_item_group(FacingId1, LogisticalUnitId2, 20, ItemGroup2),
   get_entity_id(ItemGroup2, ItemGroupId2),
+  post_item_group(FacingId2, LogisticalUnitId1, 30, ItemGroup3),
   get_entity_id(ItemGroup3, ItemGroupId3),
+  post_item_group(FacingId2, LogisticalUnitId2, 40, ItemGroup4),
   get_entity_id(ItemGroup4, ItemGroupId4),
   
   % GET ONE
@@ -947,20 +947,20 @@ test('item_test') :-
 
   % POST
   post_item(ItemGroupId1, [10, 11, 12], Item1),
+  get_entity_id(Item1, ItemId1),
   post_item(ItemGroupId1, [20, 21, 22], Item2),
+  get_entity_id(Item2, ItemId2),
   post_item(ItemGroupId2, 
     "{\"positionInFacingX\" : 30,
       \"positionInFacingY\" : 31,
       \"positionInFacingZ\" : 32}", 
       Item3),
+  get_entity_id(Item3, ItemId3),
   post_item(ItemGroupId2, 
     "{\"positionInFacingX\" : 40,
       \"positionInFacingY\" : 41,
       \"positionInFacingZ\" : 42}", 
       Item4),
-  get_entity_id(Item1, ItemId1),
-  get_entity_id(Item2, ItemId2),
-  get_entity_id(Item3, ItemId3),
   get_entity_id(Item4, ItemId4),
   
   % GET ONE
@@ -1015,22 +1015,22 @@ test('planogram_test') :-
 
   % POST
   post_planogram(LogisticalUnitId1, ShelfLayerId, [10, 11.11, 12, 13], Planogram1),
+  get_entity_id(Planogram1, PlanogramId1),
   post_planogram(LogisticalUnitId2, ShelfLayerId, [20, 21.21, 22, 23], Planogram2),
+  get_entity_id(Planogram2, PlanogramId2),
   post_planogram(LogisticalUnitId1, ShelfLayerId, 
     "{\"numberOfFacings\" : 30,
       \"orientationYaw\" : 31.31,
       \"positionX\" : 32,
       \"versionTimestamp\" : 33}", 
       Planogram3),
+      get_entity_id(Planogram3, PlanogramId3),
   post_planogram(LogisticalUnitId2, ShelfLayerId, 
     "{\"numberOfFacings\" : 40,
       \"orientationYaw\" : 41.41,
       \"positionX\" : 42,
       \"versionTimestamp\" : 43}", 
       Planogram4),
-  get_entity_id(Planogram1, PlanogramId1),
-  get_entity_id(Planogram2, PlanogramId2),
-  get_entity_id(Planogram3, PlanogramId3),
   get_entity_id(Planogram4, PlanogramId4),
 
   % PUT
@@ -1086,12 +1086,12 @@ test('shopping_basket_test') :-
       \"quantity\" : 32,
       \"sellingPrice\" : 33}", 
       ShoppingBasketPosition3),
+  get_entity_id(ShoppingBasketPosition3, ShoppingBasketPositionId3),
   post_shopping_basket_position(StoreId, CustomerId2, ProductId2,
     "{\"currency\" : 40,
       \"quantity\" : 42,
       \"sellingPrice\" : 43}", 
       ShoppingBasketPosition4),
-  get_entity_id(ShoppingBasketPosition3, ShoppingBasketPositionId3),
   get_entity_id(ShoppingBasketPosition4, ShoppingBasketPositionId4),
 
   % GET ALL
@@ -1122,7 +1122,9 @@ test('delivery_test') :-
   
   % POST
   post_delivery(LogisticalUnitId1, StoreId, [10, "handlingUnit 1", "orderUnit 1", 11, "source 1"], Delivery1),
+  get_entity_id(Delivery1, DeliveryId1),
   post_delivery(LogisticalUnitId1, StoreId, [20, "handlingUnit 2", "orderUnit 1", 21, "source 2"], Delivery2),
+  get_entity_id(Delivery2, DeliveryId2),
   post_delivery(LogisticalUnitId2, StoreId, 
     "{\"amount\" : 30,
       \"handlingUnit\" : \"handlingUnit 3\",
@@ -1130,6 +1132,7 @@ test('delivery_test') :-
       \"plannedDelivery\" : 31,
       \"source\" : \"source 3\"}", 
       Delivery3),
+  get_entity_id(Delivery3, DeliveryId3),
   post_delivery(LogisticalUnitId2, StoreId, 
     "{\"amount\" : 40,
       \"handlingUnit\" : \"handlingUnit 4\",
@@ -1137,9 +1140,6 @@ test('delivery_test') :-
       \"plannedDelivery\" : 41,
       \"source\" : \"source 4\"}", 
       Delivery4),
-  get_entity_id(Delivery1, DeliveryId1),
-  get_entity_id(Delivery2, DeliveryId2),
-  get_entity_id(Delivery3, DeliveryId3),
   get_entity_id(Delivery4, DeliveryId4),
 
   % GET ALL
