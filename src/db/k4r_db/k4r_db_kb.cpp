@@ -29,6 +29,27 @@
 #include "Entities/StoreCharacteristicController.cpp"
 #include "Entities/StoreController.cpp"
 #include "Entities/StorePropertyController.cpp"
+#include <boost/lexical_cast.hpp>
+
+PREDICATE(double_m_to_int_mm, 2)
+{
+  PlTail tail_1(PL_A1);
+  PlTerm term_1;
+  PlTail tail_2(PL_A2);
+  PlTerm term_2;
+  while (tail_1.next(term_1))
+  {
+    if (tail_2.next(term_2))
+    {
+      term_2 = int(boost::lexical_cast<double>(std::string(term_1)) * 1000);
+    }
+    else
+    {
+      return false;
+    }
+  }
+  return true;
+}
 
 const Json::Value PlTerm_to_json(PlTerm in_entity_PlTerm)
 {
