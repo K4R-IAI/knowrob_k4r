@@ -11,12 +11,10 @@
 
 // For K4R
 #include "Entities/CustomerController.cpp"
-#include "Entities/DeliveryController.cpp"
 #include "Entities/DeviceController.cpp"
 #include "Entities/FacingController.cpp"
 #include "Entities/ItemController.cpp"
 #include "Entities/ItemGroupController.cpp"
-#include "Entities/LogisticalUnitController.cpp"
 #include "Entities/MaterialGroupController.cpp"
 #include "Entities/PlanogramController.cpp"
 #include "Entities/ProductCharacteristicController.cpp"
@@ -24,19 +22,13 @@
 #include "Entities/ProductGroupController.cpp"
 #include "Entities/ProductGtinController.cpp"
 #include "Entities/ProductPropertyController.cpp"
+#include "Entities/ProductUnitController.cpp"
 #include "Entities/ShelfController.cpp"
 #include "Entities/ShelfLayerController.cpp"
 #include "Entities/ShoppingBasketPositionController.cpp"
 #include "Entities/StoreCharacteristicController.cpp"
 #include "Entities/StoreController.cpp"
 #include "Entities/StorePropertyController.cpp"
-
-// convert_string_to_int(StringVal, IntegerVal)
-PREDICATE(convert_string_to_int, 2)
-{
-  int integer_val = std::stoi(std::string(PL_A1));
-  PL_A2 = integer_val;
-}
 
 const Json::Value PlTerm_to_json(PlTerm in_entity_PlTerm)
 {
@@ -327,14 +319,14 @@ PREDICATE(get_store_properties, 2)
   return store_properties.close();
 }
 
-// post_store_property(InStoreId, InStoreCharacteristicId, InValue, OutStoreProperty)
-PREDICATE(post_store_property, 4)
+// post_store_property(InStoreId, InStoreCharacteristicId, InValueLow, InValueHigh, OutStoreProperty)
+PREDICATE(post_store_property, 5)
 {
   StorePropertyController store_property_controller;
   Json::Value out_store_property;
-  if (store_property_controller.post_store_property(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), out_store_property))
+  if (store_property_controller.post_store_property(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), std::string(PL_A4), out_store_property))
   {
-    PL_A4 = out_store_property.toStyledString().c_str();
+    PL_A5 = out_store_property.toStyledString().c_str();
     return true;
   }
   else
@@ -355,14 +347,18 @@ PREDICATE(delete_store_property, 2)
 const Json::Value material_group_array_to_material_group_json(const Json::Value &material_group_array)
 {
   Json::Value material_group_json;
-  if (material_group_array.size() == 1)
+  if (material_group_array.size() == 3)
   {
-    material_group_json["name"] = material_group_array[0];
+    material_group_json["description"] = material_group_array[0];
+    material_group_json["hierarchyLevel"] = material_group_array[1];
+    material_group_json["name"] = material_group_array[2];
   }
-  else if (material_group_array.size() == 2)
+  else if (material_group_array.size() == 4)
   {
-    material_group_json["name"] = material_group_array[0];
-    material_group_json["parentId"] = material_group_array[1];
+    material_group_json["description"] = material_group_array[0];
+    material_group_json["hierarchyLevel"] = material_group_array[1];
+    material_group_json["name"] = material_group_array[2];
+    material_group_json["parentId"] = material_group_array[3];
   }
   else
   {
@@ -402,31 +398,6 @@ PREDICATE(get_material_group, 2)
   }
 }
 
-// post_material_group(InMaterialGroup, OutMaterialGroup)
-PREDICATE(post_material_group, 2)
-{
-  MaterialGroupController material_group_controller;
-  Json::Value in_material_group = PlTerm_to_json(PL_A1);
-  Json::Value out_material_group;
-  if (in_material_group.isArray())
-  {
-    material_group_controller.post_material_group(material_group_array_to_material_group_json(in_material_group), out_material_group);
-  }
-  else
-  {
-    material_group_controller.post_material_group(in_material_group, out_material_group);
-  }
-  if (!out_material_group.isNull())
-  {
-    PL_A2 = out_material_group.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
 // post_material_group(InParentId, InMaterialGroup, OutMaterialGroup)
 PREDICATE(post_material_group, 3)
 {
@@ -440,31 +411,6 @@ PREDICATE(post_material_group, 3)
   else
   {
     material_group_controller.post_material_group(std::string(PL_A1), in_material_group, out_material_group);
-  }
-  if (!out_material_group.isNull())
-  {
-    PL_A3 = out_material_group.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// put_material_group(InMaterialGroupId, InMaterialGroup, OutMaterialGroup)
-PREDICATE(put_material_group, 3)
-{
-  MaterialGroupController material_group_controller;
-  Json::Value in_material_group = PlTerm_to_json(PL_A2);
-  Json::Value out_material_group;
-  if (in_material_group.isArray())
-  {
-    material_group_controller.put_material_group(std::string(PL_A1), material_group_array_to_material_group_json(in_material_group), out_material_group);
-  }
-  else
-  {
-    material_group_controller.put_material_group(std::string(PL_A1), in_material_group, out_material_group);
   }
   if (!out_material_group.isNull())
   {
@@ -594,31 +540,6 @@ PREDICATE(get_product, 2)
   }
 }
 
-// post_product(InProductId, InProduct, OutProduct)
-PREDICATE(post_product, 3)
-{
-  ProductController product_controller;
-  Json::Value in_product = PlTerm_to_json(PL_A2);
-  Json::Value out_product;
-  if (in_product.isArray())
-  {
-    product_controller.post_product(std::string(PL_A1), product_array_to_product_json(in_product), out_product);
-  }
-  else
-  {
-    product_controller.post_product(std::string(PL_A1), in_product, out_product);
-  }
-  if (!out_product.isNull())
-  {
-    PL_A3 = out_product.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
 // post_product(InProductId, InMaterialGroupId, InProduct, OutProduct)
 PREDICATE(post_product, 4)
 {
@@ -636,31 +557,6 @@ PREDICATE(post_product, 4)
   if (!out_product.isNull())
   {
     PL_A4 = out_product.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// put_product(ProductId, InProduct, OutProduct)
-PREDICATE(put_product, 3)
-{
-  ProductController product_controller;
-  Json::Value in_product = PlTerm_to_json(PL_A2);
-  Json::Value out_product;
-  if (in_product.isArray())
-  {
-    product_controller.put_product(std::string(PL_A1), product_array_to_product_json(in_product), out_product);
-  }
-  else
-  {
-    product_controller.put_product(std::string(PL_A1), in_product, out_product);
-  }
-  if (!out_product.isNull())
-  {
-    PL_A3 = out_product.toStyledString().c_str();
     return true;
   }
   else
@@ -741,14 +637,14 @@ PREDICATE(get_product_characteristics, 1)
   return product_characteristics.close();
 }
 
-// post_product_characteristic(InProductCharacteristicName, OutProductCharacteristic)
-PREDICATE(post_product_characteristic, 2)
+// post_product_characteristic(InProductCharacteristicCode, InProductCharacteristicName, OutProductCharacteristic)
+PREDICATE(post_product_characteristic, 3)
 {
   ProductCharacteristicController product_characteristic_controller;
   Json::Value out_product_characteristic;
-  if (product_characteristic_controller.post_product_characteristic(std::string(PL_A1), out_product_characteristic))
+  if (product_characteristic_controller.post_product_characteristic(std::string(PL_A1), std::string(PL_A2), out_product_characteristic))
   {
-    PL_A2 = out_product_characteristic.toStyledString().c_str();
+    PL_A3 = out_product_characteristic.toStyledString().c_str();
     return true;
   }
   else
@@ -766,7 +662,7 @@ PREDICATE(delete_product_characteristic, 1)
 
 // ProductProperty
 
-// get_product_properties(StoreId, ProductId, Properties)
+// get_product_properties(ProductId, StoreId, Properties)
 PREDICATE(get_product_properties, 3)
 {
   ProductPropertyController product_property_controller;
@@ -779,14 +675,14 @@ PREDICATE(get_product_properties, 3)
   return product_properties.close();
 }
 
-// post_product_property(InStoreId, InProductId, InProductCharacteristicId, InValue, OutProductProperty)
-PREDICATE(post_product_property, 5)
+// post_product_property(InProductId, InProductCharacteristicId, InStoreId, InValueLow, InValueHigh, OutProductProperty)
+PREDICATE(post_product_property, 6)
 {
   ProductPropertyController product_property_controller;
   Json::Value out_product_property;
-  if (product_property_controller.post_product_property(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), std::string(PL_A4), out_product_property))
+  if (product_property_controller.post_product_property(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), std::string(PL_A4), std::string(PL_A5), out_product_property))
   {
-    PL_A5 = out_product_property.toStyledString().c_str();
+    PL_A6 = out_product_property.toStyledString().c_str();
     return true;
   }
   else
@@ -795,85 +691,65 @@ PREDICATE(post_product_property, 5)
   }
 }
 
-// delete_product_property(StoreId, ProductId, ProductCharacteristicId)
+// delete_product_property(ProductId, ProductCharacteristicId, StoreId)
 PREDICATE(delete_product_property, 3)
 {
   ProductPropertyController product_property_controller;
   return product_property_controller.delete_product_property(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3));
 }
 
-// LogisticalUnit
+// ProductUnit
 
-const Json::Value logistical_unit_array_to_logistical_unit_json(const Json::Value &logistical_unit_array)
+const Json::Value product_unit_array_to_product_unit_json(const Json::Value &product_unit_array)
 {
-  Json::Value logistical_unit_json;
+  Json::Value product_unit_json;
 
-  if (logistical_unit_array.size() == 14)
+  if (product_unit_array.size() == 13)
   {
-    logistical_unit_json["basicUnit"] = logistical_unit_array[0];
-    logistical_unit_json["deliveryExpanseUnit"] = logistical_unit_array[1];
-    logistical_unit_json["dimensionUnit"] = logistical_unit_array[2];
-    logistical_unit_json["height"] = logistical_unit_array[3];
-    logistical_unit_json["length"] = logistical_unit_array[4];
-    logistical_unit_json["maxStackSize"] = logistical_unit_array[5];
-    logistical_unit_json["netWeight"] = logistical_unit_array[6];
-    logistical_unit_json["orderUnit"] = logistical_unit_array[7];
-    logistical_unit_json["quantityOfPredecessors"] = logistical_unit_array[8];
-    logistical_unit_json["quantityUnit"] = logistical_unit_array[9];
-    logistical_unit_json["quantityUnitIso"] = logistical_unit_array[10];
-    logistical_unit_json["retailUnit"] = logistical_unit_array[11];
-    logistical_unit_json["weightUnit"] = logistical_unit_array[12];
-    logistical_unit_json["width"] = logistical_unit_array[13];
-  }
-  else if (logistical_unit_array.size() == 16)
-  {
-    logistical_unit_json["basicUnit"] = logistical_unit_array[0];
-    logistical_unit_json["deliveryExpanseUnit"] = logistical_unit_array[1];
-    logistical_unit_json["dimensionUnit"] = logistical_unit_array[2];
-    logistical_unit_json["height"] = logistical_unit_array[3];
-    logistical_unit_json["length"] = logistical_unit_array[4];
-    logistical_unit_json["maxStackSize"] = logistical_unit_array[5];
-    logistical_unit_json["netWeight"] = logistical_unit_array[6];
-    logistical_unit_json["orderUnit"] = logistical_unit_array[7];
-    logistical_unit_json["predecessorId"] = logistical_unit_array[8];
-    logistical_unit_json["productId"] = logistical_unit_array[9];
-    logistical_unit_json["quantityOfPredecessors"] = logistical_unit_array[10];
-    logistical_unit_json["quantityUnit"] = logistical_unit_array[11];
-    logistical_unit_json["quantityUnitIso"] = logistical_unit_array[12];
-    logistical_unit_json["retailUnit"] = logistical_unit_array[13];
-    logistical_unit_json["weightUnit"] = logistical_unit_array[14];
-    logistical_unit_json["width"] = logistical_unit_array[15];
+    product_unit_json["denominatorBaseUnit"] = product_unit_array[0];
+    product_unit_json["dimensionUnit"] = product_unit_array[1];
+    product_unit_json["grossWeight"] = product_unit_array[2];
+    product_unit_json["height"] = product_unit_array[3];
+    product_unit_json["length"] = product_unit_array[4];
+    product_unit_json["maxStackSize"] = product_unit_array[5];
+    product_unit_json["netWeight"] = product_unit_array[6];
+    product_unit_json["numeratorBaseUnit"] = product_unit_array[7];
+    product_unit_json["unitCode"] = product_unit_array[8];
+    product_unit_json["volume"] = product_unit_array[9];
+    product_unit_json["volumeUnit"] = product_unit_array[10];
+    product_unit_json["weightUnit"] = product_unit_array[11];
+    product_unit_json["width"] = product_unit_array[12];
   }
   else
   {
-    std::cerr << "Invalid logistical unit array (length = " << logistical_unit_array.size() << ")" << std::endl;
+    std::cerr << "Invalid logistical unit array (length = " << product_unit_array.size() << ")" << std::endl;
   }
-  return logistical_unit_json;
+  return product_unit_json;
 }
 
-// get_logistical_units(LogisticalUnitList)
-PREDICATE(get_logistical_units, 1)
+// get_product_units(ProductUnitList)
+PREDICATE(get_product_units, 1)
 {
-  LogisticalUnitController logistical_unit_controller;
+  ProductUnitController product_unit_controller;
 
-  PlTail logistical_units(PL_A1);
-  for (const Json::Value &logistical_unit : logistical_unit_controller.get_logistical_units())
+  PlTail product_units(PL_A1);
+  for (const Json::Value &product_unit : product_unit_controller.get_product_units())
   {
-    logistical_units.append(logistical_unit.toStyledString().c_str());
+    product_units.append(product_unit.toStyledString().c_str());
   }
-  return logistical_units.close();
+  return product_units.close();
 }
 
-// get_logistical_unit(LogisticalUnitId, LogisticalUnit)
-PREDICATE(get_logistical_unit, 2)
+// get_product_unit(ProductUnitId, ProductUnit)
+PREDICATE(get_product_unit, 2)
 {
-  LogisticalUnitController logistical_unit_controller;
+  ProductUnitController product_unit_controller;
 
-  Json::Value logistical_unit = logistical_unit_controller.get_logistical_unit(std::string(PL_A1));
-  std::string logistical_unit_id = logistical_unit["id"].asString();
-  if (std::stoi(std::string(PL_A1)) == std::stoi(logistical_unit_id))
+  Json::Value product_unit = product_unit_controller.get_product_unit(std::string(PL_A1));
+  std::string product_unit_id = product_unit["id"].asString();
+  if (std::stoi(std::string(PL_A1)) == std::stoi(product_unit_id))
   {
-    PL_A2 = logistical_unit.toStyledString().c_str();
+    PL_A2 = product_unit.toStyledString().c_str();
     return true;
   }
   else
@@ -882,23 +758,15 @@ PREDICATE(get_logistical_unit, 2)
   }
 }
 
-// post_logistical_unit(InLogisticalUnit, OutLogisticalUnit)
-PREDICATE(post_logistical_unit, 2)
+// post_product_unit(InProductId, InProductUnit, OutProductUnit)
+PREDICATE(post_product_unit, 3)
 {
-  LogisticalUnitController logistical_unit_controller;
-  Json::Value in_logistical_unit = PlTerm_to_json(PL_A1);
-  Json::Value out_logistical_unit;
-  if (in_logistical_unit.isArray())
+  ProductUnitController product_unit_controller;
+  Json::Value in_product_unit = PlTerm_to_json(PL_A2);
+  Json::Value out_product_unit;
+  if (in_product_unit.isArray() ? product_unit_controller.post_product_unit(std::string(PL_A1), product_unit_array_to_product_unit_json(in_product_unit), out_product_unit) : product_unit_controller.post_product_unit(std::string(PL_A1), in_product_unit, out_product_unit))
   {
-    logistical_unit_controller.post_logistical_unit(logistical_unit_array_to_logistical_unit_json(in_logistical_unit), out_logistical_unit);
-  }
-  else
-  {
-    logistical_unit_controller.post_logistical_unit(in_logistical_unit, out_logistical_unit);
-  }
-  if (!out_logistical_unit.isNull())
-  {
-    PL_A2 = out_logistical_unit.toStyledString().c_str();
+    PL_A3 = out_product_unit.toStyledString().c_str();
     return true;
   }
   else
@@ -907,23 +775,15 @@ PREDICATE(post_logistical_unit, 2)
   }
 }
 
-// post_logistical_unit(InPredecessorId, InProductId, InLogisticalUnit, OutLogisticalUnit)
-PREDICATE(post_logistical_unit, 4)
+// put_product_unit(InProductUnitId, InProductId, InProductUnit, OutProductUnit)
+PREDICATE(put_product_unit, 4)
 {
-  LogisticalUnitController logistical_unit_controller;
-  Json::Value in_logistical_unit = PlTerm_to_json(PL_A3);
-  Json::Value out_logistical_unit;
-  if (in_logistical_unit.isArray())
+  ProductUnitController product_unit_controller;
+  Json::Value in_product_unit = PlTerm_to_json(PL_A3);
+  Json::Value out_product_unit;
+  if (in_product_unit.isArray() ? product_unit_controller.put_product_unit(std::string(PL_A1), std::string(PL_A2), product_unit_array_to_product_unit_json(in_product_unit), out_product_unit) : product_unit_controller.put_product_unit(std::string(PL_A1), std::string(PL_A2), in_product_unit, out_product_unit))
   {
-    logistical_unit_controller.post_logistical_unit(std::string(PL_A1), std::string(PL_A2), logistical_unit_array_to_logistical_unit_json(in_logistical_unit), out_logistical_unit);
-  }
-  else
-  {
-    logistical_unit_controller.post_logistical_unit(std::string(PL_A1), std::string(PL_A2), in_logistical_unit, out_logistical_unit);
-  }
-  if (!out_logistical_unit.isNull())
-  {
-    PL_A4 = out_logistical_unit.toStyledString().c_str();
+    PL_A4 = out_product_unit.toStyledString().c_str();
     return true;
   }
   else
@@ -932,61 +792,11 @@ PREDICATE(post_logistical_unit, 4)
   }
 }
 
-// put_logistical_unit(InLogisticalUnitId, InLogisticalUnit, OutLogisticalUnit)
-PREDICATE(put_logistical_unit, 3)
+// delete_product_unit(ProductUnitId)
+PREDICATE(delete_product_unit, 1)
 {
-  LogisticalUnitController logistical_unit_controller;
-  Json::Value in_logistical_unit = PlTerm_to_json(PL_A2);
-  Json::Value out_logistical_unit;
-  if (in_logistical_unit.isArray())
-  {
-    logistical_unit_controller.put_logistical_unit(std::string(PL_A1), logistical_unit_array_to_logistical_unit_json(in_logistical_unit), out_logistical_unit);
-  }
-  else
-  {
-    logistical_unit_controller.put_logistical_unit(std::string(PL_A1), in_logistical_unit, out_logistical_unit);
-  }
-  if (!out_logistical_unit.isNull())
-  {
-    PL_A3 = out_logistical_unit.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// put_logistical_unit(InLogisticalUnitId, InPredecessorId, InProductId, InLogisticalUnit, OutLogisticalUnit)
-PREDICATE(put_logistical_unit, 5)
-{
-  LogisticalUnitController logistical_unit_controller;
-  Json::Value in_logistical_unit = PlTerm_to_json(PL_A4);
-  Json::Value out_logistical_unit;
-  if (in_logistical_unit.isArray())
-  {
-    logistical_unit_controller.put_logistical_unit(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), logistical_unit_array_to_logistical_unit_json(in_logistical_unit), out_logistical_unit);
-  }
-  else
-  {
-    logistical_unit_controller.put_logistical_unit(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), in_logistical_unit, out_logistical_unit);
-  }
-  if (!out_logistical_unit.isNull())
-  {
-    PL_A5 = out_logistical_unit.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// delete_logistical_unit(LogisticalUnitId)
-PREDICATE(delete_logistical_unit, 1)
-{
-  LogisticalUnitController logistical_unit_controller;
-  return logistical_unit_controller.delete_logistical_unit(std::string(PL_A1));
+  ProductUnitController product_unit_controller;
+  return product_unit_controller.delete_product_unit(std::string(PL_A1));
 }
 
 // ProductGtin
@@ -994,18 +804,11 @@ PREDICATE(delete_logistical_unit, 1)
 const Json::Value product_gtin_array_to_product_gtin_json(const Json::Value &product_gtin_array)
 {
   Json::Value product_gtin_json;
-  if (product_gtin_array.size() == 2)
+  if (product_gtin_array.size() == 3)
   {
-    product_gtin_json["gtinType"] = product_gtin_array[0];
-    product_gtin_json["mainGtin"] = product_gtin_array[1];
-  }
-  else if (product_gtin_array.size() == 5)
-  {
-    product_gtin_json["id"] = product_gtin_array[0];
+    product_gtin_json["gtin"] = product_gtin_array[0];
     product_gtin_json["gtinType"] = product_gtin_array[1];
-    product_gtin_json["logisticalUnitId"] = product_gtin_array[2];
-    product_gtin_json["mainGtin"] = product_gtin_array[3];
-    product_gtin_json["productId"] = product_gtin_array[4];
+    product_gtin_json["mainGtin"] = product_gtin_array[2];
   }
   else
   {
@@ -1045,72 +848,13 @@ PREDICATE(get_product_gtin, 2)
   }
 }
 
-// post_product_gtin(InProductGtin, OutProductGtin)
-PREDICATE(post_product_gtin, 2)
-{
-  ProductGtinController product_gtin_controller;
-  Json::Value in_product_gtin = PlTerm_to_json(PL_A1);
-  Json::Value out_product_gtin;
-
-  if (in_product_gtin.isArray())
-  {
-    product_gtin_controller.post_product_gtin(product_gtin_array_to_product_gtin_json(in_product_gtin), out_product_gtin);
-  }
-  else
-  {
-    product_gtin_controller.post_product_gtin(in_product_gtin, out_product_gtin);
-  }
-  if (!out_product_gtin.isNull())
-  {
-    PL_A2 = out_product_gtin.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// post_product_gtin(InProductGtinId, InLogisticalUnitId, InProductId, InProductGtin, OutProductGtin)
-PREDICATE(post_product_gtin, 5)
-{
-  ProductGtinController product_gtin_controller;
-  Json::Value in_product_gtin = PlTerm_to_json(PL_A4);
-  Json::Value out_product_gtin;
-  if (in_product_gtin.isArray())
-  {
-    product_gtin_controller.post_product_gtin(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), product_gtin_array_to_product_gtin_json(in_product_gtin), out_product_gtin);
-  }
-  else
-  {
-    product_gtin_controller.post_product_gtin(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), in_product_gtin, out_product_gtin);
-  }
-  if (!out_product_gtin.isNull())
-  {
-    PL_A5 = out_product_gtin.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// put_product_gtin(InProductGtinId, InProductGtin, OutProductGtin)
-PREDICATE(put_product_gtin, 3)
+// post_product_gtin(InProductUnitId, InProductGtin, OutProductGtin)
+PREDICATE(post_product_gtin, 3)
 {
   ProductGtinController product_gtin_controller;
   Json::Value in_product_gtin = PlTerm_to_json(PL_A2);
   Json::Value out_product_gtin;
-  if (in_product_gtin.isArray())
-  {
-    product_gtin_controller.put_product_gtin(std::string(PL_A1), product_gtin_array_to_product_gtin_json(in_product_gtin), out_product_gtin);
-  }
-  else
-  {
-    product_gtin_controller.put_product_gtin(std::string(PL_A1), in_product_gtin, out_product_gtin);
-  }
-  if (!out_product_gtin.isNull())
+  if (in_product_gtin.isArray() ? product_gtin_controller.post_product_gtin(std::string(PL_A1), product_gtin_array_to_product_gtin_json(in_product_gtin), out_product_gtin) : product_gtin_controller.post_product_gtin(std::string(PL_A1), in_product_gtin, out_product_gtin))
   {
     PL_A3 = out_product_gtin.toStyledString().c_str();
     return true;
@@ -1121,23 +865,15 @@ PREDICATE(put_product_gtin, 3)
   }
 }
 
-// put_product_gtin(InProductGtinId, InLogisticalUnitId, InProductId, InProductGtin, OutProductGtin)
-PREDICATE(put_product_gtin, 5)
+// put_product_gtin(InProductUnitId, InProductId, InProductGtin, OutProductGtin)
+PREDICATE(put_product_gtin, 4)
 {
   ProductGtinController product_gtin_controller;
-  Json::Value in_product_gtin = PlTerm_to_json(PL_A4);
+  Json::Value in_product_gtin = PlTerm_to_json(PL_A3);
   Json::Value out_product_gtin;
-  if (in_product_gtin.isArray())
+  if (in_product_gtin.isArray() ? product_gtin_controller.put_product_gtin(std::string(PL_A1), std::string(PL_A2), product_gtin_array_to_product_gtin_json(in_product_gtin), out_product_gtin) : product_gtin_controller.put_product_gtin(std::string(PL_A1), std::string(PL_A2), in_product_gtin, out_product_gtin))
   {
-    product_gtin_controller.put_product_gtin(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), product_gtin_array_to_product_gtin_json(in_product_gtin), out_product_gtin);
-  }
-  else
-  {
-    product_gtin_controller.put_product_gtin(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), in_product_gtin, out_product_gtin);
-  }
-  if (!out_product_gtin.isNull())
-  {
-    PL_A5 = out_product_gtin.toStyledString().c_str();
+    PL_A4 = out_product_gtin.toStyledString().c_str();
     return true;
   }
   else
@@ -1204,15 +940,15 @@ PREDICATE(post_product_to_product_group, 3)
   }
 }
 
-// post_product_group(InStoreId, InProductGroup, OutProductGroup)
-PREDICATE(post_product_group, 3)
+// post_product_group(InName, InStoreId, InProductGroup, OutProductGroup)
+PREDICATE(post_product_group, 4)
 {
   ProductGroupController product_group_controller;
-  Json::Value in_product_group = PlTerm_to_json(PL_A2);
+  Json::Value in_product_group = PlTerm_to_json(PL_A3);
   Json::Value out_product_group;
-  if (product_group_controller.post_product_group(std::string(PL_A1), in_product_group, out_product_group))
+  if (product_group_controller.post_product_group(std::string(PL_A1), std::string(PL_A2), in_product_group, out_product_group))
   {
-    PL_A3 = out_product_group.toStyledString().c_str();
+    PL_A4 = out_product_group.toStyledString().c_str();
     return true;
   }
   else
@@ -1254,23 +990,6 @@ const Json::Value shelf_array_to_shelf_json(const Json::Value &shelf_array)
     shelf_json["positionY"] = shelf_array[9];
     shelf_json["positionZ"] = shelf_array[10];
     shelf_json["width"] = shelf_array[11];
-  }
-  else if (shelf_array.size() == 14)
-  {
-    shelf_json["cadPlanId"] = shelf_array[0];
-    shelf_json["depth"] = shelf_array[1];
-    shelf_json["externalReferenceId"] = shelf_array[2];
-    shelf_json["height"] = shelf_array[3];
-    shelf_json["orientationW"] = shelf_array[4];
-    shelf_json["orientationX"] = shelf_array[5];
-    shelf_json["orientationY"] = shelf_array[6];
-    shelf_json["orientationZ"] = shelf_array[7];
-    shelf_json["positionX"] = shelf_array[8];
-    shelf_json["positionY"] = shelf_array[9];
-    shelf_json["positionZ"] = shelf_array[10];
-    shelf_json["productGroupId"] = shelf_array[11];
-    shelf_json["storeId"] = shelf_array[12];
-    shelf_json["width"] = shelf_array[13];
   }
   else
   {
@@ -1316,42 +1035,9 @@ PREDICATE(post_shelf, 4)
   ShelfController shelf_controller;
   Json::Value in_shelf = PlTerm_to_json(PL_A3);
   Json::Value out_shelf;
-  if (in_shelf.isArray())
-  {
-    shelf_controller.post_shelf(std::string(PL_A1), std::string(PL_A2), shelf_array_to_shelf_json(in_shelf), out_shelf);
-  }
-  else
-  {
-    shelf_controller.post_shelf(std::string(PL_A1), std::string(PL_A2), in_shelf, out_shelf);
-  }
-  if (!out_shelf.isNull())
+  if (in_shelf.isArray() ? shelf_controller.post_shelf(std::string(PL_A1), std::string(PL_A2), shelf_array_to_shelf_json(in_shelf), out_shelf) : shelf_controller.post_shelf(std::string(PL_A1), std::string(PL_A2), in_shelf, out_shelf))
   {
     PL_A4 = out_shelf.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// post_shelf(InStoreId, InShelf, OutShelf)
-PREDICATE(post_shelf, 3)
-{
-  ShelfController shelf_controller;
-  Json::Value in_shelf = PlTerm_to_json(PL_A2);
-  Json::Value out_shelf;
-  if (in_shelf.isArray())
-  {
-    shelf_controller.post_shelf(std::string(PL_A1), shelf_array_to_shelf_json(in_shelf), out_shelf);
-  }
-  else
-  {
-    shelf_controller.post_shelf(std::string(PL_A1), in_shelf, out_shelf);
-  }
-  if (!out_shelf.isNull())
-  {
-    PL_A3 = out_shelf.toStyledString().c_str();
     return true;
   }
   else
@@ -1366,42 +1052,9 @@ PREDICATE(put_shelf, 5)
   ShelfController shelf_controller;
   Json::Value in_shelf = PlTerm_to_json(PL_A4);
   Json::Value out_shelf;
-  if (in_shelf.isArray())
-  {
-    shelf_controller.put_shelf(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), shelf_array_to_shelf_json(in_shelf), out_shelf);
-  }
-  else
-  {
-    shelf_controller.put_shelf(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), in_shelf, out_shelf);
-  }
-  if (!out_shelf.isNull())
+  if (in_shelf.isArray() ? shelf_controller.put_shelf(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), shelf_array_to_shelf_json(in_shelf), out_shelf) : shelf_controller.put_shelf(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), in_shelf, out_shelf))
   {
     PL_A5 = out_shelf.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// put_shelf(InShelfId, InShelf, OutShelf)
-PREDICATE(put_shelf, 3)
-{
-  ShelfController shelf_controller;
-  Json::Value in_shelf = PlTerm_to_json(PL_A2);
-  Json::Value out_shelf;
-  if (in_shelf.isArray())
-  {
-    shelf_controller.put_shelf(std::string(PL_A1), shelf_array_to_shelf_json(in_shelf), out_shelf);
-  }
-  else
-  {
-    shelf_controller.put_shelf(std::string(PL_A1), in_shelf, out_shelf);
-  }
-  if (!out_shelf.isNull())
-  {
-    PL_A3 = out_shelf.toStyledString().c_str();
     return true;
   }
   else
@@ -1625,15 +1278,7 @@ PREDICATE(post_shelf_layer, 3)
   ShelfLayerController shelf_layer_controller;
   Json::Value in_shelf_layer = PlTerm_to_json(PL_A2);
   Json::Value out_shelf_layer;
-  if (in_shelf_layer.isArray())
-  {
-    shelf_layer_controller.post_shelf_layer(std::string(PL_A1), shelf_layer_array_to_shelf_layer_json(in_shelf_layer), out_shelf_layer);
-  }
-  else
-  {
-    shelf_layer_controller.post_shelf_layer(std::string(PL_A1), in_shelf_layer, out_shelf_layer);
-  }
-  if (!out_shelf_layer.isNull())
+  if (in_shelf_layer.isArray() ? shelf_layer_controller.post_shelf_layer(std::string(PL_A1), shelf_layer_array_to_shelf_layer_json(in_shelf_layer), out_shelf_layer) : shelf_layer_controller.post_shelf_layer(std::string(PL_A1), in_shelf_layer, out_shelf_layer))
   {
     PL_A3 = out_shelf_layer.toStyledString().c_str();
     return true;
@@ -1661,13 +1306,6 @@ const Json::Value facing_array_to_facing_json(const Json::Value &facing_array)
     facing_json["layerRelativePosition"] = facing_array[0];
     facing_json["noOfItemsDepth"] = facing_array[1];
     facing_json["noOfItemsWidth"] = facing_array[2];
-  }
-  else if (facing_array.size() == 4)
-  {
-    facing_json["layerRelativePosition"] = facing_array[0];
-    facing_json["noOfItemsDepth"] = facing_array[1];
-    facing_json["noOfItemsWidth"] = facing_array[2];
-    facing_json["shelfLayerId"] = facing_array[3];
   }
   else
   {
@@ -1713,40 +1351,7 @@ PREDICATE(post_facing, 3)
   FacingController facing_controller;
   Json::Value in_facing = PlTerm_to_json(PL_A2);
   Json::Value out_facing;
-  if (in_facing.isArray())
-  {
-    facing_controller.post_facing(std::string(PL_A1), facing_array_to_facing_json(in_facing), out_facing);
-  }
-  else
-  {
-    facing_controller.post_facing(std::string(PL_A1), in_facing, out_facing);
-  }
-  if (!out_facing.isNull())
-  {
-    PL_A3 = out_facing.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// put_facing(InFacingId, InFacing, OutFacing)
-PREDICATE(put_facing, 3)
-{
-  FacingController facing_controller;
-  Json::Value in_facing = PlTerm_to_json(PL_A2);
-  Json::Value out_facing;
-  if (in_facing.isArray())
-  {
-    facing_controller.put_facing(std::string(PL_A1), facing_array_to_facing_json(in_facing), out_facing);
-  }
-  else
-  {
-    facing_controller.put_facing(std::string(PL_A1), in_facing, out_facing);
-  }
-  if (!out_facing.isNull())
+  if (in_facing.isArray() ? facing_controller.post_facing(std::string(PL_A1), facing_array_to_facing_json(in_facing), out_facing) : facing_controller.post_facing(std::string(PL_A1), in_facing, out_facing))
   {
     PL_A3 = out_facing.toStyledString().c_str();
     return true;
@@ -1763,15 +1368,7 @@ PREDICATE(put_facing, 4)
   FacingController facing_controller;
   Json::Value in_facing = PlTerm_to_json(PL_A3);
   Json::Value out_facing;
-  if (in_facing.isArray())
-  {
-    facing_controller.put_facing(std::string(PL_A1), std::string(PL_A2), facing_array_to_facing_json(in_facing), out_facing);
-  }
-  else
-  {
-    facing_controller.put_facing(std::string(PL_A1), std::string(PL_A2), in_facing, out_facing);
-  }
-  if (!out_facing.isNull())
+  if (in_facing.isArray() ? facing_controller.put_facing(std::string(PL_A1), std::string(PL_A2), facing_array_to_facing_json(in_facing), out_facing) : facing_controller.put_facing(std::string(PL_A1), std::string(PL_A2), in_facing, out_facing))
   {
     PL_A4 = out_facing.toStyledString().c_str();
     return true;
@@ -1822,23 +1419,7 @@ PREDICATE(get_item_group, 2)
   }
 }
 
-// post_item_group(InItemGroup, OutItemGroup)
-PREDICATE(post_item_group, 2)
-{
-  ItemGroupController item_group_controller;
-  Json::Value out_item_group;
-  if (item_group_controller.post_item_group(PlTerm_to_json(PL_A1), out_item_group))
-  {
-    PL_A2 = out_item_group.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// post_item_group(InFacingId, InLogisticalUnitId, InStock, OutItemGroup)
+// post_item_group(InFacingId, InProductUnitId, InStock, OutItemGroup)
 PREDICATE(post_item_group, 4)
 {
   ItemGroupController item_group_controller;
@@ -1854,23 +1435,7 @@ PREDICATE(post_item_group, 4)
   }
 }
 
-// put_item_group(InItemGroupId, InItemGroup, OutItemGroup)
-PREDICATE(put_item_group, 3)
-{
-  ItemGroupController item_group_controller;
-  Json::Value out_item_group;
-  if (item_group_controller.put_item_group(std::string(PL_A1), PlTerm_to_json(PL_A2), out_item_group))
-  {
-    PL_A3 = out_item_group.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// put_item_group(InItemGroupId, InFacingId, InLogisticalUnitId, InStock, OutItemGroup)
+// put_item_group(InItemGroupId, InFacingId, InProductUnitId, InStock, OutItemGroup)
 PREDICATE(put_item_group, 5)
 {
   ItemGroupController item_group_controller;
@@ -1904,14 +1469,6 @@ const Json::Value item_array_to_item_json(const Json::Value &item_array)
     item_json["positionInFacingY"] = item_array[1];
     item_json["positionInFacingZ"] = item_array[2];
   }
-  else if (item_array.size() == 4)
-  {
-    item_json["itemGroupId"] = item_array[0];
-    item_json["positionInFacingX"] = item_array[1];
-    item_json["positionInFacingY"] = item_array[2];
-    item_json["positionInFacingZ"] = item_array[3];
-  }
-
   else
   {
     std::cerr << "Invalid item array (length = " << item_array.size() << ")" << std::endl;
@@ -1950,71 +1507,13 @@ PREDICATE(get_item, 2)
   }
 }
 
-// post_item(InItem, OutItem)
-PREDICATE(post_item, 2)
-{
-  ItemController item_controller;
-  Json::Value in_item = PlTerm_to_json(PL_A1);
-  Json::Value out_item;
-  if (in_item.isArray())
-  {
-    item_controller.post_item(item_array_to_item_json(in_item), out_item);
-  }
-  else
-  {
-    item_controller.post_item(in_item, out_item);
-  }
-  if (!out_item.isNull())
-  {
-    PL_A2 = out_item.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
 // post_item(InItemGroupId, InItem, OutItem)
 PREDICATE(post_item, 3)
 {
   ItemController item_controller;
   Json::Value in_item = PlTerm_to_json(PL_A2);
   Json::Value out_item;
-  if (in_item.isArray())
-  {
-    item_controller.post_item(std::string(PL_A1), item_array_to_item_json(in_item), out_item);
-  }
-  else
-  {
-    item_controller.post_item(std::string(PL_A1), in_item, out_item);
-  }
-  if (!out_item.isNull())
-  {
-    PL_A3 = out_item.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// put_item(InItemId, InItem, OutItem)
-PREDICATE(put_item, 3)
-{
-  ItemController item_controller;
-  Json::Value in_item = PlTerm_to_json(PL_A2);
-  Json::Value out_item;
-  if (in_item.isArray())
-  {
-    item_controller.put_item(std::string(PL_A1), item_array_to_item_json(in_item), out_item);
-  }
-  else
-  {
-    item_controller.put_item(std::string(PL_A1), in_item, out_item);
-  }
-  if (!out_item.isNull())
+  if (in_item.isArray() ? item_controller.post_item(std::string(PL_A1), item_array_to_item_json(in_item), out_item) : item_controller.post_item(std::string(PL_A1), in_item, out_item))
   {
     PL_A3 = out_item.toStyledString().c_str();
     return true;
@@ -2031,15 +1530,7 @@ PREDICATE(put_item, 4)
   ItemController item_controller;
   Json::Value in_item = PlTerm_to_json(PL_A3);
   Json::Value out_item;
-  if (in_item.isArray())
-  {
-    item_controller.put_item(std::string(PL_A1), std::string(PL_A2), item_array_to_item_json(in_item), out_item);
-  }
-  else
-  {
-    item_controller.put_item(std::string(PL_A1), std::string(PL_A2), in_item, out_item);
-  }
-  if (!out_item.isNull())
+  if (in_item.isArray() ? item_controller.put_item(std::string(PL_A1), std::string(PL_A2), item_array_to_item_json(in_item), out_item) : item_controller.put_item(std::string(PL_A1), std::string(PL_A2), in_item, out_item))
   {
     PL_A4 = out_item.toStyledString().c_str();
     return true;
@@ -2099,46 +1590,13 @@ PREDICATE(get_planograms, 1)
   return planograms.close();
 }
 
-// post_planogram(InPlanogram, OutPlanogram)
-PREDICATE(post_planogram, 2)
-{
-  PlanogramController planogram_controller;
-  Json::Value in_planogram = PlTerm_to_json(PL_A1);
-  Json::Value out_planogram;
-  if (in_planogram.isArray())
-  {
-    planogram_controller.post_planogram(planogram_array_to_planogram_json(in_planogram), out_planogram);
-  }
-  else
-  {
-    planogram_controller.post_planogram(in_planogram, out_planogram);
-  }
-  if (!out_planogram.isNull())
-  {
-    PL_A2 = out_planogram.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// post_planogram(InLogisticalUnitId, InShelfLayerId, InPlanogram, OutPlanogram)
+// post_planogram(InProductUnitId, InShelfLayerId, InPlanogram, OutPlanogram)
 PREDICATE(post_planogram, 4)
 {
   PlanogramController planogram_controller;
   Json::Value in_planogram = PlTerm_to_json(PL_A3);
   Json::Value out_planogram;
-  if (in_planogram.isArray())
-  {
-    planogram_controller.post_planogram(std::string(PL_A1), std::string(PL_A2), planogram_array_to_planogram_json(in_planogram), out_planogram);
-  }
-  else
-  {
-    planogram_controller.post_planogram(std::string(PL_A1), std::string(PL_A2), in_planogram, out_planogram);
-  }
-  if (!out_planogram.isNull())
+  if (in_planogram.isArray() ? planogram_controller.post_planogram(std::string(PL_A1), std::string(PL_A2), planogram_array_to_planogram_json(in_planogram), out_planogram) : planogram_controller.post_planogram(std::string(PL_A1), std::string(PL_A2), in_planogram, out_planogram))
   {
     PL_A4 = out_planogram.toStyledString().c_str();
     return true;
@@ -2149,46 +1607,13 @@ PREDICATE(post_planogram, 4)
   }
 }
 
-// put_planogram(InPlanogramId, InPlanogram, OutPlanogram)
-PREDICATE(put_planogram, 3)
-{
-  PlanogramController planogram_controller;
-  Json::Value in_planogram = PlTerm_to_json(PL_A2);
-  Json::Value out_planogram;
-  if (in_planogram.isArray())
-  {
-    planogram_controller.put_planogram(std::string(PL_A1), planogram_array_to_planogram_json(in_planogram), out_planogram);
-  }
-  else
-  {
-    planogram_controller.put_planogram(std::string(PL_A1), in_planogram, out_planogram);
-  }
-  if (!out_planogram.isNull())
-  {
-    PL_A3 = out_planogram.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// put_planogram(InPlanogramId, InLogisticalUnitId, InShelfLayerId, InPlanogram, OutPlanogram)
+// put_planogram(InPlanogramId, InProductUnitId, InShelfLayerId, InPlanogram, OutPlanogram)
 PREDICATE(put_planogram, 5)
 {
   PlanogramController planogram_controller;
   Json::Value in_planogram = PlTerm_to_json(PL_A4);
   Json::Value out_planogram;
-  if (in_planogram.isArray())
-  {
-    planogram_controller.put_planogram(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), planogram_array_to_planogram_json(in_planogram), out_planogram);
-  }
-  else
-  {
-    planogram_controller.put_planogram(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), in_planogram, out_planogram);
-  }
-  if (!out_planogram.isNull())
+  if (in_planogram.isArray() ? planogram_controller.put_planogram(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), planogram_array_to_planogram_json(in_planogram), out_planogram) : planogram_controller.put_planogram(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), in_planogram, out_planogram))
   {
     PL_A5 = out_planogram.toStyledString().c_str();
     return true;
@@ -2217,14 +1642,6 @@ const Json::Value shopping_basket_position_array_to_shopping_basket_position_jso
     shopping_basket_position_json["quantity"] = shopping_basket_position_array[1];
     shopping_basket_position_json["sellingPrice"] = shopping_basket_position_array[2];
   }
-  else if (shopping_basket_position_array.size() == 4)
-  {
-    shopping_basket_position_json["currency"] = shopping_basket_position_array[0];
-    shopping_basket_position_json["productId"] = shopping_basket_position_array[1];
-    shopping_basket_position_json["quantity"] = shopping_basket_position_array[2];
-    shopping_basket_position_json["sellingPrice"] = shopping_basket_position_array[3];
-  }
-
   else
   {
     std::cerr << "Invalid shopping_basket_position array (length = " << shopping_basket_position_array.size() << ")" << std::endl;
@@ -2245,46 +1662,13 @@ PREDICATE(get_shopping_basket_positions, 3)
   return shopping_basket_positions.close();
 }
 
-// post_shopping_basket_position(InStoreId, InCustomerId, InShoppingBasketPosition, OutShoppingBasketPosition)
-PREDICATE(post_shopping_basket_position, 4)
-{
-  ShoppingBasketPositionController shopping_basket_position_controller;
-  Json::Value in_shopping_basket_position = PlTerm_to_json(PL_A3);
-  Json::Value out_shopping_basket_position;
-  if (in_shopping_basket_position.isArray())
-  {
-    shopping_basket_position_controller.post_shopping_basket_position(std::string(PL_A1), std::string(PL_A2), shopping_basket_position_array_to_shopping_basket_position_json(in_shopping_basket_position), out_shopping_basket_position);
-  }
-  else
-  {
-    shopping_basket_position_controller.post_shopping_basket_position(std::string(PL_A1), std::string(PL_A2), in_shopping_basket_position, out_shopping_basket_position);
-  }
-  if (!out_shopping_basket_position.isNull())
-  {
-    PL_A4 = out_shopping_basket_position.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
 // post_shopping_basket_position(InStoreId, InCustomerId, InProductId, InShoppingBasketPosition, OutShoppingBasketPosition)
 PREDICATE(post_shopping_basket_position, 5)
 {
   ShoppingBasketPositionController shopping_basket_position_controller;
   Json::Value in_shopping_basket_position = PlTerm_to_json(PL_A4);
   Json::Value out_shopping_basket_position;
-  if (in_shopping_basket_position.isArray())
-  {
-    shopping_basket_position_controller.post_shopping_basket_position(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), shopping_basket_position_array_to_shopping_basket_position_json(in_shopping_basket_position), out_shopping_basket_position);
-  }
-  else
-  {
-    shopping_basket_position_controller.post_shopping_basket_position(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), in_shopping_basket_position, out_shopping_basket_position);
-  }
-  if (!out_shopping_basket_position.isNull())
+  if (in_shopping_basket_position.isArray() ? shopping_basket_position_controller.post_shopping_basket_position(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), shopping_basket_position_array_to_shopping_basket_position_json(in_shopping_basket_position), out_shopping_basket_position) : shopping_basket_position_controller.post_shopping_basket_position(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), in_shopping_basket_position, out_shopping_basket_position))
   {
     PL_A5 = out_shopping_basket_position.toStyledString().c_str();
     return true;
@@ -2309,157 +1693,6 @@ PREDICATE(delete_shopping_basket_positions, 2)
   return shopping_basket_position_controller.delete_shopping_basket_positions(std::string(PL_A1), std::string(PL_A2));
 }
 
-// Delivery
-
-const Json::Value delivery_array_to_delivery_json(const Json::Value &delivery_array)
-{
-  Json::Value delivery_json;
-  if (delivery_array.size() == 5)
-  {
-    delivery_json["amount"] = delivery_array[0];
-    delivery_json["handlingUnit"] = delivery_array[1];
-    delivery_json["orderUnit"] = delivery_array[2];
-    delivery_json["plannedDelivery"] = delivery_array[3];
-    delivery_json["source"] = delivery_array[4];
-  }
-  else if (delivery_array.size() == 7)
-  {
-    delivery_json["amount"] = delivery_array[0];
-    delivery_json["handlingUnit"] = delivery_array[1];
-    delivery_json["logisticalUnitId"] = delivery_array[2];
-    delivery_json["orderUnit"] = delivery_array[3];
-    delivery_json["plannedDelivery"] = delivery_array[4];
-    delivery_json["source"] = delivery_array[5];
-    delivery_json["storeId"] = delivery_array[6];
-  }
-
-  else
-  {
-    std::cerr << "Invalid delivery array (length = " << delivery_array.size() << ")" << std::endl;
-  }
-  return delivery_json;
-}
-
-// get_deliveries(DeliveryList)
-PREDICATE(get_deliveries, 1)
-{
-  DeliveryController delivery_controller;
-
-  PlTail deliveries(PL_A1);
-  for (const Json::Value &delivery : delivery_controller.get_deliveries())
-  {
-    deliveries.append(delivery.toStyledString().c_str());
-  }
-  return deliveries.close();
-}
-
-// post_delivery(InDelivery, OutDelivery)
-PREDICATE(post_delivery, 2)
-{
-  DeliveryController delivery_controller;
-  Json::Value in_delivery = PlTerm_to_json(PL_A1);
-  Json::Value out_delivery;
-  if (in_delivery.isArray())
-  {
-    delivery_controller.post_delivery(delivery_array_to_delivery_json(in_delivery), out_delivery);
-  }
-  else
-  {
-    delivery_controller.post_delivery(in_delivery, out_delivery);
-  }
-  if (!out_delivery.isNull())
-  {
-    PL_A2 = out_delivery.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// post_delivery(InLogisticalUnitId, InStoreId, InDelivery, OutDelivery)
-PREDICATE(post_delivery, 4)
-{
-  DeliveryController delivery_controller;
-  Json::Value in_delivery = PlTerm_to_json(PL_A3);
-  Json::Value out_delivery;
-  if (in_delivery.isArray())
-  {
-    delivery_controller.post_delivery(std::string(PL_A1), std::string(PL_A2), delivery_array_to_delivery_json(in_delivery), out_delivery);
-  }
-  else
-  {
-    delivery_controller.post_delivery(std::string(PL_A1), std::string(PL_A2),in_delivery, out_delivery);
-  }
-  if (!out_delivery.isNull())
-  {
-    PL_A4 = out_delivery.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// put_delivery(InDeliveryId, InDelivery, OutDelivery)
-PREDICATE(put_delivery, 3)
-{
-  DeliveryController delivery_controller;
-  Json::Value in_delivery = PlTerm_to_json(PL_A2);
-  Json::Value out_delivery;
-  if (in_delivery.isArray())
-  {
-    delivery_controller.put_delivery(std::string(PL_A1), delivery_array_to_delivery_json(in_delivery), out_delivery);
-  }
-  else
-  {
-    delivery_controller.put_delivery(std::string(PL_A1), in_delivery, out_delivery);
-  }
-  if (!out_delivery.isNull())
-  {
-    PL_A3 = out_delivery.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// put_delivery(InDeliveryId, InLogisticalUnitId, InStoreId, InDelivery, OutDelivery)
-PREDICATE(put_delivery, 5)
-{
-  DeliveryController delivery_controller;
-  Json::Value in_delivery = PlTerm_to_json(PL_A4);
-  Json::Value out_delivery;
-  if (in_delivery.isArray())
-  {
-    delivery_controller.put_delivery(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), delivery_array_to_delivery_json(in_delivery), out_delivery);
-  }
-  else
-  {
-    delivery_controller.put_delivery(std::string(PL_A1), std::string(PL_A2), std::string(PL_A3), in_delivery, out_delivery);
-  }
-  if (!out_delivery.isNull())
-  {
-    PL_A5 = out_delivery.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// delete_delivery(DeliveryId)
-PREDICATE(delete_delivery, 1)
-{
-  DeliveryController delivery_controller;
-  return delivery_controller.delete_delivery(std::string(PL_A1));
-}
-
 // Device
 
 const Json::Value device_array_to_device_json(const Json::Value &device_array)
@@ -2470,14 +1703,6 @@ const Json::Value device_array_to_device_json(const Json::Value &device_array)
     device_json["description"] = device_array[0];
     device_json["deviceType"] = device_array[1];
   }
-  else if (device_array.size() == 4)
-  {
-    device_json["description"] = device_array[0];
-    device_json["deviceType"] = device_array[1];
-    device_json["id"] = device_array[2];
-    device_json["storeId"] = device_array[3];
-  }
-
   else
   {
     std::cerr << "Invalid delivery array (length = " << device_array.size() << ")" << std::endl;
@@ -2504,42 +1729,9 @@ PREDICATE(post_device, 4)
   DeviceController device_controller;
   Json::Value in_device = PlTerm_to_json(PL_A3);
   Json::Value out_device;
-  if (in_device.isArray())
-  {
-    device_controller.post_device(std::string(PL_A1), std::string(PL_A2), device_array_to_device_json(in_device), out_device);
-  }
-  else
-  {
-    device_controller.post_device(std::string(PL_A1), std::string(PL_A2), in_device, out_device);
-  }
-  if (!out_device.isNull())
+  if (in_device.isArray() ? device_controller.post_device(std::string(PL_A1), std::string(PL_A2), device_array_to_device_json(in_device), out_device) : device_controller.post_device(std::string(PL_A1), std::string(PL_A2), in_device, out_device))
   {
     PL_A4 = out_device.toStyledString().c_str();
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// post_device(InDelivery, OutDelivery)
-PREDICATE(post_device, 2)
-{
-  DeviceController device_controller;
-  Json::Value in_device = PlTerm_to_json(PL_A1);
-  Json::Value out_device;
-  if (in_device.isArray())
-  {
-    device_controller.post_device(device_array_to_device_json(in_device), out_device);
-  }
-  else
-  {
-    device_controller.post_device(in_device, out_device);
-  }
-  if (!out_device.isNull())
-  {
-    PL_A2 = out_device.toStyledString().c_str();
     return true;
   }
   else

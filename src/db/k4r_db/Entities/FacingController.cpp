@@ -13,7 +13,6 @@ public:
 
   const bool post_facing(const std::string &, const Json::Value &, Json::Value &);
 
-  const bool put_facing(const std::string &, const Json::Value &, Json::Value &);
   const bool put_facing(const std::string &, const std::string &, const Json::Value &, Json::Value &);
 
   const bool delete_facing(const std::string &);
@@ -38,16 +37,11 @@ const bool FacingController::post_facing(const std::string &in_shelf_layer_id, c
   return this->post_data(in_facing, out_facing, "shelflayers/" + in_shelf_layer_id + "/facings");
 }
 
-const bool FacingController::put_facing(const std::string &in_facing_id, const Json::Value &in_facing, Json::Value &out_facing)
-{
-  return this->put_data(in_facing, out_facing,"facings/" + in_facing_id);
-}
-
 const bool FacingController::put_facing(const std::string &in_facing_id, const std::string &in_shelf_layer_id, const Json::Value &in_facing, Json::Value &out_facing)
 {
   Json::Value in_facing_tmp = in_facing;
   in_facing_tmp["shelfLayerId"] = in_shelf_layer_id;
-  return this->put_facing(in_facing_id, in_facing, out_facing);
+  return this->put_data(in_facing_tmp, out_facing,"facings/" + in_facing_id);
 }
 
 const bool FacingController::delete_facing(const std::string &facing_id)

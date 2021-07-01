@@ -13,7 +13,7 @@ public:
   const Json::Value get_product_groups(const std::string &);
 
   const bool post_product_to_product_group(const std::string &, const std::string &, Json::Value &);
-  const bool post_product_group(const std::string &, const Json::Value &, Json::Value &);
+  const bool post_product_group(const std::string &, const std::string &, const Json::Value &, Json::Value &);
 
   const bool delete_product_from_product_group(const std::string &, const std::string &);
   const bool delete_product_group(const std::string &);
@@ -38,9 +38,11 @@ const bool ProductGroupController::post_product_to_product_group(const std::stri
   return this->post_data(Json::Value(), out_product_group, "productgroups/" + in_product_group_id + "/products/" + in_product_id);
 }
 
-const bool ProductGroupController::post_product_group(const std::string &in_store_id, const Json::Value &in_product_group, Json::Value &out_product_group)
+const bool ProductGroupController::post_product_group(const std::string &in_name, const std::string &in_store_id, const Json::Value &in_product_group, Json::Value &out_product_group)
 {
-  return this->post_data(in_product_group, out_product_group, "stores/" + in_store_id + "/productgroups");
+  Json::Value in_product_group_tmp = in_product_group;
+  in_product_group_tmp["name"] = in_name;
+  return this->post_data(in_product_group_tmp, out_product_group, "stores/" + in_store_id + "/productgroups");
 }
 
 const bool ProductGroupController::delete_product_group(const std::string &product_group_id)
