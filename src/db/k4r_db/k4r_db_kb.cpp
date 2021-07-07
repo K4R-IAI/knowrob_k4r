@@ -121,8 +121,7 @@ PREDICATE(get_customer, 2)
   CustomerController customer_controller;
 
   Json::Value customer = customer_controller.get_customer(std::string(PL_A1));
-  std::string customer_id = customer["id"].asString();
-  if (std::stoi(std::string(PL_A1)) == std::stoi(customer_id))
+  if (!customer["id"].isNull())
   {
     PL_A2 = customer.toStyledString().c_str();
     return true;
@@ -218,8 +217,7 @@ PREDICATE(get_store, 2)
   StoreController store_controller;
 
   Json::Value store = store_controller.get_store(std::string(PL_A1));
-  std::string store_id = store["id"].asString();
-  if (std::stoi(std::string(PL_A1)) == std::stoi(store_id))
+  if (!store["id"].isNull())
   {
     PL_A2 = store.toStyledString().c_str();
     return true;
@@ -407,8 +405,7 @@ PREDICATE(get_material_group, 2)
   MaterialGroupController material_group_controller;
 
   Json::Value material_group = material_group_controller.get_material_group(std::string(PL_A1));
-  std::string material_group_id = material_group["id"].asString();
-  if (std::stoi(std::string(PL_A1)) == std::stoi(material_group_id))
+  if (!material_group["id"].isNull())
   {
     PL_A2 = material_group.toStyledString().c_str();
     return true;
@@ -767,8 +764,7 @@ PREDICATE(get_product_unit, 2)
   ProductUnitController product_unit_controller;
 
   Json::Value product_unit = product_unit_controller.get_product_unit(std::string(PL_A1));
-  std::string product_unit_id = product_unit["id"].asString();
-  if (std::stoi(std::string(PL_A1)) == std::stoi(product_unit_id))
+  if (!product_unit["id"].isNull())
   {
     PL_A2 = product_unit.toStyledString().c_str();
     return true;
@@ -931,8 +927,7 @@ PREDICATE(get_product_group, 2)
   ProductGroupController product_group_controller;
 
   Json::Value product_group = product_group_controller.get_product_group(std::string(PL_A1));
-  std::string product_group_id = product_group["id"].asString();
-  if (std::stoi(std::string(PL_A1)) == std::stoi(product_group_id))
+  if (!product_group["id"].isNull())
   {
     PL_A2 = product_group.toStyledString().c_str();
     return true;
@@ -1038,8 +1033,7 @@ PREDICATE(get_shelf, 2)
   ShelfController shelf_controller;
 
   Json::Value shelf = shelf_controller.get_shelf(std::string(PL_A1));
-  std::string shelf_id = shelf["id"].asString();
-  if (std::stoi(std::string(PL_A1)) == std::stoi(shelf_id))
+  if (!shelf["id"].isNull())
   {
     PL_A2 = shelf.toStyledString().c_str();
     return true;
@@ -1281,8 +1275,7 @@ PREDICATE(get_shelf_layer, 2)
   ShelfLayerController shelf_layer_controller;
 
   Json::Value shelf_layer = shelf_layer_controller.get_shelf_layer(std::string(PL_A1));
-  std::string shelf_layer_id = shelf_layer["id"].asString();
-  if (std::stoi(std::string(PL_A1)) == std::stoi(shelf_layer_id))
+  if (!shelf_layer["id"].isNull())
   {
     PL_A2 = shelf_layer.toStyledString().c_str();
     return true;
@@ -1354,8 +1347,7 @@ PREDICATE(get_facing, 2)
   FacingController facing_controller;
 
   Json::Value facing = facing_controller.get_facing(std::string(PL_A1));
-  std::string facing_id = facing["id"].asString();
-  if (std::stoi(std::string(PL_A1)) == std::stoi(facing_id))
+  if (!facing["id"].isNull())
   {
     PL_A2 = facing.toStyledString().c_str();
     return true;
@@ -1428,8 +1420,7 @@ PREDICATE(get_item_group, 2)
   ItemGroupController item_group_controller;
 
   Json::Value item_group = item_group_controller.get_item_group(std::string(PL_A1));
-  std::string item_group_id = item_group["id"].asString();
-  if (std::stoi(std::string(PL_A1)) == std::stoi(item_group_id))
+  if (!item_group["id"].isNull())
   {
     PL_A2 = item_group.toStyledString().c_str();
     return true;
@@ -1516,8 +1507,7 @@ PREDICATE(get_item, 2)
   ItemController item_controller;
 
   Json::Value item = item_controller.get_item(std::string(PL_A1));
-  std::string item_id = item["id"].asString();
-  if (std::stoi(std::string(PL_A1)) == std::stoi(item_id))
+  if (!item["id"].isNull())
   {
     PL_A2 = item.toStyledString().c_str();
     return true;
