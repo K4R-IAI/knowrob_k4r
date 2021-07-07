@@ -7,20 +7,26 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(catkin REQUIRED COMPONENTS
-    rosprolog roscpp roslib)
+    rosprolog 
+    roscpp 
+    roslib
+)
 
 find_package(PkgConfig)
+
+pkg_check_modules(RDKAFKA REQUIRED rdkafka)
+pkg_check_modules(RDKAFKAPP REQUIRED rdkafka++)
 
 pkg_check_modules(SWIPL REQUIRED swipl)
 link_directories(${SWIPL_LIBRARY_DIRS})
 
 pkg_check_modules(CURLPP REQUIRED curlpp)
-include_directories(${CURLPP_INCLUDE_DIRS})
-link_directories(${CURLPP_LIBRARY_DIRS})
+# include_directories(${CURLPP_INCLUDE_DIRS})
+#link_directories(${CURLPP_LIBRARY_DIRS})
 
 pkg_check_modules(JSONCPP REQUIRED jsoncpp)
-include_directories(${JSONCPP_INCLUDE_DIRS})
-link_directories(${JSONCPP_LIBRARY_DIRS})
+# include_directories(${JSONCPP_INCLUDE_DIRS})
+#link_directories(${JSONCPP_LIBRARY_DIRS})
 
 catkin_package(
 	CATKIN_DEPENDS rosprolog roscpp roslib
@@ -28,6 +34,8 @@ catkin_package(
 
 set(CMAKE_CXX_FLAGS "-std=c++0x -pthread ${CMAKE_CXX_FLAGS}")
 include_directories(include ${SWIPL_INCLUDE_DIRS} ${CURLPP_INCLUDE_DIRS} ${JSONCPP_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
+
+
 
 ##############
 ##### DB #####
@@ -42,5 +50,26 @@ install(DIRECTORY prolog/
 add_library(k4r_db_client SHARED src/k4r_db/k4r_db_kb.cpp)
 target_link_libraries(k4r_db_client ${SWIPL_LIBRARIES} ${CURLPP_LIBRARIES} ${JSONCPP_LIBRARIES} ${catkin_LIBRARIES} stdc++fs)
 add_dependencies(k4r_db_client
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS})
+
+###############
+##### Pa4 #####
+###############
+
+##add_executable(publisher src/pa4/kafka_publisher.cpp)
+##target_link_libraries(publisher ${RDKAFKA_LIBRARIES} ${RDKAFKAPP_LIBRARIES})
+
+add_library(kafka_plugin 
+            src/pa4/kafka_plugin.cpp 
+            src/pa4/kafka_event_producer.cpp)
+target_link_libraries(kafka_plugin 
+                      ${SWIPL_LIBRARIES}  
+                      ${JSONCPP_LIBRARIES} 
+                      ${catkin_LIBRARIES}
+                      ${RDKAFKA_LIBRARIES}
+                      ${RDKAFKAPP_LIBRARIES})
+
+add_dependencies(kafka_plugin
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS})

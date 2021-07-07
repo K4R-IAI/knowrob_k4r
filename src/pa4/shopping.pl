@@ -1,4 +1,4 @@
-/** <module> shopping_fridge
+/** <module> shopping_events
  * A client for the k4r db for Prolog.
 
 @author Kaviya Dhanabalachandran
@@ -8,15 +8,17 @@
 
 %%% TODO : Check if you are able to get the user
 
-:- module( shopping_fridge,
-    [
-        user_login(r, r, r),
+:- module( shopping_events,
+    [   
+        create_store(+, -, -),
+        user_login(r, r, r, r),
         pick_object(r, r, r, r, r), %% how do we handle probability 
         user_logout(r, r, r),
         put_back_object(r,r,r,r,r),
         items_bought(r, ?)
     ]).
 
+:- use_foreign_library('libkafka_plugin.so').
 :- use_module(library('semweb/rdf_db')).
 :- use_module(library('model/SOMA/ACT')).
 :- use_module(library('lang/terms/is_a')).
@@ -27,10 +29,21 @@
 :- rdf_db:rdf_register_ns(soma,
     'http://www.ease-crc.org/ont/SOMA.owl#', [keep(true)]).
 
-
-user_login(UserId, DeviceId, TimeStamp) :-
-   tell([is_action(ParentAct),
+%% Create Store
+create_store(StoreId, Store, Fridge) :-
+    tell([ instance_of(Store, shop:'Shop'),
+        triple(Store, shop:hasShopId, StoreId),
         has_type(Fridge, shop:'SmartFridge'),
+        has_location(Fridge, Store)
+        ]).
+
+% create_planogram(ProductId, Name, ProductPose, StoreId) :-
+%     tell(),
+
+user_login(UserId, DeviceId, TimeStamp, StoreId) :-
+   triple(Store, shop:hasShopId, StoreId),
+   has_location(Fridge, Store),
+   tell([is_action(ParentAct),
         has_participant(ParentAct, Fridge),
         instance_of(User, shop:'Customer'),
         instance_of(Task,shop:'Shopping'),
@@ -59,11 +72,11 @@ user_login(UserId, DeviceId, TimeStamp) :-
         executes_task(LoggingInAction, Tsk1),
         is_performed_by(LoggingInAction, User)
         ]),
-        time_interval_tell(LoggingInAction, Timestamp, Timestamp).
-       
+        time_interval_tell(LoggingInAction, Timestamp, Timestamp),
+        publish_log_in(TimeStamp, [UserId, StoreId]).
 
 
-pick_object(UserId, ItemId, ObjectType, Timestamp, Position) :-
+pick_object(UserId, StoreId, ItemId, ObjectType, Timestamp, Position) :-
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk), 
@@ -83,7 +96,8 @@ pick_object(UserId, ItemId, ObjectType, Timestamp, Position) :-
             %% TODO : create an instance of a Product. find Product type with object id or object type.
             triple(Basket, soma:containsObject, ItemId)
         ]),
-        time_interval_tell(PickAct, Timestamp, Timestamp).
+        time_interval_tell(PickAct, Timestamp, Timestamp),
+        publish_pick_event(TimeStamp, [UserId, ]).
 
 put_back_object(UserId, ItemId, ObjectType, Timestamp, Position) :-
     triple(User, shop:hasUserId, UserId),
@@ -108,8 +122,8 @@ put_back_object(UserId, ItemId, ObjectType, Timestamp, Position) :-
         tripledb_forget(Basket, soma:containsObject, ItemId),
         time_interval_tell(PutAct, Timestamp, Timestamp).
 
-user_logout(UserId, DeviceId, Timestamp) :-
-    %% Device might be another participant in the login and logout action
+user_logout(UserId, DeviceId, Timestamp, StoreId) :-
+    %% Device might be another participant in the login and logout action  
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk), 
@@ -129,7 +143,8 @@ user_logout(UserId, DeviceId, Timestamp) :-
             triple(ShoppingAct,  soma:hasExecutionState, soma:'ExecutionState_Succeeded')
         ]),
     time_interval_tell(LogoutAct, Timestamp, Timestamp),
-    time_interval_tell(ShoppingAct, Start, Timestamp).
+    time_interval_tell(ShoppingAct, Start, Timestamp), 
+    publish_log_out(Timestamp, [UserId, StoreId]).
 
 items_bought(UserId, Items) :-
     triple(User, shop:hasUserId, UserId),
