@@ -1206,25 +1206,25 @@ post_test_item_groups(StoreId, ProductId1, ProductId2, ProductUnitId1, ProductUn
 %   delete_product(ProductId1),
 %   delete_store(StoreId).
 
-% test('post_shelf') :-
-%   % Post mockup data
-%   post_test_store(StoreId),
+test('post_shelves') :-
+  % Post mockup data
+  post_test_store(StoreId),
 
-%   % Post shelves from data base
-%   post_shelves(StoreId, ShelfList),
-%   writeln(ShelfList),
+  % Post shelves from data base
+  post_shelves(StoreId, ShelfList),
+  writeln(ShelfList),
   
-%   % Delete all shelves
-%   get_shelves(StoreId, Shelves),
-%   forall(
-%     member(Shelf, Shelves),
-%     (
-%       get_entity_id(Shelf, ShelfId),
-%       delete_shelf(ShelfId)
-%     )
-%   ),
+  % Delete all shelves
+  get_shelves(StoreId, Shelves),
+  forall(
+    member(Shelf, Shelves),
+    (
+      get_entity_id(Shelf, ShelfId),
+      delete_shelf(ShelfId)
+    )
+  ),
 
-%   % Delete mockup data
-%   delete_store(StoreId).
+  % Delete mockup data
+  delete_store(StoreId).
 
 :- end_tests(k4r_db_client).

@@ -4,7 +4,6 @@
             get_entity_by_key_value/4,
             get_products_by_shelf/2,
             post_shelves/2
-            % post_shelf_layers/1,
             % post_facings/2,
             % post_shelves_and_parts/1,
             % post_facings/2,
@@ -83,29 +82,9 @@ post_shelves(StoreId, OutShelfList) :-
                 [CadPlanId, DepthInMM, ExternalReferenceId, HeightInMM,
                 OrientationW, OrientationX, OrientationY, OrientationZ,
                 PositionX, PositionY, PositionZ, WidthInMM], 
-                OutShelf
-            )
+                OutShelf)
         ),
         OutShelfList
-    ).
-
-post_shelf_layers(ShelfId) :-
-    get_shelf(ShelfId, ShelfDT),
-    get_value_from_key(ShelfDT, "externalReferenceId", ShelfReferenceId),
-    shelf_with_erp_id(Shelf, ShelfReferenceId),
-    findall(
-        OutShelfLayer,
-        (
-            triple(Shelf, soma:hasPhysicalComponent, ShelfLayer),
-            is_at(ShelfLayer, ['map', [_, _, PositionZ], _]),
-            instance_of(ShelfLayer, Type),
-            rdf_split_url(_, ExternalReferenceId, Type),
-            triple(ShelfLayer, shop:erpShelfLayerId, Level),
-            object_dimensions(Layer, DepthInM, WidthInM, HeightInM),
-            double_m_to_int_mm([DepthInM, WidthInM, HeightInM], [DepthInMM, WidthInMM, HeightInMM]),
-            post_shelf_layer(ShelfId, [DepthInMM, ExternalReferenceId, HeightInMM, Level, PositionZ, Type, WidthInMM], OutShelfLayer)
-        ),
-        OutShelfLayerList
     ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Kaviya %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
