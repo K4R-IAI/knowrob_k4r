@@ -28,14 +28,73 @@
 :- rdf_db:rdf_register_ns(shop, 'http://knowrob.org/kb/shop.owl#', [keep(true)]).
 :- rdf_db:rdf_register_ns(soma,
     'http://www.ease-crc.org/ont/SOMA.owl#', [keep(true)]).
+:- rdf_db:rdf_register_ns(fridge, 'http://knowrob.org/kb/fridge.owl#', [keep(true)]).
 
 %% Create Store
 create_store(StoreId, Store, Fridge) :-
+    has_type(Fridge, shop:'SmartFridge'),
     tell([ instance_of(Store, shop:'Shop'),
         triple(Store, shop:hasShopId, StoreId),
-        has_type(Fridge, shop:'SmartFridge'),
         has_location(Fridge, Store)
         ]).
+
+%% Create the physical rep with properties of the fridge
+assert_frame_dimensions(Fridge, BackDim, BaseDim) :-
+    triple(Fridge, dul:hasComponent, Frame),
+    has_type(Frame, shop:'ShelfFrame'),
+    % ShelfBase
+    triple(Frame, dul:hasComponent, ShelfBase),
+    has_type(ShelfBase, shop:'ShelfBase'),
+    [D, W, H] = BaseDim,
+    shop:assert_object_shape_(ShelfBase, D, W, H, [0.5,0.5,0.5]),
+    % ShelfBack
+    triple(Frame, dul:hasComponent, ShelfBack),
+    has_type(ShelfBack, shop:'ShelfBack'),
+    [D1, W1, H1] = BackDim,
+    shop:assert_object_shape_(ShelfBack, D1, W1, H1, [0.5,0.5,0.5]).
+
+%% assert layer, separators and facigns on the layer. Assert their dimensions
+insert_layer_and_components(LayerNumber, LayerDim, NoOfFacings) :-
+    % 1. assert the layer dimensions
+    has_type(Layer, shop:'ShelfLayer'),
+    triple(Layer, shop:erpShelfLayerId, LayerNum),
+    [D, W, H] = LayerDim, 
+    shop:assert_object_shape_(Layer, D, W, H, [0.5,0.5,0.5]),
+
+
+    
+    
+% 2. based on number of facings, attach the separators to the layer
+
+
+% 3. assert the dimensions of facings 
+% a. (H of layer above - layer below) - 0.1
+% b. no layer above case - (H of shelf frame - layer of facing)-0.1 ?
+    
+assert_layer_dimensions_(Fridge, LayerDim) :-
+    triple(Fridge, dul:hasComponent, Layer),
+    has_type(Layer, shop:'ShelfLayer'),
+    [D, W, H] = LayerDim, 
+    shop:assert_object_shape_(Layer, D, W, H, [0.5,0.5,0.5]),
+    fail.
+
+assert_layer_dimensions_(_,_).
+
+%%%% Get the pose and the dimension from urdf
+
+/* ros_package_path('knowrob_refills', X), atom_concat(X, '/urdf/fridge.urdf', Filename), urdf_load_file(fridge, Filename), urdf_link_visual_shape(fridge, shelf_1_level_1_link, ST, O, MT, SId), urdf_joint_origin(fridge, shelf_1_level_0_joint, P).
+P: [u'shelf_1_base', [0.0, -0.06, 0.10665], [0.0, 0.0, 0.0, 1.0]],
+O: [u'shelf_1_level_1_link', [0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
+ST: {u'term': [u'box', 0.48, 0.35, 0.043]},
+MT: {u'term': [u'material', [{u'term': [u'rgba', [0.5, 0.5, 0.5, 0.800000011920929]]}]]},
+SId: shelf_1_level_1_link0,
+X: /home/kaviya/ros_ws/src/knowrob_refills,
+Filename: /home/kaviya/ros_ws/src/knowrob_refills/urdf/fridge.urdf. */
+
+
+
+
+
 
 % create_planogram(ProductId, Name, ProductPose, StoreId) :-
 %     tell(),
