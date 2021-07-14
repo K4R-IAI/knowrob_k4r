@@ -246,6 +246,69 @@ post_test_item_groups(StoreId, ProductId1, ProductId2, ProductUnitId1, ProductUn
 %   writeln(StoreListNew).
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %     StoreObject     %
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% test('store_object_test') :-
+%   % Post mockup data
+%   post_test_store(StoreId),
+
+%   % POST
+%   post_store_object(StoreId, [10, "description 1", 11, "2021-07-14T07:09:31.038Z", 12.12, 13.13, 14.14, 15.15, 16.16, 17.17, 18.18, "type 1", 19], StoreObject1),
+%   get_entity_id(StoreObject1, StoreObjectId1),
+%   post_store_object(StoreId, [20, "description 2", 21, "2012-08-11T07:12:42.038Z", 22.22, 23.23, 24.24, 25.25, 26.26, 27.27, 28.28, "type 2", 29], StoreObject2),
+%   get_entity_id(StoreObject2, StoreObjectId2),
+%   post_store_object(StoreId,
+%     "{\"depth\" : 30,
+%       \"description\" : \"description 3\",
+%       \"height\" : 31,
+%       \"locationTimestamp\" : \"2002-02-11T07:12:42.038Z\",
+%       \"orientationW\" : 32.32,
+%       \"orientationX\" : 33.33,
+%       \"orientationY\" : 34.34,
+%       \"orientationZ\" : 35.35,
+%       \"positionX\" : 36.36,
+%       \"positionY\" : 37.37,
+%       \"positionZ\" : 38.38,
+%       \"type\" : \"type 3\",
+%       \"width\" : 39",
+%     StoreObject3),
+%   get_entity_id(StoreObject3, StoreObjectId3),
+%   post_store_object(StoreId,
+%     "{\"depth\" : 40,
+%       \"description\" : \"description 4\",
+%       \"height\" : 41,
+%       \"locationTimestamp\" : \"2008-05-12T01:12:42.038Z\",
+%       \"orientationW\" : 42.42,
+%       \"orientationX\" : 43.43,
+%       \"orientationY\" : 44.44,
+%       \"orientationZ\" : 45.45,
+%       \"positionX\" : 46.46,
+%       \"positionY\" : 47.47,
+%       \"positionZ\" : 48.48,
+%       \"type\" : \"type 4\",
+%       \"width\" : 49",
+%     StoreObject4),
+%   get_entity_id(StoreObject4, StoreObjectId4),
+
+%   % GET ALL
+%   get_store_objects(StoreId, StoreObjectList),
+%   writeln('Return store object list:'),
+%   writeln(StoreObjectList),
+
+%   % DELETE
+%   delete_store_object(StoreObjectId4),
+%   delete_store_object(StoreObjectId3),
+%   delete_store_object(StoreObjectId2),
+%   delete_store_object(StoreObjectId1),
+%   get_store_objects(StoreId, StoreObjectListNew),
+%   writeln('Return empty store object list:'),
+%   writeln(StoreObjectListNew),
+
+%   % Delete mockup data
+%   delete_store(StoreId).
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % %     StoreCharacteristic     %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -602,6 +665,64 @@ post_test_item_groups(StoreId, ProductId1, ProductId2, ProductUnitId1, ProductUn
 
 %   % Delete mockup data
 %   delete_product(ProductId).
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %      Product description      %
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% test('product_description_test') :-
+%   % Post mockup data
+%   post_test_products(ProductId1, ProductId2, ProductId3, ProductId4, ProductId5, ProductId6),
+
+%   % POST
+%   post_product_description(ProductId1, ["description 1", "isoLanguageCode 1"], ProductDescription1),
+%   get_entity_id(ProductDescription1, ProductDescriptionId1),
+%   post_product_description(ProductId2, ["description 2", "isoLanguageCode 2"], ProductDescription2),
+%   get_entity_id(ProductDescription2, ProductDescriptionId2),
+%   post_product_description(ProductId3, 
+%     "{\"description\" : \"description 3\",
+%       \"isoLanguageCode\" : \"isoLanguageCode 3\"}",
+%     ProductDescription3),
+%   get_entity_id(ProductDescription3, ProductDescriptionId3),
+%   post_product_description(ProductId4,
+%     "{\"description\" : \"description 4\",
+%       \"isoLanguageCode\" : \"isoLanguageCode 4\"}", 
+%     ProductDescription4),
+%   get_entity_id(ProductDescription4, ProductDescriptionId4),
+
+%   % GET ONE
+%   get_product_description(ProductDescriptionId1, ProductDescriptionSame1),
+%   write('Return product description at Id '), writeln(ProductDescriptionId1),
+%   writeln(ProductDescriptionSame1),
+
+%   % PUT
+%   put_product_description(ProductDescriptionId1, ProductId1, ["description 1 changed", "isoLanguageCode 1 changed"], _),
+%   put_product_description(ProductDescriptionId3, ProductId2,
+%     "{\"description\" : \"description 3 changed\",
+%       \"isoLanguageCode\" : \"isoLanguageCode 3 changed\"}",
+%     _),
+
+%   % GET ALL
+%   get_product_descriptions(ProductDescriptionList),
+%   writeln('Return product description list'),
+%   writeln(ProductDescriptionList),
+
+%   % DELETE
+%   delete_product_description(ProductDescriptionId1),
+%   delete_product_description(ProductDescriptionId2),
+%   delete_product_description(ProductDescriptionId3),
+%   delete_product_description(ProductDescriptionId4),
+%   get_product_descriptions(ProductDescriptionListNew),
+%   writeln('Return empty product description list'),
+%   writeln(ProductDescriptionListNew),
+
+%   % Delete mockup data
+%   delete_product(ProductId6),
+%   delete_product(ProductId5),
+%   delete_product(ProductId4),
+%   delete_product(ProductId3),
+%   delete_product(ProductId2),
+%   delete_product(ProductId1).
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % %         Product gtin          %
@@ -1206,25 +1327,25 @@ post_test_item_groups(StoreId, ProductId1, ProductId2, ProductUnitId1, ProductUn
 %   delete_product(ProductId1),
 %   delete_store(StoreId).
 
-test('post_shelves') :-
-  % Post mockup data
-  post_test_store(StoreId),
+% test('post_shelves') :-
+%   % Post mockup data
+%   post_test_store(StoreId),
 
-  % Post shelves from data base
-  post_shelves(StoreId, ShelfList),
-  writeln(ShelfList),
+%   % Post shelves from data base
+%   post_shelves(StoreId, ShelfList),
+%   writeln(ShelfList),
   
-  % Delete all shelves
-  get_shelves(StoreId, Shelves),
-  forall(
-    member(Shelf, Shelves),
-    (
-      get_entity_id(Shelf, ShelfId),
-      delete_shelf(ShelfId)
-    )
-  ),
+%   % Delete all shelves
+%   get_shelves(StoreId, Shelves),
+%   forall(
+%     member(Shelf, Shelves),
+%     (
+%       get_entity_id(Shelf, ShelfId),
+%       delete_shelf(ShelfId)
+%     )
+%   ),
 
-  % Delete mockup data
-  delete_store(StoreId).
+%   % Delete mockup data
+%   delete_store(StoreId).
 
 :- end_tests(k4r_db_client).

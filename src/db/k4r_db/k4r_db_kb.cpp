@@ -19,6 +19,7 @@
 #include "Entities/PlanogramController.cpp"
 #include "Entities/ProductCharacteristicController.cpp"
 #include "Entities/ProductController.cpp"
+#include "Entities/ProductDescriptionController.cpp"
 #include "Entities/ProductGroupController.cpp"
 #include "Entities/ProductGtinController.cpp"
 #include "Entities/ProductPropertyController.cpp"
@@ -28,6 +29,7 @@
 #include "Entities/ShoppingBasketPositionController.cpp"
 #include "Entities/StoreCharacteristicController.cpp"
 #include "Entities/StoreController.cpp"
+#include "Entities/StoreObjectController.cpp"
 #include "Entities/StorePropertyController.cpp"
 #include <boost/lexical_cast.hpp>
 
@@ -321,6 +323,71 @@ PREDICATE(delete_store_characteristic, 1)
 {
   StoreCharacteristicController store_characteristic_controller;
   return store_characteristic_controller.delete_store_characteristic(std::string(PL_A1));
+}
+
+// StoreObject
+
+const Json::Value store_object_array_to_store_object_json(const Json::Value &store_object_array)
+{
+  Json::Value store_object_json;
+  if (store_object_array.size() == 13)
+  {
+    store_object_json["depth"] = store_object_array[0];
+    store_object_json["description"] = store_object_array[1];
+    store_object_json["height"] = store_object_array[2];
+    store_object_json["locationTimestamp"] = store_object_array[3];
+    store_object_json["orientationW"] = store_object_array[4];
+    store_object_json["orientationX"] = store_object_array[5];
+    store_object_json["orientationY"] = store_object_array[6];
+    store_object_json["orientationZ"] = store_object_array[7];
+    store_object_json["positionX"] = store_object_array[8];
+    store_object_json["positionY"] = store_object_array[9];
+    store_object_json["positionZ"] = store_object_array[10];
+    store_object_json["type"] = store_object_array[11];
+    store_object_json["width"] = store_object_array[12];
+  }
+  else
+  {
+    std::cerr << "Invalid store object array (length = " << store_object_array.size() << ")" << std::endl;
+  }
+  return store_object_json;
+}
+
+// get_store_objects(StoreId, StoreObjects)
+PREDICATE(get_store_objects, 2)
+{
+  StoreObjectController store_object_controller;
+
+  PlTail store_objects(PL_A2);
+  for (const Json::Value &store_object : store_object_controller.get_store_objects(std::string(PL_A1)))
+  {
+    store_objects.append(store_object.toStyledString().c_str());
+  }
+  return store_objects.close();
+}
+
+// post_store_object(StoreId, InStoreObjectObject, OutStoreObject)
+PREDICATE(post_store_object, 3)
+{
+  StoreObjectController store_object_controller;
+  Json::Value in_store_object = PlTerm_to_json(PL_A2);
+  Json::Value out_store_object;
+  if (in_store_object.isArray() ? store_object_controller.post_store_object(std::string(PL_A1), store_object_array_to_store_object_json(in_store_object), out_store_object) : store_object_controller.post_store_object(std::string(PL_A1), in_store_object, out_store_object))
+  {
+    PL_A3 = out_store_object.toStyledString().c_str();
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+// delete_store_object(ObjectId)
+PREDICATE(delete_store_object, 1)
+{
+  StoreObjectController store_object_controller;
+  return store_object_controller.delete_store_object(std::string(PL_A1));
 }
 
 // StoreProperty
@@ -740,7 +807,7 @@ const Json::Value product_unit_array_to_product_unit_json(const Json::Value &pro
   }
   else
   {
-    std::cerr << "Invalid logistical unit array (length = " << product_unit_array.size() << ")" << std::endl;
+    std::cerr << "Invalid product unit array (length = " << product_unit_array.size() << ")" << std::endl;
   }
   return product_unit_json;
 }
@@ -816,6 +883,95 @@ PREDICATE(delete_product_unit, 1)
   return product_unit_controller.delete_product_unit(std::string(PL_A1));
 }
 
+// ProductDescription
+
+const Json::Value product_description_array_to_product_description_json(const Json::Value &product_description_array)
+{
+  Json::Value product_description_json;
+  if (product_description_array.size() == 2)
+  {
+    product_description_json["description"] = product_description_array[0];
+    product_description_json["isoLanguageCode"] = product_description_array[1];
+  }
+  else
+  {
+    std::cerr << "Invalid product description array (length = " << product_description_array.size() << ")" << std::endl;
+  }
+  return product_description_json;
+}
+
+// get_product_descriptions(ProductDescriptionList)
+PREDICATE(get_product_descriptions, 1)
+{
+  ProductDescriptionController product_description_controller;
+
+  PlTail product_descriptions(PL_A1);
+  for (const Json::Value &product_description : product_description_controller.get_product_descriptions())
+  {
+    product_descriptions.append(product_description.toStyledString().c_str());
+  }
+  return product_descriptions.close();
+}
+
+// get_product_description(ProductDescriptionId, ProductDescription)
+PREDICATE(get_product_description, 2)
+{
+  ProductDescriptionController product_description_controller;
+
+  Json::Value product_description = product_description_controller.get_product_description(std::string(PL_A1));
+  std::string product_description_id = product_description["id"].asString();
+  if (std::string(PL_A1) == product_description_id)
+  {
+    PL_A2 = product_description.toStyledString().c_str();
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+// post_product_description(InProductId, InProductDescription, OutProductDescription)
+PREDICATE(post_product_description, 3)
+{
+  ProductDescriptionController product_description_controller;
+  Json::Value in_product_description = PlTerm_to_json(PL_A2);
+  Json::Value out_product_description;
+  if (in_product_description.isArray() ? product_description_controller.post_product_description(std::string(PL_A1), product_description_array_to_product_description_json(in_product_description), out_product_description) : product_description_controller.post_product_description(std::string(PL_A1), in_product_description, out_product_description))
+  {
+    PL_A3 = out_product_description.toStyledString().c_str();
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+// put_product_description(InProductId, InProductId, InProductDescription, OutProductDescription)
+PREDICATE(put_product_description, 4)
+{
+  ProductDescriptionController product_description_controller;
+  Json::Value in_product_description = PlTerm_to_json(PL_A3);
+  Json::Value out_product_description;
+  if (in_product_description.isArray() ? product_description_controller.put_product_description(std::string(PL_A1), std::string(PL_A2), product_description_array_to_product_description_json(in_product_description), out_product_description) : product_description_controller.put_product_description(std::string(PL_A1), std::string(PL_A2), in_product_description, out_product_description))
+  {
+    PL_A4 = out_product_description.toStyledString().c_str();
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+// delete_product_description(ProductDescriptionId)
+PREDICATE(delete_product_description, 1)
+{
+  ProductDescriptionController product_description_controller;
+  return product_description_controller.delete_product_description(std::string(PL_A1));
+}
+
 // ProductGtin
 
 const Json::Value product_gtin_array_to_product_gtin_json(const Json::Value &product_gtin_array)
@@ -829,7 +985,7 @@ const Json::Value product_gtin_array_to_product_gtin_json(const Json::Value &pro
   }
   else
   {
-    std::cerr << "Invalid store array (length = " << product_gtin_array.size() << ")" << std::endl;
+    std::cerr << "Invalid product gtin array (length = " << product_gtin_array.size() << ")" << std::endl;
   }
   return product_gtin_json;
 }
