@@ -3,12 +3,6 @@
   <arg name="knowrob_settings" default="$(find knowrob)/settings/default.pl" />
   <env name="KNOWROB_SETTINGS" value="$(arg knowrob_settings)" />
   <param name="mongodb_uri" value="$(optenv KNOWROB_MONGODB_URI mongodb://localhost:27017/?appname=knowrob)" />
-
-    <!-- rosbridge for websocket visualization -->
-  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
-    <arg name="authenticate" value="true"/>
-    <arg name="websocket_external_port" value="80" />
-  </include>
   
   <include file="$(find rosprolog)/launch/rosprolog.launch">
     <arg name="initial_package" default="knowrob_k4r" />
