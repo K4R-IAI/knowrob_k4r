@@ -45,6 +45,14 @@ get_entity_by_key_value(EntityList, EntityKey, EntityValue, Entity) :-
     member(Entity, EntityList),
     check_key_value(Entity, EntityKey, EntityValue).
 
+% search queries
+
+get_shelf_by_ext_id(ShelfList, ExternalReferenceId, Shelf) :-
+    get_entity_by_key_value(ShelfList, "externalReferenceId", ExternalReferenceId, Shelf).
+
+get_shelf_layer_by_ext_id(ShelfLayerList, ExternalReferenceId, ShelfLayer) :-
+    get_entity_by_key_value(ShelfLayerList, "externalReferenceId", ExternalReferenceId, ShelfLayer).
+
 % and go on.....
 
 get_products_by_shelf(ShelfId, ProductList) :-
