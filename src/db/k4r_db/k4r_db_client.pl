@@ -2,6 +2,8 @@
           [
             get_entity_id/2,
             get_entity_by_key_value/4,
+            get_shelf_by_ext_id/3,
+            get_shelf_layer_by_ext_id/3,
             get_products_by_shelf/2,
             post_shelves/2
             % post_facings/2,
