@@ -2,10 +2,13 @@
           [
             get_entity_id/2,
             get_entity_by_key_value/4,
-            get_shelf_by_ext_id/3,
-            get_shelf_layer_by_ext_id/3,
+            get_shelf_id_by_ext_id/3,
+            get_shelf_layer_id_by_ext_id/3,
             get_products_by_shelf/2,
-            post_shelves/2
+            post_shelves/1,
+            delete_shelves/1,
+            post_shelf_layers/1,
+            delete_shelf_layers/1
             % post_facings/2,
             % post_shelves_and_parts/1,
             % post_facings/2,
@@ -17,6 +20,7 @@
 /** <module> A client for the k4r db for Prolog.
 @author Sascha Jongebloed
 @author Kaviya Dhanabalachandran
+@author Giang Nguyen
 @license BSD
 */
 
@@ -49,11 +53,13 @@ get_entity_by_key_value(EntityList, EntityKey, EntityValue, Entity) :-
 
 % search queries
 
-get_shelf_by_ext_id(ShelfList, ExternalReferenceId, Shelf) :-
-    get_entity_by_key_value(ShelfList, "externalReferenceId", ExternalReferenceId, Shelf).
+get_shelf_id_by_ext_id(ShelfList, ExternalReferenceId, ShelfId) :-
+    get_entity_by_key_value(ShelfList, "externalReferenceId", ExternalReferenceId, Shelf),
+    get_entity_id(Shelf, ShelfId).
 
-get_shelf_layer_by_ext_id(ShelfLayerList, ExternalReferenceId, ShelfLayer) :-
-    get_entity_by_key_value(ShelfLayerList, "externalReferenceId", ExternalReferenceId, ShelfLayer).
+get_shelf_layer_id_by_ext_id(ShelfLayerList, ExternalReferenceId, ShelfLayerId) :-
+    get_entity_by_key_value(ShelfLayerList, "externalReferenceId", ExternalReferenceId, ShelfLayer),
+    get_entity_id(ShelfLayer, ShelfLayerId).
 
 % and go on.....
 
@@ -77,24 +83,94 @@ get_products_by_shelf(ShelfId, ProductList) :-
         ProductList
     ).
 
-post_shelves(StoreId, OutShelfList) :-
+get_shelves_from_db(ShelfList) :-
+    findall(
+        Shelf,
+        instance_of(Shelf, dmshop:'DMShelfFrame'),
+        ShelfListUnsorted
+    ),
+    sort(ShelfListUnsorted, ShelfList).
+
+post_shelves(StoreId) :-
+    get_shelves_from_db(ShelfList),
+    forall(
+        member(Shelf, ShelfList),
+        post_shelf(StoreId, Shelf)
+    ).
+
+post_shelf(StoreId, Shelf) :-
     CadPlanId = "Cad_7",
     ProductGroupId = "",
-    findall(
-        OutShelf,
+    shelf_with_erp_id(Shelf, ExternalReferenceId),
+    is_at(Shelf, ['map', [PositionX, PositionY, PositionZ], [OrientationX, OrientationY, OrientationZ, OrientationW]]),
+    object_dimensions(Shelf, DepthInM, WidthInM, HeightInM),
+    double_m_to_int_mm([DepthInM, WidthInM, HeightInM], [DepthInMM, WidthInMM, HeightInMM]),
+    post_shelf(StoreId, ProductGroupId,
+        [CadPlanId, DepthInMM, ExternalReferenceId, HeightInMM,
+        OrientationW, OrientationX, OrientationY, OrientationZ,
+        PositionX, PositionY, PositionZ, WidthInMM], 
+        _).
+
+delete_shelves(StoreId) :-
+    get_shelves(StoreId, ShelfList),
+    forall(
+        member(Shelf, ShelfList),
         (
-            instance_of(Shelf, dmshop:'DMShelfFrame'),
-            shelf_with_erp_id(Shelf, ExternalReferenceId),
-            is_at(Shelf, ['map', [PositionX, PositionY, PositionZ], [OrientationX, OrientationY, OrientationZ, OrientationW]]),
-            object_dimensions(Shelf, DepthInM, WidthInM, HeightInM),
-            double_m_to_int_mm([DepthInM, WidthInM, HeightInM], [DepthInMM, WidthInMM, HeightInMM]),
-            post_shelf(StoreId, ProductGroupId,
-                [CadPlanId, DepthInMM, ExternalReferenceId, HeightInMM,
-                OrientationW, OrientationX, OrientationY, OrientationZ,
-                PositionX, PositionY, PositionZ, WidthInMM], 
-                OutShelf)
+            get_entity_id(Shelf, ShelfId),
+            delete_shelf(ShelfId)
+        )
+    ).
+
+get_shelf_layers_from_db(Shelf, ShelfLayerWithPositionZList) :-
+    findall(
+        [ShelfLayer, PositionZ],
+        (
+            triple(Shelf, soma:hasPhysicalComponent, ShelfLayer),
+            is_at(ShelfLayer, ['map', [_, _ , PositionZ], _])
         ),
-        OutShelfList
+        ShelfLayerWithPositionZListUnsorted
+    ),
+    sort(2, @>=, ShelfLayerWithPositionZListUnsorted, ShelfLayerWithPositionZList).
+
+post_shelf_layers(StoreId) :-
+    get_shelves_from_db(ShelfList),
+    forall(
+        member(Shelf, ShelfList),
+        post_shelf_layers(StoreId, Shelf)
+    ).
+
+post_shelf_layers(StoreId, Shelf) :-
+    shelf_with_erp_id(Shelf, ShelfExternalReferenceId),
+    get_shelves(StoreId, ShelfList),
+    get_shelf_id_by_ext_id(ShelfList, ShelfExternalReferenceId, ShelfId),
+    get_shelf_layers_from_db(Shelf, ShelfLayerWithPositionZList),
+    forall(
+        member([ShelfLayer, PositionZ], ShelfLayerWithPositionZList),
+        (
+            Type = "",
+            nth1(Level, ShelfLayerWithPositionZList, [ShelfLayer, PositionZ]),
+            triple(ShelfLayer, shop:erpShelfLayerId, ExternalReferenceId),
+            object_dimensions(ShelfLayer, DepthInM, WidthInM, HeightInM),
+            double_m_to_int_mm([DepthInM, WidthInM, HeightInM], [DepthInMM, WidthInMM, HeightInMM]),
+            post_shelf_layer(ShelfId, [DepthInMM, ExternalReferenceId, HeightInMM, Level, PositionZ, Type, WidthInMM], _)
+        )
+    ).
+
+delete_shelf_layers(StoreId) :-
+    get_shelves(StoreId, ShelfList),
+    forall(
+        member(Shelf, ShelfList),
+        (
+            get_entity_id(Shelf, ShelfId),
+            get_shelf_layers(ShelfId, ShelfLayerList),
+            forall(
+                member(ShelfLayer, ShelfLayerList),
+                (
+                    get_entity_id(ShelfLayer, ShelfLayerId),
+                    delete_shelf_layer(ShelfLayerId)
+                )
+            )
+        )
     ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Kaviya %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
