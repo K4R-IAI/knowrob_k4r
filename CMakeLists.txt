@@ -52,7 +52,6 @@ target_link_libraries(k4r_db_client ${SWIPL_LIBRARIES} ${CURLPP_LIBRARIES} ${JSO
 add_dependencies(k4r_db_client
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS})
-
 ###############
 ##### Pa4 #####
 ###############
