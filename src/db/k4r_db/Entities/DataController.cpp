@@ -9,7 +9,7 @@
 #include <jsoncpp/json/reader.h>
 #include <sstream>
 #include <string>
-#include <unistd.h>
+#include <experimental/filesystem>
 
 #define CERT_TYPE "P12"
 #define SANDBOX
@@ -57,7 +57,17 @@ public:
   {
     this->request.setOpt<curlpp::options::SslVerifyPeer>(VERIFY_PEER);
     this->request.setOpt(new curlpp::options::SslCertType(CERT_TYPE));
-    this->request.setOpt(new curlpp::options::SslCert(CERT_PATH));
+    std::experimental::filesystem::path knowrob_k4r_path;
+    for (const std::experimental::filesystem::path& path : std::experimental::filesystem::current_path())
+    {
+      knowrob_k4r_path /= path;
+      if (path == "knowrob_ws")
+      {
+        break;
+      }
+    }
+    knowrob_k4r_path /= CERT_PATH;
+    this->request.setOpt(new curlpp::options::SslCert(knowrob_k4r_path));
     this->request.setOpt(new curlpp::options::SslCertPasswd(CERT_PASSWD));
   }
 
