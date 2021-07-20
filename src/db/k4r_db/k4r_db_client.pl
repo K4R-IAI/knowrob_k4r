@@ -130,9 +130,11 @@ get_shelf_layers_from_db(Shelf, ShelfLayerWithPositionZList) :-
         ),
         ShelfLayerWithPositionZListUnsorted
     ),
+    writeln(ShelfLayerWithPositionZListUnsorted),
     sort(2, @>=, ShelfLayerWithPositionZListUnsorted, ShelfLayerWithPositionZList).
 
 post_shelf_layers(StoreId) :-
+    writeln('Hello45'),
     get_shelves_from_db(ShelfList),
     forall(
         member(Shelf, ShelfList),
@@ -140,19 +142,26 @@ post_shelf_layers(StoreId) :-
     ).
 
 post_shelf_layers(StoreId, Shelf) :-
-    shelf_with_erp_id(Shelf, ShelfExternalReferenceId),
+    shop:assert_shelf_erp_id(Shelf),
+    triple(Shelf, shop:erpShelfId, FloatReferenceId),
+    ShelfExternalReferenceId is integer(FloatReferenceId),
+    shop:assert_layer_id(Shelf),
     get_shelves(StoreId, ShelfList),
     get_shelf_id_by_ext_id(ShelfList, ShelfExternalReferenceId, ShelfId),
-    get_shelf_layers_from_db(Shelf, ShelfLayerWithPositionZList),
-    forall(
-        member([ShelfLayer, PositionZ], ShelfLayerWithPositionZList),
-        (
-            Type = "",
-            nth1(Level, ShelfLayerWithPositionZList, [ShelfLayer, PositionZ]),
-            triple(ShelfLayer, shop:erpShelfLayerId, ExternalReferenceId),
+    forall( triple(Shelf, soma:hasPhysicalComponent, ShelfLayer),
+        (   
+            instance_of(ShelfLayer, LayerType), 
+            ((subclass_of(LayerType, dmshop:'DMShelfFloor'),
+            rdf_split_url(_,LayerFrame1,LayerType),
+            term_to_atom(LayerFrame1, LayerFrame2),
+            atom_string(LayerFrame2, LayerFrame));
+            LayerFrame = "LayerType"),
+            triple(ShelfLayer, shop:erpShelfLayerId, FloatId),
+            ExternalReferenceId is integer(FloatId),
+            is_at(ShelfLayer, ['map', [_,_, PositionZ], _]),
             object_dimensions(ShelfLayer, DepthInM, WidthInM, HeightInM),
             double_m_to_int_mm([DepthInM, WidthInM, HeightInM], [DepthInMM, WidthInMM, HeightInMM]),
-            post_shelf_layer(ShelfId, [DepthInMM, ExternalReferenceId, HeightInMM, Level, PositionZ, Type, WidthInMM], _)
+            post_shelf_layer(ShelfId, [DepthInMM, ExternalReferenceId, HeightInMM, ExternalReferenceId, PositionZ, LayerFrame, WidthInMM], _)
         )
     ).
 
