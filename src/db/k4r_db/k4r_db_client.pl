@@ -121,20 +121,7 @@ delete_shelves(StoreId) :-
         )
     ).
 
-get_shelf_layers_from_db(Shelf, ShelfLayerWithPositionZList) :-
-    findall(
-        [ShelfLayer, PositionZ],
-        (
-            triple(Shelf, soma:hasPhysicalComponent, ShelfLayer),
-            is_at(ShelfLayer, ['map', [_, _ , PositionZ], _])
-        ),
-        ShelfLayerWithPositionZListUnsorted
-    ),
-    writeln(ShelfLayerWithPositionZListUnsorted),
-    sort(2, @>=, ShelfLayerWithPositionZListUnsorted, ShelfLayerWithPositionZList).
-
 post_shelf_layers(StoreId) :-
-    writeln('Hello45'),
     get_shelves_from_db(ShelfList),
     forall(
         member(Shelf, ShelfList),
@@ -143,21 +130,22 @@ post_shelf_layers(StoreId) :-
 
 post_shelf_layers(StoreId, Shelf) :-
     shop:assert_shelf_erp_id(Shelf),
-    triple(Shelf, shop:erpShelfId, FloatReferenceId),
-    ShelfExternalReferenceId is integer(FloatReferenceId),
+    triple(Shelf, shop:erpShelfId, FloatShelfExternalReferenceId),
+    ShelfExternalReferenceId is integer(FloatShelfExternalReferenceId),
     shop:assert_layer_id(Shelf),
     get_shelves(StoreId, ShelfList),
     get_shelf_id_by_ext_id(ShelfList, ShelfExternalReferenceId, ShelfId),
-    forall( triple(Shelf, soma:hasPhysicalComponent, ShelfLayer),
+    forall( 
+        triple(Shelf, soma:hasPhysicalComponent, ShelfLayer),
         (   
             instance_of(ShelfLayer, LayerType), 
             ((subclass_of(LayerType, dmshop:'DMShelfFloor'),
-            rdf_split_url(_,LayerFrame1,LayerType),
+            rdf_split_url(_, LayerFrame1, LayerType),
             term_to_atom(LayerFrame1, LayerFrame2),
             atom_string(LayerFrame2, LayerFrame));
-            LayerFrame = "LayerType"),
-            triple(ShelfLayer, shop:erpShelfLayerId, FloatId),
-            ExternalReferenceId is integer(FloatId),
+            LayerFrame = "None"),
+            triple(ShelfLayer, shop:erpShelfLayerId, FloatExternalReferenceId),
+            ExternalReferenceId is integer(FloatExternalReferenceId),
             is_at(ShelfLayer, ['map', [_,_, PositionZ], _]),
             object_dimensions(ShelfLayer, DepthInM, WidthInM, HeightInM),
             double_m_to_int_mm([DepthInM, WidthInM, HeightInM], [DepthInMM, WidthInMM, HeightInMM]),
