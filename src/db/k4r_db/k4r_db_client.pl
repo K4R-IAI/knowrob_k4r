@@ -8,8 +8,9 @@
             post_shelves/1,
             delete_shelves/1,
             post_shelf_layers/1,
-            delete_shelf_layers/1
-            % post_facings/2,
+            delete_shelf_layers/1,
+            post_facings/1,
+            delete_facings/1
             % post_shelves_and_parts/1,
             % post_facings/2,
             % post_shelf_layers/2,
@@ -165,6 +166,64 @@ delete_shelf_layers(StoreId) :-
                 (
                     get_entity_id(ShelfLayer, ShelfLayerId),
                     delete_shelf_layer(ShelfLayerId)
+                )
+            )
+        )
+    ).
+
+post_facings(StoreId) :-
+    get_shelves_from_db(ShelfList),
+    forall(
+        member(Shelf, ShelfList),
+        post_facings(StoreId, Shelf)
+    ).
+
+post_facings(StoreId, Shelf) :-
+    shop:assert_shelf_erp_id(Shelf),
+    triple(Shelf, shop:erpShelfId, FloatShelfExternalReferenceId),
+    ShelfExternalReferenceId is integer(FloatShelfExternalReferenceId),
+    shop:assert_layer_id(Shelf),
+    get_shelves(StoreId, ShelfList),
+    get_shelf_id_by_ext_id(ShelfList, ShelfExternalReferenceId, ShelfId),
+    forall( 
+        (
+            triple(Shelf, soma:hasPhysicalComponent, ShelfLayer),
+            triple(ShelfLayer, shop:erpShelfLayerId, FloatShelfLayerExternalReferenceId),
+            ShelfLayerExternalReferenceId is integer(FloatShelfLayerExternalReferenceId),
+            get_shelf_layers(ShelfId, ShelfLayerList),
+            get_shelf_layer_id_by_ext_id(ShelfLayerList, ShelfLayerExternalReferenceId, ShelfLayerId)
+        ),
+        forall(
+            triple(Facing, shop:layerOfFacing, ShelfLayer),
+            (
+                % Todo: fill these variables from Facing
+                LayerRelativePosition = "0",
+                NumberOfItemsDepth = "1",
+                NumberOfItemsWidth = "2",
+                post_facing(ShelfLayerId, [LayerRelativePosition, NumberOfItemsDepth, NumberOfItemsWidth], _)
+            )
+        )
+    ).
+
+delete_facings(StoreId) :-
+    get_shelves(StoreId, ShelfList),
+    forall(
+        member(Shelf, ShelfList),
+        (
+            get_entity_id(Shelf, ShelfId),
+            get_shelf_layers(ShelfId, ShelfLayerList),
+            forall(
+                member(ShelfLayer, ShelfLayerList),
+                (
+                    get_entity_id(ShelfLayer, ShelfLayerId),
+                    get_facings(ShelfLayerId, FacingList),
+                    forall(
+                        member(Facing, FacingList),
+                        (
+                            get_entity_id(Facing, FacingId),
+                            delete_facing(FacingId)
+                        )
+                    )
                 )
             )
         )
