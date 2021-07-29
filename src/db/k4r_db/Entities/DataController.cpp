@@ -9,18 +9,18 @@
 #include <jsoncpp/json/reader.h>
 #include <sstream>
 #include <string>
-#include <experimental/filesystem>
+#include <ros/package.h>
 
 #define CERT_TYPE "P12"
 #define SANDBOX
 #ifdef SANDBOX
   #define URL "https://dt-api.sandbox.knowledge4retail.org/k4r/api/v0/"
-  #define CERT_PATH "src/knowrob_k4r/src/db/k4r_db/Entities/K4R_DEV_CERTs/k4r-sandbox-client.p12"
+  #define CERT_PATH "/src/db/k4r_db/Entities/K4R_DEV_CERTs/k4r-sandbox-client.p12"
   #define CERT_PASSWD "q7WgPL3OnopoyU4abkrw97LD3iqD"
   #define VERIFY_PEER false
 #else
   #define URL "https://dt-api.dev.knowledge4retail.org/k4r/api/v0/"
-  #define CERT_PATH "src/knowrob_k4r/src/db/k4r_db/Entities/K4R_DEV_CERTs/k4r-dev-keystore.p12"
+  #define CERT_PATH "/src/db/k4r_db/Entities/K4R_DEV_CERTs/k4r-dev-keystore.p12"
   #define CERT_PASSWD "8FdseHr0wCHwfuDmMv7QdKYWvnZg"
   #define VERIFY_PEER true
 #endif
@@ -57,16 +57,7 @@ public:
   {
     this->request.setOpt<curlpp::options::SslVerifyPeer>(VERIFY_PEER);
     this->request.setOpt(new curlpp::options::SslCertType(CERT_TYPE));
-    std::experimental::filesystem::path knowrob_k4r_path;
-    for (const std::experimental::filesystem::path& path : std::experimental::filesystem::current_path())
-    {
-      knowrob_k4r_path /= path;
-      if (path == "knowrob_ws")
-      {
-        break;
-      }
-    }
-    knowrob_k4r_path /= CERT_PATH;
+    std::string knowrob_k4r_path = ros::package::getPath("knowrob_k4r") + CERT_PATH;
     this->request.setOpt(new curlpp::options::SslCert(knowrob_k4r_path));
     this->request.setOpt(new curlpp::options::SslCertPasswd(CERT_PASSWD));
   }
