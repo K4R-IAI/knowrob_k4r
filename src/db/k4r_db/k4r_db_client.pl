@@ -25,12 +25,17 @@
 @license BSD
 */
 
+/*  Use assert_shelves_parts_erp_id predicate before using
+    predicates to post data. This predicate asserts external reference id of 
+    shelves, layers and facings */
+
 :- use_foreign_library('libk4r_db_client.so').
 :- use_module(library(http/json)).
 :- use_module(library(http/json_convert)).
 :- use_module(library('semweb/rdf_db'),
 	[ rdf_split_url/3 ]).
 :- use_module(library('shop')).
+:- use_module(library('shop_reasoner')).
 % :- use_module(library('planogram')).
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
@@ -54,11 +59,13 @@ get_entity_by_key_value(EntityList, EntityKey, EntityValue, Entity) :-
 
 % search queries
 
-get_shelf_id_by_ext_id(ShelfList, ExternalReferenceId, ShelfId) :-
+get_shelf_id_by_ext_id(ShelfList, ExtRefIdFloat, ShelfId) :-
+    ExternalReferenceId is integer(ExtRefIdFloat),
     get_entity_by_key_value(ShelfList, "externalReferenceId", ExternalReferenceId, Shelf),
     get_entity_id(Shelf, ShelfId).
 
-get_shelf_layer_id_by_ext_id(ShelfLayerList, ExternalReferenceId, ShelfLayerId) :-
+get_shelf_layer_id_by_ext_id(ShelfLayerList, ExtRefIdFloat, ShelfLayerId) :-
+    ExternalReferenceId is integer(ExtRefIdFloat),
     get_entity_by_key_value(ShelfLayerList, "externalReferenceId", ExternalReferenceId, ShelfLayer),
     get_entity_id(ShelfLayer, ShelfLayerId).
 
@@ -84,16 +91,13 @@ get_products_by_shelf(ShelfId, ProductList) :-
         ProductList
     ).
 
-get_shelves_from_db(ShelfList) :-
-    findall(
-        Shelf,
-        instance_of(Shelf, dmshop:'DMShelfFrame'),
-        ShelfListUnsorted
-    ),
-    sort(ShelfListUnsorted, ShelfList).
+/* get_all_shelves(ShelfList) :-
+    setof(Shelf, 
+        instance_of(Shelf, dmshop:'DMShelfFrame'), 
+        ShelfList). */
 
 post_shelves(StoreId) :-
-    get_shelves_from_db(ShelfList),
+    get_all_shelves(ShelfList),
     forall(
         member(Shelf, ShelfList),
         post_shelf(StoreId, Shelf)
@@ -123,7 +127,7 @@ delete_shelves(StoreId) :-
     ).
 
 post_shelf_layers(StoreId) :-
-    get_shelves_from_db(ShelfList),
+    get_all_shelves(ShelfList),
     forall(
         member(Shelf, ShelfList),
         post_shelf_layers(StoreId, Shelf)
@@ -171,8 +175,8 @@ delete_shelf_layers(StoreId) :-
         )
     ).
 
-post_facings(StoreId) :-
-    get_shelves_from_db(ShelfList),
+/* post_facings(StoreId) :-
+    get_all_shelves(ShelfList),
     forall(
         member(Shelf, ShelfList),
         post_facings(StoreId, Shelf)
@@ -227,9 +231,13 @@ delete_facings(StoreId) :-
                 )
             )
         )
-    ).
+    ). */
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Kaviya %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
 % post_shelf_location(StoreId):-
 %   k4r_get_core_link(Link),
 %   ProductGroupId = 3,
@@ -270,20 +278,32 @@ delete_facings(StoreId) :-
 %         post_shelf_layers(Shelf, ShelfIdInt))
 %       ).
 
-% post_facings(ShelfLayer, ShelfLayerId) :-
-%     k4r_get_core_link(Link),
-%     k4r_get_search_link(SearchLink),
-%     forall(
-%         (triple(Facing, shop:layerOfFacing, ShelfLayer)), 
-%         (get_number_of_items_in_facing(Facing, Quantity),
-%         triple(Facing, shop:erpFacingId, FacingId),
-%         shelf_facing_product_type(Facing, ProductType),
-%         subclass_of(ProductType, S),
-%         has_description(S ,value(shop:articleNumberOfProduct,ArticleNumber)),
-%         k4r_get_entity_property_by_properties(SearchLink, 'product', [['gtin'],[ArticleNumber]], "id", ProductIdList),
-%         member(ProductId, ProductIdList),
-%         k4r_post_facing(Link, ShelfLayerId, ProductId, FacingId, Quantity))
-%     ).
+post_facings(StoreId) :-
+    get_shelves(StoreId, ShelfList),
+    post_facings_of_layers_(StoreId, ShelfList).
+
+post_facings_of_layers_(StoreId, ShelfList):- 
+    has_type(Layer, shop:'ShelfLayer'),
+    triple(Shelf, soma:hasPhysicalComponent, Layer),
+    triple(Shelf, shop:erpShelfId, ShelfExtRefId),
+    get_shelf_id_by_ext_id(ShelfList, ShelfExtRefId, ShelfId),
+    triple(Layer, shop:erpShelfLayerId, LayerExtRefId),
+    get_shelf_layers(ShelfId, ShelfLayerList),
+    get_shelf_layer_id_by_ext_id(ShelfLayerList, LayerExtRefId, ShelfLayerId),
+    post_facings(Layer, ShelfLayerId),
+    fail.
+ 
+post_facings_of_layers_(_, _).
+
+post_facings(ShelfLayer, ShelfLayerId) :-
+    forall(
+        (triple(Facing, shop:layerOfFacing, ShelfLayer)), 
+        (get_number_of_items_in_facing(Facing, NoOfItemDepthFloat),
+        triple(Facing, shop:erpFacingId, LayerRelPos),
+        NoOfItemDepth is integer(NoOfItemDepthFloat),
+        NoOfItemWidth is 1,
+        post_facing(ShelfLayerId, [LayerRelPos, NoOfItemDepth, NoOfItemWidth], _))
+    ).
 
 % post_shelf_layers(Shelf, ShelfId) :-
 %     k4r_get_core_link(Link),
