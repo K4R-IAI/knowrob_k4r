@@ -172,9 +172,9 @@ delete_shelf_layers(StoreId) :-
 
 post_facings(StoreId) :-
     get_shelves(StoreId, ShelfList),
-    post_facings_of_shelves(StoreId, ShelfList).
+    post_facings_of_shelves(ShelfList).
 
-post_facings_of_shelves(StoreId, ShelfList):- 
+post_facings_of_shelves(ShelfList):- 
     has_type(ShelfLayer, shop:'ShelfLayer'),
     triple(Shelf, soma:hasPhysicalComponent, ShelfLayer),
     triple(Shelf, shop:erpShelfId, ShelfExtRefId),
@@ -185,7 +185,7 @@ post_facings_of_shelves(StoreId, ShelfList):-
     post_facings(ShelfLayer, ShelfLayerId),
     fail.
  
-post_facings_of_shelves(_, _).
+post_facings_of_shelves(_).
 
 post_facings(ShelfLayer, ShelfLayerId) :-
     forall(
