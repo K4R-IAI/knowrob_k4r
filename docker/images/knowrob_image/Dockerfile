@@ -8,21 +8,22 @@ USER root
 # Initialize the catkin workspace
 RUN cd /home/ros/src/knowrob \
     && git remote add k4r https://github.com/K4R-IAI/knowrob \
-    && git pull k4r v0.2 \
-    && git checkout v0.2
+    && git fetch k4r master \
+    && git checkout k4r/master
 
 RUN cd /home/ros/src \
-    && git clone -b v0.2 https://github.com/K4R-IAI/knowrob_k4r \
+    && git clone -b v1.0 https://github.com/K4R-IAI/knowrob_k4r \
     && git clone -b v0.2 https://github.com/K4R-IAI/knowrob_refills
 
 RUN cd /home/ros/src/rosprolog \
     && git remote add k4r https://github.com/K4R-IAI/rosprolog \
-    && git pull k4r v0.1 \
-    && git checkout v0.1
+    && git fetch k4r v0.1 \
+    && git checkout k4r/v0.1
 
 COPY test.py /home/ros
 RUN chmod +x test.py
 
+RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
 RUN wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-amazon-x86_64-100.3.1.tgz \
     && tar -zxvf mongodb-database-tools-*-100.3.1.tgz
 
@@ -37,10 +38,7 @@ RUN apt-get update && apt-get install -y \
     && rosdep install --from-paths src --ignore-src -r -y \
     && rm -rf /var/lib/apt/lists/*
 
-RUN sudo -H pip3 install flask flask_restplus gevent rospkg requests
-
-RUN sed -i 's/werkzeug import cached_property/werkzeug.utils import cached_property/' /usr/local/lib/python*/dist-packages/flask_restplus/fields.py \
-    && sed -i 's/werkzeug import cached_property/werkzeug.utils import cached_property/' /usr/local/lib/python*/dist-packages/flask_restplus/api.py
+RUN sudo -H pip3 install flask==1.1.4 flask_restplus gevent werkzeug==0.16.1 rospkg requests
 
 # Build the catkin workspace
 WORKDIR /home/ros

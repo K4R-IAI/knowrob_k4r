@@ -13,7 +13,7 @@ services:
       - KNOWROB_MONGODB_PKG_URI=${KNOWROB_MONGODB_PKG_URI}
     
   knowrob:
-    image: iaik4r/knowrob:v0.2
+    image: iaik4r/knowrob:v1.0
     container_name: ${KNOWROB}
     depends_on:
       - 'mongo'

@@ -91,11 +91,6 @@ get_products_by_shelf(ShelfId, ProductList) :-
         ProductList
     ).
 
-/* get_all_shelves(ShelfList) :-
-    setof(Shelf, 
-        instance_of(Shelf, dmshop:'DMShelfFrame'), 
-        ShelfList). */
-
 post_shelves(StoreId) :-
     get_all_shelves(ShelfList),
     forall(
@@ -170,6 +165,59 @@ delete_shelf_layers(StoreId) :-
                 (
                     get_entity_id(ShelfLayer, ShelfLayerId),
                     delete_shelf_layer(ShelfLayerId)
+                )
+            )
+        )
+    ).
+
+post_facings(StoreId) :-
+    get_shelves(StoreId, ShelfList),
+    post_facings_of_shelves(StoreId, ShelfList).
+
+post_facings_of_shelves(StoreId, ShelfList):- 
+    has_type(ShelfLayer, shop:'ShelfLayer'),
+    triple(Shelf, soma:hasPhysicalComponent, ShelfLayer),
+    triple(Shelf, shop:erpShelfId, ShelfExtRefId),
+    get_shelf_id_by_ext_id(ShelfList, ShelfExtRefId, ShelfId),
+    triple(ShelfLayer, shop:erpShelfLayerId, LayerExtRefId),
+    get_shelf_layers(ShelfId, ShelfLayerList),
+    get_shelf_layer_id_by_ext_id(ShelfLayerList, LayerExtRefId, ShelfLayerId),
+    post_facings(ShelfLayer, ShelfLayerId),
+    fail.
+ 
+post_facings_of_shelves(_, _).
+
+post_facings(ShelfLayer, ShelfLayerId) :-
+    forall(
+        triple(Facing, shop:layerOfFacing, ShelfLayer), 
+        (
+            get_number_of_items_in_facing(Facing, NoOfItemDepthFloat),
+            triple(Facing, shop:erpFacingId, LayerRelPos),
+            NoOfItemDepth is integer(NoOfItemDepthFloat),
+            NoOfItemWidth is 1,
+            post_facing(ShelfLayerId, [LayerRelPos, NoOfItemDepth, NoOfItemWidth], _)
+        )
+    ).
+
+delete_facings(StoreId) :-
+    get_shelves(StoreId, ShelfList),
+    forall(
+        member(Shelf, ShelfList),
+        (
+            get_entity_id(Shelf, ShelfId),
+            get_shelf_layers(ShelfId, ShelfLayerList),
+            forall(
+                member(ShelfLayer, ShelfLayerList),
+                (
+                    get_entity_id(ShelfLayer, ShelfLayerId),
+                    get_facings(ShelfLayerId, FacingList),
+                    forall(
+                        member(Facing, FacingList),
+                        (
+                            get_entity_id(Facing, FacingId),
+                            delete_facing(FacingId)
+                        )
+                    )
                 )
             )
         )
@@ -278,32 +326,32 @@ delete_facings(StoreId) :-
 %         post_shelf_layers(Shelf, ShelfIdInt))
 %       ).
 
-post_facings(StoreId) :-
-    get_shelves(StoreId, ShelfList),
-    post_facings_of_layers_(StoreId, ShelfList).
+% post_facings(StoreId) :-
+%     get_shelves(StoreId, ShelfList),
+%     post_facings_of_layers_(StoreId, ShelfList).
 
-post_facings_of_layers_(StoreId, ShelfList):- 
-    has_type(Layer, shop:'ShelfLayer'),
-    triple(Shelf, soma:hasPhysicalComponent, Layer),
-    triple(Shelf, shop:erpShelfId, ShelfExtRefId),
-    get_shelf_id_by_ext_id(ShelfList, ShelfExtRefId, ShelfId),
-    triple(Layer, shop:erpShelfLayerId, LayerExtRefId),
-    get_shelf_layers(ShelfId, ShelfLayerList),
-    get_shelf_layer_id_by_ext_id(ShelfLayerList, LayerExtRefId, ShelfLayerId),
-    post_facings(Layer, ShelfLayerId),
-    fail.
+% post_facings_of_layers_(StoreId, ShelfList):- 
+%     has_type(Layer, shop:'ShelfLayer'),
+%     triple(Shelf, soma:hasPhysicalComponent, Layer),
+%     triple(Shelf, shop:erpShelfId, ShelfExtRefId),
+%     get_shelf_id_by_ext_id(ShelfList, ShelfExtRefId, ShelfId),
+%     triple(Layer, shop:erpShelfLayerId, LayerExtRefId),
+%     get_shelf_layers(ShelfId, ShelfLayerList),
+%     get_shelf_layer_id_by_ext_id(ShelfLayerList, LayerExtRefId, ShelfLayerId),
+%     post_facings(Layer, ShelfLayerId),
+%     fail.
  
-post_facings_of_layers_(_, _).
+% post_facings_of_layers_(_, _).
 
-post_facings(ShelfLayer, ShelfLayerId) :-
-    forall(
-        (triple(Facing, shop:layerOfFacing, ShelfLayer)), 
-        (get_number_of_items_in_facing(Facing, NoOfItemDepthFloat),
-        triple(Facing, shop:erpFacingId, LayerRelPos),
-        NoOfItemDepth is integer(NoOfItemDepthFloat),
-        NoOfItemWidth is 1,
-        post_facing(ShelfLayerId, [LayerRelPos, NoOfItemDepth, NoOfItemWidth], _))
-    ).
+% post_facings(ShelfLayer, ShelfLayerId) :-
+%     forall(
+%         (triple(Facing, shop:layerOfFacing, ShelfLayer)), 
+%         (get_number_of_items_in_facing(Facing, NoOfItemDepthFloat),
+%         triple(Facing, shop:erpFacingId, LayerRelPos),
+%         NoOfItemDepth is integer(NoOfItemDepthFloat),
+%         NoOfItemWidth is 1,
+%         post_facing(ShelfLayerId, [LayerRelPos, NoOfItemDepth, NoOfItemWidth], _))
+%     ).
 
 % post_shelf_layers(Shelf, ShelfId) :-
 %     k4r_get_core_link(Link),
