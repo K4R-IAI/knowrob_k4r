@@ -178,6 +178,7 @@ post_facings_of_shelves(ShelfList):-
     has_type(ShelfLayer, shop:'ShelfLayer'),
     triple(Shelf, soma:hasPhysicalComponent, ShelfLayer),
     shelf_with_erp_id(Shelf, ShelfExtRefId),
+    shop:assert_layer_id(Shelf),
     get_shelf_id_by_ext_id(ShelfList, ShelfExtRefId, ShelfId),
     triple(ShelfLayer, shop:erpShelfLayerId, LayerExtRefId),
     get_shelf_layers(ShelfId, ShelfLayerList),
