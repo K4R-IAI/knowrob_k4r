@@ -8,8 +8,8 @@ USER root
 # Initialize the catkin workspace
 RUN cd /home/ros/src/knowrob \
     && git remote add k4r https://github.com/K4R-IAI/knowrob \
-    && git fetch k4r master \
-    && git checkout k4r/master
+    && git fetch k4r v1.0 \
+    && git checkout k4r/v1.0
 
 RUN cd /home/ros/src \
     && git clone -b v1.0 https://github.com/K4R-IAI/knowrob_k4r \
