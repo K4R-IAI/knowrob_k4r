@@ -177,6 +177,7 @@ post_facings(StoreId) :-
 post_facings_of_shelves(ShelfList):- 
     has_type(ShelfLayer, shop:'ShelfLayer'),
     triple(Shelf, soma:hasPhysicalComponent, ShelfLayer),
+    shop:assert_shelf_erp_id(Shelf),
     triple(Shelf, shop:erpShelfId, ShelfExtRefId),
     get_shelf_id_by_ext_id(ShelfList, ShelfExtRefId, ShelfId),
     triple(ShelfLayer, shop:erpShelfLayerId, LayerExtRefId),
