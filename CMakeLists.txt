@@ -62,6 +62,10 @@ add_dependencies(k4r_db_client
 add_library(kafka_plugin 
             src/pa4/kafka_plugin.cpp 
             src/pa4/kafka_event_producer.cpp)
+
+add_library(rest_interface
+            src/pa4/sensor_data_input.cpp)
+
 target_link_libraries(kafka_plugin 
                       ${SWIPL_LIBRARIES}  
                       ${JSONCPP_LIBRARIES} 
@@ -69,6 +73,14 @@ target_link_libraries(kafka_plugin
                       ${RDKAFKA_LIBRARIES}
                       ${RDKAFKAPP_LIBRARIES})
 
+target_link_libraries(rest_interface
+                      ${JSONCPP_LIBRARIES}
+                      ${CURLPP_LIBRARIES})
+
 add_dependencies(kafka_plugin
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS})
+
+add_dependencies(rest_interface
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS})
