@@ -20,6 +20,10 @@ public:
     this->link = dt_url + std::string(link_tail);
   }
 
+  DataController(const std::string url, const char *link_tail="") : link(url + std::string(link_tail))
+  {
+  }
+
   ~DataController() {}
 
 public:
