@@ -104,7 +104,7 @@ PREDICATE(publish_pick_event, 2)
 }
 
 // publish_return_event(time, [CustomerId, StoreId, Product])
-PREDICATE(publish_pick_event, 2)
+PREDICATE(publish_put_back, 2)
 {
     Json::Value event_data;
 

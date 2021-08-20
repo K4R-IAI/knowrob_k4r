@@ -12,8 +12,8 @@
     [   
         create_store(+, -, -),
         user_login(r, r, r, r),
-        pick_object(r, r, r, r, r), %% how do we handle probability 
-        user_logout(r, r, r),
+        pick_object(r, r, r, r, r, r), %% how do we handle probability 
+        user_logout(r, r, r, r),
         put_back_object(r,r,r,r,r),
         items_bought(r, ?)
     ]).
@@ -75,19 +75,24 @@ assert_layer_properties(Fridge) :-
 assert_layer_properties(_,_).
 
 %% assert layer, separators and facigns on the layer. Assert their dimensions
-insert_layer_components(LayerNumber, NoOfFacings) :-
+insert_layer_components(LayerNumber, 2) :-
     % 1. assert the layer dimensions
     has_type(Layer, shop:'ShelfLayer'),
     triple(Layer, shop:erpShelfLayerId, LayerNum),
-    [D, W, H] = LayerDim, 
-    shop:assert_object_shape_(Layer, D, W, H, [0.5,0.5,0.5]).
+    is_at(Layer, [Parent, [X,_,_], _]),
+    object_dimensions(Layer, D, W, H),
+    DX is D/2,
+    %shop:perceived_pos__()
+    
 % 2. based on number of facings, attach the separators to the layer
-
+%  X pos of the separators has to be computed based on their order and from the x value of the Layer position
 
 % 3. assert the dimensions of facings 
 % a. (H of layer above - layer below) - 0.1
 % b. no layer above case - (H of shelf frame - layer of facing)-0.1 ?
-    
+
+compute_offset_(X, Axis, Offset) :-
+
 
 get_child_link_(Object, Child) :-
     triple(Object, urdf:hasEndLinkName, Child).
@@ -183,7 +188,7 @@ pick_object(UserId, StoreId, ItemId, ObjectType, Timestamp, Position) :-
             triple(Basket, soma:containsObject, ItemId)
         ]),
         time_interval_tell(PickAct, Timestamp, Timestamp),
-        publish_pick_event(TimeStamp, [UserId, ]).
+        publish_pick_event(TimeStamp, [UserId, StoreId, ObjectType]).
 
 put_back_object(UserId, ItemId, ObjectType, Timestamp, Position) :-
     triple(User, shop:hasUserId, UserId),
