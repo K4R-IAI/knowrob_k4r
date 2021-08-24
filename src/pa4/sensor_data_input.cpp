@@ -4,11 +4,14 @@
 class SensorDataInput : DataController
 {  
     private:
-        const std::string rest_link = "http://ked.informatik.uni-bremen.de:3678/getLastEvent";
+        static constexpr char* rest_link = (char*)"http://ked.informatik.uni-bremen.de:3678/getLastEvent";
+    
     public:
         SensorDataInput();
         void get_sensor_data();
 };
+
+//
 
 SensorDataInput::SensorDataInput() : DataController::DataController(rest_link, "")
 {   
