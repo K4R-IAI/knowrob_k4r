@@ -13,7 +13,7 @@ class SensorDataInput : DataController
 
 //
 
-SensorDataInput::SensorDataInput() : DataController::DataController(rest_link, "")
+SensorDataInput::SensorDataInput()
 {   
     
 }
@@ -21,6 +21,6 @@ SensorDataInput::SensorDataInput() : DataController::DataController(rest_link, "
 
 void SensorDataInput::get_sensor_data()
 {
-    Json::Value data = this->get_data("");
+    Json::Value data = this->get_data(rest_link);
     std::cout << data << std::endl;
 }
