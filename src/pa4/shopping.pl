@@ -1,4 +1,4 @@
-/** <module> shopping_events
+/** <module> shopping
  * A client for the k4r db for Prolog.
 
 @author Kaviya Dhanabalachandran
@@ -8,17 +8,18 @@
 
 %%% TODO : Check if you are able to get the user
 
-:- module( shopping_events,
-    [   
+:- module( shopping,
+    [  
         create_store(+, -, -),
         user_login(r, r, r, r),
         pick_object(r, r, r, r, r, r), %% how do we handle probability 
         user_logout(r, r, r, r),
-        put_back_object(r,r,r,r,r),
+        put_back_object/0,
         items_bought(r, ?)
     ]).
 
 :- use_foreign_library('libkafka_plugin.so').
+:- use_foreign_library('librest_interface.so').
 :- use_module(library('semweb/rdf_db')).
 :- use_module(library('model/SOMA/ACT')).
 :- use_module(library('lang/terms/is_a')).
@@ -81,7 +82,7 @@ insert_layer_components(LayerNumber, 2) :-
     triple(Layer, shop:erpShelfLayerId, LayerNum),
     is_at(Layer, [Parent, [X,_,_], _]),
     object_dimensions(Layer, D, W, H),
-    DX is D/2,
+    DX is D/2.
     %shop:perceived_pos__()
     
 % 2. based on number of facings, attach the separators to the layer
@@ -91,7 +92,7 @@ insert_layer_components(LayerNumber, 2) :-
 % a. (H of layer above - layer below) - 0.1
 % b. no layer above case - (H of shelf frame - layer of facing)-0.1 ?
 
-compute_offset_(X, Axis, Offset) :-
+%compute_offset_(X, Axis, Offset) :-
 
 
 get_child_link_(Object, Child) :-
@@ -190,7 +191,8 @@ pick_object(UserId, StoreId, ItemId, ObjectType, Timestamp, Position) :-
         time_interval_tell(PickAct, Timestamp, Timestamp),
         publish_pick_event(TimeStamp, [UserId, StoreId, ObjectType]).
 
-put_back_object(UserId, ItemId, ObjectType, Timestamp, Position) :-
+put_back_object :-
+    get_put_data(UserId, ItemId, ObjectType, Timestamp, Position, PosCoordinates),
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk), 

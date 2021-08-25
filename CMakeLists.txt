@@ -74,8 +74,10 @@ target_link_libraries(kafka_plugin
                       ${RDKAFKAPP_LIBRARIES})
 
 target_link_libraries(rest_interface
+                      ${SWIPL_LIBRARIES}
                       ${JSONCPP_LIBRARIES}
-                      ${CURLPP_LIBRARIES})
+                      ${CURLPP_LIBRARIES}
+                      k4r_db_client)
 
 add_dependencies(kafka_plugin
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
