@@ -31,6 +31,7 @@
 #include "Entities/StoreController.cpp"
 #include "Entities/StoreObjectController.cpp"
 #include "Entities/StorePropertyController.cpp"
+#include "GraphQl/GraphQlController.cpp"
 #include <boost/lexical_cast.hpp>
 
 PREDICATE(double_m_to_int_mm, 2)
@@ -1912,4 +1913,20 @@ PREDICATE(delete_device, 1)
 {
   DeviceController device_controller;
   return device_controller.delete_device(std::string(PL_A1));
+}
+
+PREDICATE(post_query, 2)
+{
+  GraphQlController graphql_controller;
+  
+  Json::Value out_data;
+  if (graphql_controller.post_query(std::string(PL_A1), out_data))
+  {
+    PL_A2 = out_data.toStyledString().c_str();
+    return true;
+  }
+  else
+  {
+    return false;
+  }
 }

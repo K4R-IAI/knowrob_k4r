@@ -12,7 +12,7 @@
 #include <ros/package.h>
 
 #define CERT_TYPE "P12"
-// #define SANDBOX
+#define SANDBOX
 #ifdef SANDBOX
   #define URL "https://dt-api.sandbox.knowledge4retail.org/k4r/api/v0/"
   #define CERT_PATH "/src/db/k4r_db/Entities/K4R_DEV_CERTs/k4r-sandbox-client.p12"
