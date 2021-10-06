@@ -11,6 +11,8 @@
 :- module( shopping,
     [  
         create_store(+, -, -),
+        assert_frame_properties/1,
+        assert_layer_properties/1,
         user_login(r, r, r, r),
         pick_object(r, r, r, r, r, r), %% how do we handle probability 
         user_logout(r, r, r, r),
@@ -26,6 +28,9 @@
 :- use_module(library('model/DUL/Event')).
 :- use_module(library('model/SOMA/EXT')).
 :- use_module(library('ros/urdf/URDF')).
+
+:- use_module(library('ros/tf/tf_plugin'), 
+                [tf_get_pose/4, tf_set_pose/3]).
 
 :- rdf_db:rdf_register_ns(soma,
     'http://www.ease-crc.org/ont/SOMA.owl#', [keep(true)]).
@@ -44,36 +49,56 @@ create_store(StoreId, Store, Fridge) :-
 
 %% Create the physical rep with properties of the fridge
 assert_frame_properties(Fridge) :-
-    triple(Fridge, dul:hasComponent, Frame),
+    triple(Fridge, soma:hasPhysicalComponent, Frame),
     has_type(Frame, shop:'ShelfFrame'),
     % ShelfBase
-    triple(Frame, dul:hasComponent, ShelfBase),
+    triple(Frame, soma:hasPhysicalComponent, ShelfBase),
     has_type(ShelfBase, shop:'ShelfBase'),
     get_child_link_(ShelfBase, ChildLink),
     get_object_dimension_from_urdf_(ChildLink, D, W, H),
+    % urdf_link_visual_shape(fridge, ChildLink, Dim, _, _, _),
+    % [D, W, H] = Dim,
+    writeln('half'),
     shop:assert_object_shape_(ShelfBase, D, W, H, [0.5,0.5,0.5]),
-    get_object_pose_from_urdf_(ChildLink, Translation, Rotation, ParentName),
-    tell(is_at(ShelfBase, [ParentName, Translation, Rotation])),
+    get_object_pose_from_urdf_(ChildLink, T1, R1, Parent1),
+    assert_object_pose_(ShelfBase, ChildLink, [Parent1, T1, R1], D, W, H),
+    writeln('half1'),
     % ShelfBack
-    triple(Frame, dul:hasComponent, ShelfBack),
+    triple(Frame, soma:hasPhysicalComponent, ShelfBack),
     has_type(ShelfBack, shop:'ShelfBack'),
     get_child_link_(ShelfBack, ChildLinkBack),
+    % urdf_link_visual_shape(fridge, ChildLinkBack, Dim1, _, _, _),
+    % [D1, W1, H1] = Dim1,
     get_object_dimension_from_urdf_(ChildLinkBack, D1, W1, H1),
     shop:assert_object_shape_(ShelfBack, D1, W1, H1, [0.5,0.5,0.5]),
     get_object_pose_from_urdf_(ChildLinkBack, Translation1, Rotation1, ParentName1),
     tell(is_at(ShelfBack, [ParentName1, Translation1, Rotation1])).
 
 assert_layer_properties(Fridge) :-
-    triple(Fridge, dul:hasComponent, Layer),
+    triple(Fridge, soma:hasPhysicalComponent, Layer),
     has_type(Layer, shop:'ShelfLayer'),
     get_child_link_(Layer, ChildLink),
     get_object_dimension_from_urdf_(ChildLink, D, W, H),
     shop:assert_object_shape_(Layer, D, W, H, [0.5,0.5,0.5]),
-    get_object_pose_from_urdf_(ChildLink, Translation, Rotation, ParentName),
-    tell(is_at(Layer, [ParentName, Translation, Rotation])),
+    get_object_pose_from_urdf_(ChildLink, T1, R1, ParentName),
+    assert_object_pose_(Layer, ChildLink, [ParentName, T1, R1], D, W, H),
+    assert_separator_properties(Layer),
+    % tell(is_at(Layer, [ParentName, Translation, Rotation])),
     fail.
 
-assert_layer_properties(_,_).
+assert_layer_properties(_).
+
+assert_separator_properties(Layer) :-
+    triple(Layer, soma:hasPhysicalComponent, Separator),
+    has_type(Separator, shop:'ShelfSeparator'),
+    get_child_link_(Separator, ChildLink),
+    get_object_dimension_from_urdf_(ChildLink, D, W, H),
+    shop:assert_object_shape_(Separator, D, W, H, [0.5,0.5,0.5]),
+    get_object_pose_from_urdf_(ChildLink, T1, R1, ParentName),
+    assert_object_pose_(Separator, ChildLink, [ParentName, T1, R1], D, W, H),
+    fail.
+
+assert_separator_properties(_).
 
 %% assert layer, separators and facigns on the layer. Assert their dimensions
 insert_layer_components(LayerNumber, 2) :-
@@ -100,7 +125,7 @@ get_child_link_(Object, Child) :-
 
 get_object_dimension_from_urdf_(Object, D, W, H) :-
     urdf_link_visual_shape(fridge, Object, Dim, _, _, _),
-    [D, W, H] = Dim.
+    box(D, W, H) = Dim.
 
 get_object_pose_from_urdf_(Object, Translation, Rotation, ParentName) :-
     urdf_link_parent_joint(fridge, Object, Joint), 
@@ -111,6 +136,30 @@ load_fridge_urdf_:-
     ros_package_path('knowrob_refills', X), 
     atom_concat(X, '/urdf/fridge.urdf', Filename), 
     urdf_load_file(fridge, Filename).
+
+assert_object_pose_(StaticObject, UrdfObj, UrdfPose, D, W, H) :-
+    get_time(Now),
+    Stamp is Now + 10,
+    time_scope(=(Now), =<(Stamp), FScope1),
+    [P1, [X1, Y1, Z1], Rot] = UrdfPose,
+    writeln([UrdfObj, P1, X1, Y1, Z1, Rot]),
+    time_scope(=(Now), =<('Infinity'), FScope),
+    tf_set_pose(UrdfObj, UrdfPose, FScope),
+    X is -(D/2),
+    Y is -(W/2),
+    Z is -(H/2),
+    tf_set_pose(StaticObject,[UrdfObj, [X, Y, Z], [0,0,0,1]], FScope1),
+    writeln([StaticObject, UrdfObj, [X, Y, Z], [0,0,0,1]]),
+    Stamp2 is Now+5,
+    time_scope(=(Now), =<(Stamp2), QScope),
+    tf_get_pose(StaticObject, [P1, T1, R1], QScope, _),
+    writeln('success2'),
+    ((get_child_link_(ParentName, P1),
+    rdf_split_url(_,ParentFrame,ParentName));
+    ParentFrame = P1), !, 
+    writeln([StaticObject, ParentFrame, T1, R1]),
+    % tell(is_at(StaticObject, [ParentFrame, T1, R1])).
+    tf_set_pose(StaticObject, [ParentFrame, T1, R1], FScope).
 
 %%%% Get the pose and the dimension from urdf
 
