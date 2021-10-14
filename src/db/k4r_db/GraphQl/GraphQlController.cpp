@@ -1,14 +1,7 @@
 #pragma once
 
-#include "../Entities/DataController.cpp"
-
-#define CERT_TYPE "P12"
-// #define SANDBOX
-#ifdef SANDBOX
-  #define GRAPHQL_URL "https://dt-api.sandbox.knowledge4retail.org/k4r/graphql"
-#else
-  #define GRAPHQL_URL "https://dt-api.dev.knowledge4retail.org/k4r/graphql"
-#endif
+#include "../Utilities/useful_functions.cpp"
+#include "../Utilities/environment.cpp"
 
 class GraphQlController
 {
@@ -25,8 +18,9 @@ public:
   ~GraphQlController() {}
 
 public:
-  bool post_query(const std::string &in_data, Json::Value &out_data)
+  bool post_query(const std::string &in_data, std::stringstream &response)
   {
+    std::cout << in_data << std::endl;
     cURLpp::Cleanup cleanup;
     long status_code = 0;
     try
@@ -38,17 +32,12 @@ public:
       this->request.setOpt(new curlpp::options::HttpHeader(header));
       this->request.setOpt(new curlpp::options::PostFields(in_data));
 
-      std::ostringstream response;
       this->request.setOpt(new curlpp::options::WriteStream(&response));
 
       this->request.perform();
 
       status_code = curlpp::infos::ResponseCode::get(this->request);
-      if (status_code == 200)
-      {
-        out_data = string_to_json(response.str());
-      }
-      else
+      if (status_code != 200)
       {
         std::cerr << "POST failed - " << this->link << " : " << status_code << std::endl;
         std::cerr << "data:\n" << in_data << std::endl;

@@ -1,54 +1,14 @@
 #pragma once
 
-#include <algorithm>
 #include <curlpp/Easy.hpp>
 #include <curlpp/Infos.hpp>
 #include <curlpp/Options.hpp>
 #include <curlpp/cURLpp.hpp>
-#include <jsoncpp/json/json.h>
 #include <jsoncpp/json/reader.h>
 #include <sstream>
-#include <string>
 #include <ros/package.h>
-
-#define CERT_TYPE "P12"
-#define SANDBOX
-#ifdef SANDBOX
-  #define URL "https://dt-api.sandbox.knowledge4retail.org/k4r/api/v0/"
-  #define CERT_PATH "/src/db/k4r_db/Entities/K4R_DEV_CERTs/k4r-sandbox-client.p12"
-  #define CERT_PASSWD "q7WgPL3OnopoyU4abkrw97LD3iqD"
-  #define VERIFY_PEER false
-#else
-  #define URL "https://dt-api.dev.knowledge4retail.org/k4r/api/v0/"
-  #define CERT_PATH "/src/db/k4r_db/Entities/K4R_DEV_CERTs/k4r-dev-keystore.p12"
-  #define CERT_PASSWD "8FdseHr0wCHwfuDmMv7QdKYWvnZg"
-  #define VERIFY_PEER true
-#endif
-
-void remove_new_line(std::string &str)
-{
-  while (true)
-  {
-    size_t str_last_index = str.length() - 1;
-    if (!str.empty() && str[str_last_index] == '\n')
-    {
-      str.erase(str_last_index);
-    }
-    else
-    {
-      break;
-    }
-  }
-  str.erase(std::remove(str.begin(), str.end(), '"'), str.end());
-}
-
-Json::Value string_to_json(const std::string &entity_in)
-{
-  Json::Value entity_out;
-  Json::Reader reader;
-  reader.parse(entity_in, entity_out);
-  return entity_out;
-}
+#include "../Utilities/useful_functions.cpp"
+#include "../Utilities/environment.cpp"
 
 class DataController
 {

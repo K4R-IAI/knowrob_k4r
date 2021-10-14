@@ -10,7 +10,11 @@
             post_shelf_layers/1,
             delete_shelf_layers/1,
             post_facings/1,
-            delete_facings/1
+            delete_facings/1,
+            get_shelf_id/2,
+            get_shelf_ids/2,
+            get_shelf_layer_id/2,
+            get_shelf_layer_ids/2
             % post_shelves_and_parts/1,
             % post_facings/2,
             % post_shelf_layers/2,
@@ -223,6 +227,49 @@ delete_facings(StoreId) :-
             )
         )
     ).
+
+make_id_filter("id", ["eq", _, "int"]).
+
+make_entity(Key, Filter, KeyWithFilter) :-
+    append("(filter:{", Filter, FilterWithHead),
+    append(FilterWithHead, "}", FilterFull),
+    string_concat(Key, FilterFull, KeyWithFilter).
+    
+get_graphql(GraphQLQuery, GraphQLResponse) :-
+    post_graphql(GraphQLQuery, GraphQLResponseString),
+    open_string(GraphQLResponseString, GraphQLResponseStream),
+    json_read_dict(GraphQLResponseStream, GraphQLResponseDict),
+    GraphQLResponse=GraphQLResponseDict.data.
+
+get_graphql(GraphQLKey, [FilterField, [Operator, Value, Type]], GraphQlValue, GraphQLResponse) :-
+    make_filter(FilterField, Operator, Value, Type, Filter),
+    make_key_with_filter(GraphQLKey, Filter, GraphQLKeyWithFilter),
+    string_concat(GraphQLKeyWithFilter, GraphQlValue, GraphQLQuery),
+    get_graphql(GraphQLQuery, GraphQLResponse).
+
+get_shelf_id(StoreId, ShelfId) :-
+    make_id_filter(FilterField, [Operator, StoreId, Type]),
+    get_graphql("{stores", [FilterField, [Operator, StoreId, Type]], "{shelves{id}}}", GraphQLResponse),
+    member(StoreDict, GraphQLResponse.stores),
+    member(ShelfDict, StoreDict.shelves),
+    string_to_atom(ShelfDict.id, ShelfId).
+
+get_shelf_ids(StoreId, ShelfIds) :-
+    findall(ShelfId, get_shelf_id(StoreId, ShelfId), ShelfIds).
+    
+get_shelf_layer_id(StoreId, ShelfLayerId) :-
+    make_id_filter(FilterField, [Operator, StoreId, Type]),
+    get_graphql("{stores", [FilterField, [Operator, StoreId, Type]], "{shelves{shelfLayers{id}}}}", GraphQLResponse),
+    member(StoreDict, GraphQLResponse.stores),
+    member(ShelfLayerDict, StoreDict.shelves),
+    member(ShelfLayerIdDict, ShelfLayerDict.shelfLayers),
+    string_to_atom(ShelfLayerIdDict.id, ShelfLayerId).
+
+get_shelf_layer_ids(StoreId, ShelfLayerIds) :-
+    findall(ShelfLayerId, get_shelf_layer_id(StoreId, ShelfLayerId), ShelfLayerIds).
+
+
+
 
 /* post_facings(StoreId) :-
     get_all_shelves(ShelfList),
