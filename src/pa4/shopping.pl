@@ -60,7 +60,9 @@ assert_frame_properties(Fridge) :-
     % [D, W, H] = Dim,
     writeln('half'),
     shop:assert_object_shape_(ShelfBase, D, W, H, [0.5,0.5,0.5]),
+    writeln('half3'),
     get_object_pose_from_urdf_(ChildLink, T1, R1, Parent1),
+    writeln('half2'),
     assert_object_pose_(ShelfBase, ChildLink, [Parent1, T1, R1], D, W, H),
     writeln('half1'),
     % ShelfBack
@@ -138,6 +140,7 @@ load_fridge_urdf_:-
     urdf_load_file(fridge, Filename).
 
 assert_object_pose_(StaticObject, UrdfObj, UrdfPose, D, W, H) :-
+    WorldFrame = 'base_link',
     get_time(Now),
     Stamp is Now + 10,
     time_scope(=(Now), =<(Stamp), FScope1),
@@ -152,14 +155,19 @@ assert_object_pose_(StaticObject, UrdfObj, UrdfPose, D, W, H) :-
     writeln([StaticObject, UrdfObj, [X, Y, Z], [0,0,0,1]]),
     Stamp2 is Now+5,
     time_scope(=(Now), =<(Stamp2), QScope),
-    tf_get_pose(StaticObject, [P1, T1, R1], QScope, _),
     writeln('success2'),
     ((get_child_link_(ParentName, P1),
-    rdf_split_url(_,ParentFrame,ParentName));
-    ParentFrame = P1), !, 
-    writeln([StaticObject, ParentFrame, T1, R1]),
+    rdf_split_url(_,ParentFrame,ParentName)
+    );
+    ParentFrame = P1), !,
+    % tf_get_pose(StaticObject, [WorldFrame, T1, R1], QScope, _),
+    % tf_set_pose(StaticObject, [WorldFrame, T1, R1], FScope),
+    % writeln([StaticObject, WorldFrame, T1, R1]),
+    % ParentFrame \= WorldFrame -> 
     % tell(is_at(StaticObject, [ParentFrame, T1, R1])).
-    tf_set_pose(StaticObject, [ParentFrame, T1, R1], FScope).
+    tf_get_pose(StaticObject, [ParentFrame, T1, R1], QScope, _),
+    tf_set_pose(StaticObject, [ParentFrame, T1, R1], FScope),
+    writeln([StaticObject, ParentFrame, T1, R1]).
 
 %%%% Get the pose and the dimension from urdf
 
@@ -218,6 +226,7 @@ user_login(UserId, DeviceId, TimeStamp, StoreId) :-
 
 
 pick_object(UserId, StoreId, ItemId, ObjectType, Timestamp, Position) :-
+    % Pose and object type are not used
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk), 

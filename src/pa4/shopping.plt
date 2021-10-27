@@ -44,6 +44,7 @@
 test('assert pose') :-
     gtrace, 
     create_store(1, S, Fridge),
+    shopping:assert_frame_properties(Fridge),
     shopping:assert_layer_properties(Fridge),
     get_time(Now), 
     Stamp2 is Now+5, 
@@ -53,10 +54,25 @@ test('assert pose') :-
     writeln(LP0),
     writeln(LP1).
 
+/* test('check tf') :-
+    create_store(1, S, Fridge),
+    tell(is_at(fridge:'ShelfBase_0', ['base_link', [-0.1985, 0.0593,0.01015], [0,0,-0.708,0.7054]])),
+    tell(is_at('shelf_1_base', ['base_link', [0, -0.241, 0.085], [0,0, -0.708,0.7054]])),
+    tell(is_at('shelf_1_level_0_link', ['shelf_1_base', [0,0,0.10665], [0,0, 0,1]])),
+    tell(is_at(fridge:'ShelfLevel_0', ['shelf_1_level_0_link', [-0.24, -0.175, -0.022], [0,0,0,1]])),
+    gtrace,
+    is_at(fridge:'ShelfLevel_0', ['ShelfBase_0', T, R]),
+    writeln([T, R]). */
+
+% test('user login') :-
+%     create_store(1, S, Fridge),
+%     gtrace,
+%     get_time(Now), 
+%     user_login(100, 101, Now, 1).
 
 % test('pick object') :-
 %     tell(is_physical_object(Object)),
-%     pick_object(111111, Object, _, 1600953683.2281373, _).
+%     pick_object(111111, 1, Object, _, 1600953683.2281373, _).
 
 % test('put back object') :-
 %     tell(is_physical_object(Object)),
