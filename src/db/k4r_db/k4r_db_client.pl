@@ -14,7 +14,8 @@
             get_shelf_id/2,
             get_shelf_ids/2,
             get_shelf_layer_id/2,
-            get_shelf_layer_ids/2
+            get_shelf_layer_ids/2,
+            get_graphql/4
             % post_shelves_and_parts/1,
             % post_facings/2,
             % post_shelf_layers/2,
@@ -268,7 +269,10 @@ get_shelf_layer_id(StoreId, ShelfLayerId) :-
 get_shelf_layer_ids(StoreId, ShelfLayerIds) :-
     findall(ShelfLayerId, get_shelf_layer_id(StoreId, ShelfLayerId), ShelfLayerIds).
 
-
+get_unit_id(UnitName, Id) :-
+    get_graphql("{units", ["name", ["eq", UnitName, "String"]], "{id}}", GraphQLResponse),
+    member(UnitDict, GraphQLResponse.units),
+    Id = UnitDict.id.
 
 
 /* post_facings(StoreId) :-

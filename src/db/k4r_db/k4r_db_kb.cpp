@@ -1149,7 +1149,7 @@ PREDICATE(delete_product_group, 1)
 const Json::Value shelf_array_to_shelf_json(const Json::Value &shelf_array)
 {
   Json::Value shelf_json;
-  if (shelf_array.size() == 12)
+  if (shelf_array.size() == 13)
   {
     shelf_json["cadPlanId"] = shelf_array[0];
     shelf_json["depth"] = shelf_array[1];
@@ -1163,6 +1163,7 @@ const Json::Value shelf_array_to_shelf_json(const Json::Value &shelf_array)
     shelf_json["positionY"] = shelf_array[9];
     shelf_json["positionZ"] = shelf_array[10];
     shelf_json["width"] = shelf_array[11];
+    shelf_json["lengthUnitId"] = shelf_array[12];
   }
   else
   {
