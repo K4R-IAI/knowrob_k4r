@@ -260,7 +260,7 @@ get_shelf_data(StoreId, RequiredFields, Data) :- % RequiredFields - List
     member(ShelfDict, StoreDict.shelves),
     findall(Value,
         (member(ReqField, RequiredFields),
-        Value = ShelfDict.ReqField),
+        string_to_atom(ShelfDict.ReqField, Value)),
     Data).
 
 get_shelves_data(StoreId, RequiredFields, DataLists) :-

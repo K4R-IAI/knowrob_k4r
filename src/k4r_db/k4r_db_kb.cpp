@@ -1397,7 +1397,7 @@ PREDICATE(delete_shelf, 1)
 const Json::Value shelf_layer_array_to_shelf_layer_json(const Json::Value &shelf_layer_array)
 {
   Json::Value shelf_layer_json;
-  if (shelf_layer_array.size() == 7)
+  if (shelf_layer_array.size() == 8)
   {
     shelf_layer_json["depth"] = shelf_layer_array[0];
     shelf_layer_json["externalReferenceId"] = shelf_layer_array[1];
@@ -1406,6 +1406,7 @@ const Json::Value shelf_layer_array_to_shelf_layer_json(const Json::Value &shelf
     shelf_layer_json["positionZ"] = shelf_layer_array[4];
     shelf_layer_json["type"] = shelf_layer_array[5];
     shelf_layer_json["width"] = shelf_layer_array[6];
+    shelf_layer_json["lengthUnitId"] = shelf_layer_array[7];
   }
   else
   {
