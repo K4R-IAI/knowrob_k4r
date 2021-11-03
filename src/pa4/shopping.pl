@@ -85,7 +85,9 @@ assert_frame_properties(Fridge) :-
     tell(is_at(ShelfBack, [ParentName1, Translation1, Rotation1])).
 
 assert_layer_properties(Fridge) :-
-    triple(Fridge, soma:hasPhysicalComponent, Layer),
+    triple(Fridge, soma:hasPhysicalComponent, Frame),
+    has_type(Frame, shop:'ShelfFrame'),
+    triple(Frame, soma:hasPhysicalComponent, Layer),
     has_type(Layer, shop:'ShelfLayer'),
     get_child_link_(Layer, ChildLink),
     get_object_dimension_from_urdf_(ChildLink, D, W, H),

@@ -2,7 +2,8 @@
           [
             post_fridge_store/1,
             post_fridge_shelf/1,
-            get_store_id/2
+            get_store_id/2,
+            post_fridge_shelf_layers/1
           ]).
 
 :- use_foreign_library('libk4r_db_client.so').
@@ -54,8 +55,25 @@ post_fridge_shelf(StoreNumber) :-
 
 post_fridge_shelf_layers(StoreNumber) :-
     get_store_id(StoreNumber, StoreId),
-    get_shelf_ids(StoreId, ShelfIds),
-    writeln(ShelfIds).
+    get_shelves_data(StoreId, [id, externalReferenceId], Data),
+    writeln(Data),
+    get_unit_id('meter', UnitId),
+    writeln(['Id', UnitId]),
+    forall(member([ShelfId, ExtRefId], Data),
+        (atom_number(ExtRefId, NumId),
+        triple(Frame, shop:erpShelfId, NumId),
+        holds(Frame, soma:hasPhysicalComponent, Layer),
+        has_type(Layer, shop:'ShelfLayer'),
+        writeln(['layer', Layer]),
+        object_dimensions(Layer, D, W, H),
+        writeln(['dim',D, W, H]),
+        is_at(Layer, [_, T, _]),
+        writeln(['pose',T, R]),
+        [_,_,Z] = T,
+        triple(Layer, shop:erpShelfLayerId, LayerId),
+        post_shelf_layer(ShelfId, [D, LayerId, H, LayerId, Z, "null", W, UnitId], _)
+        )).
+   
 
 
 get_store_id(StoreNum, StoreId) :-

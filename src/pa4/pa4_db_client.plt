@@ -11,6 +11,7 @@
     % post_fridge_shelf('fridge1').
 
 test('post fridge layer'):-
+    init_fridge('fridge1', S, F),
     post_fridge_shelf_layers('fridge1').
 
 :- end_tests('pa4_db_client').
