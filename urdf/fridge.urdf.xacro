@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<robot name="dm_shelves" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find knowrob_refills)/urdf/dm_shelf_macros.urdf.xacro"/>
+
+  <link name="base_link"/>
+
+  <shelf_1 parent="base_link" name="shelf_1">
+    <origin xyz="0.0 -0.2415761 0.08515" rpy="0 0 -1.5756"/>
+  </shelf_1>
+
+</robot>
