@@ -9,14 +9,15 @@
 %%% TODO : Check if you are able to get the user
 
 :- module( shopping,
-    [  
+    [   
+        init_fridge/3,
         create_store(+, -, -),
         assert_frame_properties/1,
         assert_layer_properties/1,
         user_login(r, r, r, r),
         pick_object(r, r, r, r, r, r), %% how do we handle probability 
         user_logout(r, r, r, r),
-        put_back_object/0,
+        put_back_object/6,
         items_bought(r, ?)
     ]).
 
@@ -38,6 +39,14 @@
 :- rdf_db:rdf_register_ns(urdf, 'http://knowrob.org/kb/urdf.owl#', [keep(true)]).
 :- rdf_db:rdf_register_ns(fridge, 'http://knowrob.org/kb/fridge.owl#', [keep(true)]).
 
+
+init_fridge(StoreId, Store, Fridge) :-
+    % StoreId, Store, Fridge
+    create_store(StoreId, Store, Fridge),
+    % post_fridge_store(StoreId).
+    shopping:assert_frame_properties(Fridge),
+    shopping:assert_layer_properties(Fridge).
+
 %% Create Store
 create_store(StoreId, Store, Fridge) :-
     has_type(Fridge, shop:'SmartFridge'),
@@ -56,7 +65,6 @@ assert_frame_properties(Fridge) :-
     has_type(ShelfBase, shop:'ShelfBase'),
     get_child_link_(ShelfBase, ChildLink),
     get_object_dimension_from_urdf_(ChildLink, D, W, H),
-    % urdf_link_visual_shape(fridge, ChildLink, Dim, _, _, _),
     % [D, W, H] = Dim,
     writeln('half'),
     shop:assert_object_shape_(ShelfBase, D, W, H, [0.5,0.5,0.5]),
@@ -103,13 +111,13 @@ assert_separator_properties(Layer) :-
 assert_separator_properties(_).
 
 %% assert layer, separators and facigns on the layer. Assert their dimensions
-insert_layer_components(LayerNumber, 2) :-
-    % 1. assert the layer dimensions
-    has_type(Layer, shop:'ShelfLayer'),
-    triple(Layer, shop:erpShelfLayerId, LayerNum),
-    is_at(Layer, [Parent, [X,_,_], _]),
-    object_dimensions(Layer, D, W, H),
-    DX is D/2.
+% insert_layer_components(LayerNumber, 2) :-
+%     % 1. assert the layer dimensions
+%     has_type(Layer, shop:'ShelfLayer'),
+%     triple(Layer, shop:erpShelfLayerId, LayerNum),
+%     is_at(Layer, [Parent, [X,_,_], _]),
+%     object_dimensions(Layer, D, W, H),
+%     DX is D/2.
     %shop:perceived_pos__()
     
 % 2. based on number of facings, attach the separators to the layer
@@ -135,12 +143,12 @@ get_object_pose_from_urdf_(Object, Translation, Rotation, ParentName) :-
     [ParentName, Translation, Rotation] = P.
 
 load_fridge_urdf_:-
-    ros_package_path('knowrob_refills', X), 
+    ros_package_path('knowrob_k4r', X), 
     atom_concat(X, '/urdf/fridge.urdf', Filename), 
     urdf_load_file(fridge, Filename).
 
 assert_object_pose_(StaticObject, UrdfObj, UrdfPose, D, W, H) :-
-    WorldFrame = 'base_link',
+    %WorldFrame = 'base_link',
     get_time(Now),
     Stamp is Now + 10,
     time_scope(=(Now), =<(Stamp), FScope1),
@@ -221,8 +229,8 @@ user_login(UserId, DeviceId, TimeStamp, StoreId) :-
         executes_task(LoggingInAction, Tsk1),
         is_performed_by(LoggingInAction, User)
         ]),
-        time_interval_tell(LoggingInAction, Timestamp, Timestamp),
-        publish_log_in(TimeStamp, [UserId, StoreId]).
+        time_interval_tell(LoggingInAction, Timestamp, Timestamp).
+        %publish_log_in(TimeStamp, [UserId, StoreId]).
 
 
 pick_object(UserId, StoreId, ItemId, ObjectType, Timestamp, Position) :-
@@ -246,11 +254,10 @@ pick_object(UserId, StoreId, ItemId, ObjectType, Timestamp, Position) :-
             %% TODO : create an instance of a Product. find Product type with object id or object type.
             triple(Basket, soma:containsObject, ItemId)
         ]),
-        time_interval_tell(PickAct, Timestamp, Timestamp),
-        publish_pick_event(TimeStamp, [UserId, StoreId, ObjectType]).
+        time_interval_tell(PickAct, Timestamp, Timestamp).
+        %publish_pick_event(TimeStamp, [UserId, StoreId, ObjectType]).
 
-put_back_object :-
-    get_put_data(UserId, ItemId, ObjectType, Timestamp, Position, PosCoordinates),
+put_back_object(UserId, ItemId, ObjectType, Timestamp, Position, PosCoordinates) :-
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk), 
@@ -294,8 +301,8 @@ user_logout(UserId, DeviceId, Timestamp, StoreId) :-
             triple(ShoppingAct,  soma:hasExecutionState, soma:'ExecutionState_Succeeded')
         ]),
     time_interval_tell(LogoutAct, Timestamp, Timestamp),
-    time_interval_tell(ShoppingAct, Start, Timestamp), 
-    publish_log_out(Timestamp, [UserId, StoreId]).
+    time_interval_tell(ShoppingAct, Start, Timestamp).
+    %publish_log_out(Timestamp, [UserId, StoreId]).
 
 items_bought(UserId, Items) :-
     triple(User, shop:hasUserId, UserId),

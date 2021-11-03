@@ -2,6 +2,16 @@
 
 :- begin_tests('shopping').
 
+% test('post store') :-
+%     init_fridge('fridge_1', Store, F).
+
+% test('create store'):-
+%     % StoreId, Store, Fridge
+%     create_store('fridge_1', Store, Fridge),
+%     gtrace,
+%     shopping:assert_frame_properties(Fridge),
+%     shopping:assert_layer_properties(Fridge).
+
 
 % insert_facing_(Sep1, Sep2, Facing, Pose, Dim) :-
 %     % Add a little distance from the separators on both sides to compute dim and X
@@ -41,7 +51,7 @@
 %     shopping:assert_frame_properties(Fridge).
 
 
-test('assert pose') :-
+/* test('assert pose') :-
     gtrace, 
     create_store(1, S, Fridge),
     shopping:assert_frame_properties(Fridge),
@@ -52,7 +62,7 @@ test('assert pose') :-
     is_at('http://knowrob.org/kb/fridge.owl#ShelfLevel_0', LP0),
     is_at('http://knowrob.org/kb/fridge.owl#ShelfLevel_1', LP1),
     writeln(LP0),
-    writeln(LP1).
+    writeln(LP1). */
 
 /* test('check tf') :-
     create_store(1, S, Fridge),

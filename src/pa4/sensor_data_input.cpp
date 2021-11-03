@@ -3,7 +3,7 @@
 #define PL_SAFE_ARG_MACROS
 #include <SWI-cpp.h>
 
-#include "../db/k4r_db/Entities/DataController.cpp"
+#include "../k4r_db/Entities/DataController.cpp"
 
 
 class SensorDataInput : DataController
