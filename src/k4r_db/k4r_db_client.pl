@@ -11,11 +11,12 @@
             delete_shelf_layers/1,
             post_facings/1,
             delete_facings/1,
-            get_shelf_id/2,
-            get_shelf_ids/2,
+            get_shelf_data/3,
+            get_shelves_data/3,
             get_shelf_layer_id/2,
             get_shelf_layer_ids/2,
-            get_graphql/4
+            get_graphql/4,
+            get_unit_id/2
             % post_shelves_and_parts/1,
             % post_facings/2,
             % post_shelf_layers/2,
@@ -248,15 +249,22 @@ get_graphql(GraphQLKey, [FilterField, [Operator, Value, Type]], GraphQlValue, Gr
     string_concat(GraphQLKeyWithFilter, GraphQlValue, GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse).
 
-get_shelf_id(StoreId, ShelfId) :-
+get_shelf_data(StoreId, RequiredFields, Data) :- % RequiredFields - List
+    atomic_list_concat(RequiredFields, ',', TempField),
+    atom_string(TempField, FieldString),
     make_id_filter(FilterField, [Operator, StoreId, Type]),
-    get_graphql("{stores", [FilterField, [Operator, StoreId, Type]], "{shelves{id}}}", GraphQLResponse),
+    string_concat("{shelves{", FieldString, Val1),
+    string_concat(Val1, "}}}", RequiredString),
+    get_graphql("{stores", [FilterField, [Operator, StoreId, Type]], RequiredString, GraphQLResponse),
     member(StoreDict, GraphQLResponse.stores),
     member(ShelfDict, StoreDict.shelves),
-    string_to_atom(ShelfDict.id, ShelfId).
+    findall(Value,
+        (member(ReqField, RequiredFields),
+        Value = ShelfDict.ReqField),
+    Data).
 
-get_shelf_ids(StoreId, ShelfIds) :-
-    findall(ShelfId, get_shelf_id(StoreId, ShelfId), ShelfIds).
+get_shelves_data(StoreId, RequiredFields, DataLists) :-
+    findall(DataList, get_shelf_data(StoreId, RequiredFields, DataList), DataLists).
     
 get_shelf_layer_id(StoreId, ShelfLayerId) :-
     make_id_filter(FilterField, [Operator, StoreId, Type]),
