@@ -13,8 +13,8 @@
             delete_facings/1,
             get_shelf_data/3,
             get_shelves_data/3,
-            get_shelf_layer_id/2,
-            get_shelf_layer_ids/2,
+            get_shelf_layer_data/3,
+            get_shelf_layers_data/3,
             get_graphql/4,
             get_unit_id/2
             % post_shelves_and_parts/1,
@@ -243,39 +243,48 @@ get_graphql(GraphQLQuery, GraphQLResponse) :-
     json_read_dict(GraphQLResponseStream, GraphQLResponseDict),
     GraphQLResponse=GraphQLResponseDict.data.
 
-get_graphql(GraphQLKey, [FilterField, [Operator, Value, Type]], GraphQlValue, GraphQLResponse) :-
-    make_filter(FilterField, Operator, Value, Type, Filter),
+get_graphql(GraphQLKey, [FilterKey, [Operator, Value, Type]], GraphQlValue, GraphQLResponse) :-
+    make_filter(FilterKey, Operator, Value, Type, Filter),
     make_key_with_filter(GraphQLKey, Filter, GraphQLKeyWithFilter),
     string_concat(GraphQLKeyWithFilter, GraphQlValue, GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse).
 
-get_shelf_data(StoreId, RequiredFields, Data) :- % RequiredFields - List
-    atomic_list_concat(RequiredFields, ',', TempField),
-    atom_string(TempField, FieldString),
+string_concat3(String1, String2, String3, String4) :-
+    string_concat(String1, String2, StringTmp),
+    string_concat(StringTmp, String3, String4).
+
+get_shelf_data(StoreId, KeyList, ValueList) :-
+    atomic_list_concat(KeyList, ',', KeysAtom),
+    atom_string(KeysAtom, KeysString),
     make_id_filter(FilterField, [Operator, StoreId, Type]),
-    string_concat("{shelves{", FieldString, Val1),
-    string_concat(Val1, "}}}", RequiredString),
-    get_graphql("{stores", [FilterField, [Operator, StoreId, Type]], RequiredString, GraphQLResponse),
+    string_concat3("{id, shelves{", KeysString, "}}}", GraphQlValue),
+    get_graphql("{stores", [FilterField, [Operator, StoreId, Type]], GraphQlValue, GraphQLResponse),
     member(StoreDict, GraphQLResponse.stores),
     member(ShelfDict, StoreDict.shelves),
     findall(Value,
-        (member(ReqField, RequiredFields),
-        string_to_atom(ShelfDict.ReqField, Value)),
-    Data).
+        (member(Key, KeyList),
+        string_to_atom(ShelfDict.Key, Value)),
+        ValueList).
 
-get_shelves_data(StoreId, RequiredFields, DataLists) :-
-    findall(DataList, get_shelf_data(StoreId, RequiredFields, DataList), DataLists).
+get_shelves_data(StoreId, KeyList, ValueLists) :-
+    findall(ValueList, get_shelf_data(StoreId, KeyList, ValueList), ValueLists).
     
-get_shelf_layer_id(StoreId, ShelfLayerId) :-
+get_shelf_layer_data(StoreId, KeyList, ValueList) :-
+    atomic_list_concat(KeyList, ',', KeysAtom),
+    atom_string(KeysAtom, KeysString),
     make_id_filter(FilterField, [Operator, StoreId, Type]),
-    get_graphql("{stores", [FilterField, [Operator, StoreId, Type]], "{shelves{shelfLayers{id}}}}", GraphQLResponse),
+    string_concat3("{shelves{shelfLayers{", KeysString, "}}}}", GraphQlValue),
+    get_graphql("{stores", [FilterField, [Operator, StoreId, Type]], GraphQlValue, GraphQLResponse),
     member(StoreDict, GraphQLResponse.stores),
-    member(ShelfLayerDict, StoreDict.shelves),
-    member(ShelfLayerIdDict, ShelfLayerDict.shelfLayers),
-    string_to_atom(ShelfLayerIdDict.id, ShelfLayerId).
+    member(ShelfDict, StoreDict.shelves),
+    member(ShelfLayerDict, ShelfDict.shelfLayers),
+    findall(Value,
+        (member(Key, KeyList),
+        string_to_atom(ShelfLayerDict.Key, Value)),
+        ValueList).
 
-get_shelf_layer_ids(StoreId, ShelfLayerIds) :-
-    findall(ShelfLayerId, get_shelf_layer_id(StoreId, ShelfLayerId), ShelfLayerIds).
+get_shelf_layers_data(StoreId, KeyList, ValueLists) :-
+    findall(ValueList, get_shelf_layer_data(StoreId, KeyList, ValueList), ValueLists).
 
 get_unit_id(UnitName, Id) :-
     get_graphql("{units", ["name", ["eq", UnitName, "String"]], "{id}}", GraphQLResponse),
