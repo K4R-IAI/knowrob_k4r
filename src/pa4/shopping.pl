@@ -212,8 +212,6 @@ user_login(UserId, DeviceId, TimeStamp, StoreId) :-
         
         instance_of(ShoppingBasket, shop:'ShopperBasket'),
         has_participant(ParentAct, ShoppingBasket),
-        has_type(Role1, soma:'Patient'),
-        has_task_role(Task, Role1),
         has_type(Motion, soma:'Holding'),
         is_classified_by(ParentAct, Motion),
         triple(ParentAct, soma:hasExecutionState, soma:'ExecutionState_Active'),

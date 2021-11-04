@@ -12,7 +12,7 @@ RUN cd /home/ros/src/knowrob \
     && git checkout k4r/v1.0
 
 RUN cd /home/ros/src \
-    && git clone -b K8S https://github.com/K4R-IAI/knowrob_k4r \
+    && git clone -b pa4 https://github.com/kaviyachandran/knowrob_k4r/ \
     && git clone -b v0.2 https://github.com/K4R-IAI/knowrob_refills
 
 RUN cd /home/ros/src/rosprolog \
@@ -35,6 +35,7 @@ RUN apt-get update && apt-get install -y \
     python3-yaml \
     libcurlpp-dev \
     libjsoncpp-dev \
+    librdkafka-dev \
     && rosdep install --from-paths src --ignore-src -r -y \
     && rm -rf /var/lib/apt/lists/*
 
