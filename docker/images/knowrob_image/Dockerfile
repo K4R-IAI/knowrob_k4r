@@ -17,8 +17,8 @@ RUN cd /home/ros/src \
 
 RUN cd /home/ros/src/rosprolog \
     && git remote add k4r https://github.com/K4R-IAI/rosprolog \
-    && git fetch k4r v0.1 \
-    && git checkout k4r/v0.1
+    && git fetch k4r v1.0 \
+    && git checkout k4r/v1.0
 
 COPY test.py /home/ros
 RUN chmod +x test.py
