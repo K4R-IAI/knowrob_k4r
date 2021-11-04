@@ -111,20 +111,18 @@ post_shelf(StoreId, Shelf) :-
     is_at(Shelf, ['map', [PositionX, PositionY, PositionZ], [OrientationX, OrientationY, OrientationZ, OrientationW]]),
     object_dimensions(Shelf, DepthInM, WidthInM, HeightInM),
     double_m_to_int_mm([DepthInM, WidthInM, HeightInM], [DepthInMM, WidthInMM, HeightInMM]),
+    get_unit_id("Milimeter", UnitId),
     post_shelf(StoreId, ProductGroupId,
         [CadPlanId, DepthInMM, ExternalReferenceId, HeightInMM,
         OrientationW, OrientationX, OrientationY, OrientationZ,
-        PositionX, PositionY, PositionZ, WidthInMM], 
+        PositionX, PositionY, PositionZ, WidthInMM, UnitId], 
         _).
 
 delete_shelves(StoreId) :-
-    get_shelves(StoreId, ShelfList),
+    get_shelves_data(StoreId, [id], ShelfIds),    
     forall(
-        member(Shelf, ShelfList),
-        (
-            get_entity_id(Shelf, ShelfId),
-            delete_shelf(ShelfId)
-        )
+        (member(ShelfId, ShelfIds), member(ShelfIdString, ShelfId)),     
+        delete_shelf(ShelfIdString)
     ).
 
 post_shelf_layers(StoreId) :-
@@ -257,7 +255,7 @@ get_shelf_data(StoreId, KeyList, ValueList) :-
     atomic_list_concat(KeyList, ',', KeysAtom),
     atom_string(KeysAtom, KeysString),
     make_id_filter(FilterField, [Operator, StoreId, Type]),
-    string_concat3("{id, shelves{", KeysString, "}}}", GraphQlValue),
+    string_concat3("{shelves{", KeysString, "}}}", GraphQlValue),
     get_graphql("{stores", [FilterField, [Operator, StoreId, Type]], GraphQlValue, GraphQLResponse),
     member(StoreDict, GraphQLResponse.stores),
     member(ShelfDict, StoreDict.shelves),
