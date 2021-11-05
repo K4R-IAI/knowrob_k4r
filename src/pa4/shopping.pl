@@ -209,7 +209,6 @@ user_login(UserId, DeviceId, TimeStamp, StoreId) :-
         has_type(Role, soma:'Location'),
         has_task_role(Task, Role),
         is_performed_by(ParentAct, User),
-        
         instance_of(ShoppingBasket, shop:'ShopperBasket'),
         has_participant(ParentAct, ShoppingBasket),
         has_type(Motion, soma:'Holding'),
@@ -217,7 +216,6 @@ user_login(UserId, DeviceId, TimeStamp, StoreId) :-
         triple(ParentAct, soma:hasExecutionState, soma:'ExecutionState_Active'),
         executes_task(ParentAct, Task)
    ]),
-
    tell(
        [ is_action(LoggingInAction),
         has_subevent(ParentAct, LoggingInAction), 
@@ -227,7 +225,9 @@ user_login(UserId, DeviceId, TimeStamp, StoreId) :-
         triple(Device, shop:hasDeviceId, DeviceId),
         instance_of(Tsk1,shop:'LoggingIn'),
         executes_task(LoggingInAction, Tsk1),
-        is_performed_by(LoggingInAction, User)
+        is_performed_by(LoggingInAction, User),
+        has_type(Interval, dul:'TimeInterval'),
+        has_time_interval(LoggingInAction, Interval)
         ]),
         time_interval_tell(LoggingInAction, Timestamp, Timestamp).
         %publish_log_in(TimeStamp, [UserId, StoreId]).
