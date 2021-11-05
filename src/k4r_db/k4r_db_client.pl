@@ -15,6 +15,8 @@
             get_shelves_data/3,
             get_shelf_layer_data/3,
             get_shelf_layers_data/3,
+            get_facing_data/3,
+            get_facings_data/3,
             get_graphql/4,
             get_unit_id/2
             % post_shelves_and_parts/1,
@@ -136,12 +138,13 @@ post_shelf_layers(StoreId, Shelf) :-
     shop:assert_shelf_erp_id(Shelf),
     triple(Shelf, shop:erpShelfId, FloatShelfExternalReferenceId),
     ShelfExternalReferenceId is integer(FloatShelfExternalReferenceId),
+    string_concat3("(filter: {externalReferenceId: {operator: \"eq\", value: \"", ShelfExternalReferenceId, "\", type: \"string\"}})", ShelfFilter),
+    get_shelf_data_with_filter(StoreId, ShelfFilter, [id], ShelfId),
+    member(ShelfIdString, ShelfId),
     shop:assert_layer_id(Shelf),
-    get_shelves(StoreId, ShelfList),
-    get_shelf_id_by_ext_id(ShelfList, ShelfExternalReferenceId, ShelfId),
     forall( 
         triple(Shelf, soma:hasPhysicalComponent, ShelfLayer),
-        (   
+        (               
             instance_of(ShelfLayer, LayerType), 
             ((subclass_of(LayerType, dmshop:'DMShelfFloor'),
             rdf_split_url(_, LayerFrame1, LayerType),
@@ -153,44 +156,32 @@ post_shelf_layers(StoreId, Shelf) :-
             is_at(ShelfLayer, ['map', [_,_, PositionZ], _]),
             object_dimensions(ShelfLayer, DepthInM, WidthInM, HeightInM),
             double_m_to_int_mm([DepthInM, WidthInM, HeightInM], [DepthInMM, WidthInMM, HeightInMM]),
-            post_shelf_layer(ShelfId, [DepthInMM, ExternalReferenceId, HeightInMM, ExternalReferenceId, PositionZ, LayerFrame, WidthInMM], _)
+            get_unit_id("Milimeter", UnitId),
+            post_shelf_layer(ShelfIdString, [DepthInMM, ExternalReferenceId, HeightInMM, ExternalReferenceId, PositionZ, LayerFrame, WidthInMM, UnitId], _)
         )
     ).
 
 delete_shelf_layers(StoreId) :-
-    get_shelves(StoreId, ShelfList),
+    get_shelf_layers_data(StoreId, [id], ShelfLayerIds),    
     forall(
-        member(Shelf, ShelfList),
-        (
-            get_entity_id(Shelf, ShelfId),
-            get_shelf_layers(ShelfId, ShelfLayerList),
-            forall(
-                member(ShelfLayer, ShelfLayerList),
-                (
-                    get_entity_id(ShelfLayer, ShelfLayerId),
-                    delete_shelf_layer(ShelfLayerId)
-                )
-            )
-        )
+        (member(ShelfLayerId, ShelfLayerIds), member(ShelfLayerIdString, ShelfLayerId)),     
+        delete_shelf_layer(ShelfLayerIdString)
     ).
 
 post_facings(StoreId) :-
-    get_shelves(StoreId, ShelfList),
-    post_facings_of_shelves(ShelfList).
-
-post_facings_of_shelves(ShelfList):- 
     has_type(ShelfLayer, shop:'ShelfLayer'),
     triple(Shelf, soma:hasPhysicalComponent, ShelfLayer),
-    shelf_with_erp_id(Shelf, ShelfExtRefId),
+    shelf_with_erp_id(Shelf, ShelfExternalReferenceId),
+    string_concat3("(filter: {externalReferenceId: {operator: \"eq\", value: \"", ShelfExternalReferenceId, "\", type: \"string\"}})", ShelfFilter),
     shop:assert_layer_id(Shelf),
-    get_shelf_id_by_ext_id(ShelfList, ShelfExtRefId, ShelfId),
-    triple(ShelfLayer, shop:erpShelfLayerId, LayerExtRefId),
-    get_shelf_layers(ShelfId, ShelfLayerList),
-    get_shelf_layer_id_by_ext_id(ShelfLayerList, LayerExtRefId, ShelfLayerId),
-    post_facings(ShelfLayer, ShelfLayerId),
+    triple(ShelfLayer, shop:erpShelfLayerId, ShelfLayerExternalReferenceId),
+    string_concat3("(filter: {externalReferenceId: {operator: \"eq\", value: \"", ShelfLayerExternalReferenceId, "\", type: \"string\"}})", ShelfLayerFilter),
+    get_shelf_layer_data_with_filter(StoreId, ShelfFilter, ShelfLayerFilter, [id], ShelfLayerId),
+    member(ShelfLayerIdString, ShelfLayerId),
+    post_facings(ShelfLayer, ShelfLayerIdString),
     fail.
  
-post_facings_of_shelves(_).
+post_facings(_).
 
 post_facings(ShelfLayer, ShelfLayerId) :-
     forall(
@@ -205,30 +196,13 @@ post_facings(ShelfLayer, ShelfLayerId) :-
     ).
 
 delete_facings(StoreId) :-
-    get_shelves(StoreId, ShelfList),
+    get_facings_data(StoreId, [id], FacingIds),
     forall(
-        member(Shelf, ShelfList),
-        (
-            get_entity_id(Shelf, ShelfId),
-            get_shelf_layers(ShelfId, ShelfLayerList),
-            forall(
-                member(ShelfLayer, ShelfLayerList),
-                (
-                    get_entity_id(ShelfLayer, ShelfLayerId),
-                    get_facings(ShelfLayerId, FacingList),
-                    forall(
-                        member(Facing, FacingList),
-                        (
-                            get_entity_id(Facing, FacingId),
-                            delete_facing(FacingId)
-                        )
-                    )
-                )
-            )
-        )
+        (member(FacingId, FacingIds), member(FacingIdString, FacingId)),     
+        delete_facing(FacingIdString)
     ).
 
-make_id_filter("id", ["eq", _, "int"]).
+make_id_filter("id", ["eq", _, _]).
 
 make_entity(Key, Filter, KeyWithFilter) :-
     append("(filter:{", Filter, FilterWithHead),
@@ -251,9 +225,25 @@ string_concat3(String1, String2, String3, String4) :-
     string_concat(String1, String2, StringTmp),
     string_concat(StringTmp, String3, String4).
 
+get_shelf_data_with_filter(StoreId, Filter, KeyList, ValueList) :-
+    atomic_list_concat(KeyList, ',', KeysAtom),
+    atom_string(KeysAtom, KeysString),
+    Type="int",
+    make_id_filter(FilterField, [Operator, StoreId, Type]),
+    string_concat3("{shelves", Filter, "{", ShelfWithFilter),
+    string_concat3(ShelfWithFilter, KeysString, "}}}", GraphQlValue),
+    get_graphql("{stores", [FilterField, [Operator, StoreId, Type]], GraphQlValue, GraphQLResponse),
+    member(StoreDict, GraphQLResponse.stores),
+    member(ShelfDict, StoreDict.shelves),
+    findall(Value,
+        (member(Key, KeyList),
+        string_to_atom(ShelfDict.Key, Value)),
+        ValueList).
+
 get_shelf_data(StoreId, KeyList, ValueList) :-
     atomic_list_concat(KeyList, ',', KeysAtom),
     atom_string(KeysAtom, KeysString),
+    Type="int",
     make_id_filter(FilterField, [Operator, StoreId, Type]),
     string_concat3("{shelves{", KeysString, "}}}", GraphQlValue),
     get_graphql("{stores", [FilterField, [Operator, StoreId, Type]], GraphQlValue, GraphQLResponse),
@@ -270,6 +260,7 @@ get_shelves_data(StoreId, KeyList, ValueLists) :-
 get_shelf_layer_data(StoreId, KeyList, ValueList) :-
     atomic_list_concat(KeyList, ',', KeysAtom),
     atom_string(KeysAtom, KeysString),
+    Type="int",
     make_id_filter(FilterField, [Operator, StoreId, Type]),
     string_concat3("{shelves{shelfLayers{", KeysString, "}}}}", GraphQlValue),
     get_graphql("{stores", [FilterField, [Operator, StoreId, Type]], GraphQlValue, GraphQLResponse),
@@ -281,8 +272,44 @@ get_shelf_layer_data(StoreId, KeyList, ValueList) :-
         string_to_atom(ShelfLayerDict.Key, Value)),
         ValueList).
 
+get_shelf_layer_data_with_filter(StoreId, ShelfFilter, ShelfLayerFilter, KeyList, ValueList) :-
+    atomic_list_concat(KeyList, ',', KeysAtom),
+    atom_string(KeysAtom, KeysString),
+    Type="int",
+    make_id_filter(FilterField, [Operator, StoreId, Type]),
+    string_concat3("{shelves", ShelfFilter, "{shelfLayers", ShelfWithFilter),
+    string_concat3(ShelfWithFilter, ShelfLayerFilter, "{", ShelfAndShelfLayerWithFilter),
+    string_concat3(ShelfAndShelfLayerWithFilter, KeysString, "}}}}", GraphQlValue),
+    get_graphql("{stores", [FilterField, [Operator, StoreId, Type]], GraphQlValue, GraphQLResponse),
+    member(StoreDict, GraphQLResponse.stores),
+    member(ShelfDict, StoreDict.shelves),
+    member(ShelfLayerDict, ShelfDict.shelfLayers),
+    findall(Value,
+        (member(Key, KeyList),
+        string_to_atom(ShelfLayerDict.Key, Value)),
+        ValueList).
+
 get_shelf_layers_data(StoreId, KeyList, ValueLists) :-
     findall(ValueList, get_shelf_layer_data(StoreId, KeyList, ValueList), ValueLists).
+
+get_facing_data(StoreId, KeyList, ValueList) :-
+    atomic_list_concat(KeyList, ',', KeysAtom),
+    atom_string(KeysAtom, KeysString),
+    Type="int",
+    make_id_filter(FilterField, [Operator, StoreId, Type]),
+    string_concat3("{shelves{shelfLayers{facings{", KeysString, "}}}}}", GraphQlValue),
+    get_graphql("{stores", [FilterField, [Operator, StoreId, Type]], GraphQlValue, GraphQLResponse),
+    member(StoreDict, GraphQLResponse.stores),
+    member(ShelfDict, StoreDict.shelves),
+    member(ShelfLayerDict, ShelfDict.shelfLayers),
+    member(FacingDict, ShelfLayerDict.facings),
+    findall(Value,
+        (member(Key, KeyList),
+        string_to_atom(FacingDict.Key, Value)),
+        ValueList).
+
+get_facings_data(StoreId, KeyList, ValueLists) :-
+    findall(ValueList, get_facing_data(StoreId, KeyList, ValueList), ValueLists).
 
 get_unit_id(UnitName, Id) :-
     get_graphql("{units", ["name", ["eq", UnitName, "String"]], "{id}}", GraphQLResponse),
