@@ -199,12 +199,16 @@ Filename: /home/kaviya/ros_ws/src/knowrob_refills/urdf/fridge.urdf. */
 % create_planogram(ProductId, Name, ProductPose, StoreId) :-
 %     tell(),
 
-user_login(UserId, DeviceId, TimeStamp, StoreId) :-
+user_login(UserId, DeviceId, Timestamp, StoreId) :-
    triple(Store, shop:hasShopId, StoreId),
    has_location(Fridge, Store),
    tell([is_action(ParentAct),
         has_participant(ParentAct, Fridge),
+        has_type(PaInterval, dul:'TimeInterval'),
+        has_time_interval(ParentAct, PaInterval),
+        triple(PaInterval, soma:hasIntervalBegin, Timestamp),
         instance_of(User, shop:'Customer'),
+        triple(User, shop:hasUserId, UserId),
         instance_of(Task,shop:'Shopping'),
         has_type(Role, soma:'Location'),
         has_task_role(Task, Role),
@@ -214,12 +218,10 @@ user_login(UserId, DeviceId, TimeStamp, StoreId) :-
         has_type(Motion, soma:'Holding'),
         is_classified_by(ParentAct, Motion),
         triple(ParentAct, soma:hasExecutionState, soma:'ExecutionState_Active'),
-        executes_task(ParentAct, Task)
-   ]),
-   tell(
+        executes_task(ParentAct, Task)]), !,
+    tell(
        [ is_action(LoggingInAction),
         has_subevent(ParentAct, LoggingInAction), 
-        triple(User, shop:hasUserId, UserId),
         has_type(Device, shop:'MobileDevice'),
         has_participant(LoggingInAction, Device),
         triple(Device, shop:hasDeviceId, DeviceId),
@@ -227,8 +229,7 @@ user_login(UserId, DeviceId, TimeStamp, StoreId) :-
         executes_task(LoggingInAction, Tsk1),
         is_performed_by(LoggingInAction, User),
         has_type(Interval, dul:'TimeInterval'),
-        has_time_interval(LoggingInAction, Interval)
-        ]),
+        has_time_interval(LoggingInAction, Interval)]),
         time_interval_tell(LoggingInAction, Timestamp, Timestamp).
         %publish_log_in(TimeStamp, [UserId, StoreId]).
 
