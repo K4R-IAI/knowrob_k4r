@@ -1933,19 +1933,3 @@ PREDICATE(post_graphql, 2)
     return false;
   }
 }
-
-// make_filter(FilterField, Operator, Value, Type, Filter)
-PREDICATE(make_filter, 5)
-{
-  std::string filter = std::string(PL_A1) + ":{" + "operator:\"" + std::string(PL_A2) + "\",value:\"" + std::string(PL_A3) + "\",type:\"" + std::string(PL_A4) + "\"}";
-  PL_A5 = filter.c_str();
-  return true;
-}
-
-// make_key_with_filter(Key, Filter, KeyWithFilter)
-PREDICATE(make_key_with_filter, 3)
-{
-  std::string key_with_filter = std::string(PL_A1) + "(filter:{" + std::string(PL_A2) + "})";
-  PL_A3 = key_with_filter.c_str();
-  return true;
-}
