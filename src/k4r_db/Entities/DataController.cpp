@@ -18,7 +18,6 @@ public:
   {
     bool sandbox = true;
     ros::param::get("sandbox", sandbox);
-    std::cout << sandbox << std::endl;
     if (sandbox)
     {
       this->link = SANDBOX_URL + std::string(link_tail);

@@ -15,6 +15,7 @@ public:
   GraphQlController()
   {
     bool sandbox = true;
+    ros::param::get("sandbox", sandbox);
     if (sandbox)
     {
       this->link = SANDBOX_GRAPHQL_URL;
