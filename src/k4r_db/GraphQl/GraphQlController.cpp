@@ -1,18 +1,39 @@
 #pragma once
 
+#include <curlpp/Easy.hpp>
+#include <curlpp/Infos.hpp>
+#include <curlpp/Options.hpp>
+#include <curlpp/cURLpp.hpp>
+#include "ros/param.h"
+#include <ros/package.h>
 #include "../Utilities/useful_functions.cpp"
 #include "../Utilities/environment.cpp"
 
 class GraphQlController
 {
 public:
-  GraphQlController() : link(GRAPHQL_URL)
+  GraphQlController()
   {
-    this->request.setOpt<curlpp::options::SslVerifyPeer>(VERIFY_PEER);
-    this->request.setOpt(new curlpp::options::SslCertType(CERT_TYPE));
-    std::string knowrob_k4r_path = ros::package::getPath("knowrob_k4r") + CERT_PATH;
-    this->request.setOpt(new curlpp::options::SslCert(knowrob_k4r_path));
-    this->request.setOpt(new curlpp::options::SslCertPasswd(CERT_PASSWD));
+    bool sandbox = true;
+    ros::param::get("/sandbox", sandbox);
+    if (sandbox)
+    {
+      this->link = SANDBOX_GRAPHQL_URL;
+      this->request.setOpt<curlpp::options::SslVerifyPeer>(SANDBOX_VERIFY_PEER);
+      this->request.setOpt(new curlpp::options::SslCertType(CERT_TYPE));
+      std::string knowrob_k4r_path = ros::package::getPath("knowrob_k4r") + SANDBOX_CERT_PATH;
+      this->request.setOpt(new curlpp::options::SslCert(knowrob_k4r_path));
+      this->request.setOpt(new curlpp::options::SslCertPasswd(SANDBOX_CERT_PASSWD));
+    }
+    else
+    {
+      this->link = DEV_GRAPHQL_URL;
+      this->request.setOpt<curlpp::options::SslVerifyPeer>(DEV_VERIFY_PEER);
+      this->request.setOpt(new curlpp::options::SslCertType(CERT_TYPE));
+      std::string knowrob_k4r_path = ros::package::getPath("knowrob_k4r") + DEV_CERT_PATH;
+      this->request.setOpt(new curlpp::options::SslCert(knowrob_k4r_path));
+      this->request.setOpt(new curlpp::options::SslCertPasswd(DEV_CERT_PASSWD));
+    }
   }
 
   ~GraphQlController() {}

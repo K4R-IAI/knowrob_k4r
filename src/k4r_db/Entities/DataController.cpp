@@ -7,19 +7,36 @@
 #include <jsoncpp/json/reader.h>
 #include <sstream>
 #include <ros/package.h>
+#include <ros/param.h>
 #include "../Utilities/useful_functions.cpp"
 #include "../Utilities/environment.cpp"
 
 class DataController
 {
 public:
-  DataController(const char *link_tail="") : link(URL + std::string(link_tail))
+  DataController(const char *link_tail="")
   {
-    this->request.setOpt<curlpp::options::SslVerifyPeer>(VERIFY_PEER);
-    this->request.setOpt(new curlpp::options::SslCertType(CERT_TYPE));
-    std::string knowrob_k4r_path = ros::package::getPath("knowrob_k4r") + CERT_PATH;
-    this->request.setOpt(new curlpp::options::SslCert(knowrob_k4r_path));
-    this->request.setOpt(new curlpp::options::SslCertPasswd(CERT_PASSWD));
+    bool sandbox = true;
+    ros::param::get("sandbox", sandbox);
+    std::cout << sandbox << std::endl;
+    if (sandbox)
+    {
+      this->link = SANDBOX_URL + std::string(link_tail);
+      this->request.setOpt<curlpp::options::SslVerifyPeer>(SANDBOX_VERIFY_PEER);
+      this->request.setOpt(new curlpp::options::SslCertType(CERT_TYPE));
+      std::string knowrob_k4r_path = ros::package::getPath("knowrob_k4r") + SANDBOX_CERT_PATH;
+      this->request.setOpt(new curlpp::options::SslCert(knowrob_k4r_path));
+      this->request.setOpt(new curlpp::options::SslCertPasswd(SANDBOX_CERT_PASSWD));
+    }
+    else
+    {
+      this->link = DEV_URL + std::string(link_tail);
+      this->request.setOpt<curlpp::options::SslVerifyPeer>(DEV_VERIFY_PEER);
+      this->request.setOpt(new curlpp::options::SslCertType(CERT_TYPE));
+      std::string knowrob_k4r_path = ros::package::getPath("knowrob_k4r") + DEV_CERT_PATH;
+      this->request.setOpt(new curlpp::options::SslCert(knowrob_k4r_path));
+      this->request.setOpt(new curlpp::options::SslCertPasswd(DEV_CERT_PASSWD));
+    }
   }
 
   ~DataController() {}
