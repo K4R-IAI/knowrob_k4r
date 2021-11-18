@@ -200,7 +200,9 @@ Filename: /home/kaviya/ros_ws/src/knowrob_refills/urdf/fridge.urdf. */
 %     tell(),
 
 user_login(UserId, DeviceId, Timestamp, StoreId) :-
-   triple(Store, shop:hasShopId, StoreId),
+    (triple(User, shop:hasUserId, UserId) -> true, 
+    print_message(info, 'User has already registered and has not logged out'));
+   (triple(Store, shop:hasShopId, StoreId),
    has_location(Fridge, Store),
    tell([is_action(ParentAct),
         has_participant(ParentAct, Fridge),
@@ -230,11 +232,11 @@ user_login(UserId, DeviceId, Timestamp, StoreId) :-
         is_performed_by(LoggingInAction, User),
         has_type(Interval, dul:'TimeInterval'),
         has_time_interval(LoggingInAction, Interval)]),
-        time_interval_tell(LoggingInAction, Timestamp, Timestamp).
+        time_interval_tell(LoggingInAction, Timestamp, Timestamp)).
         %publish_log_in(TimeStamp, [UserId, StoreId]).
 
 
-pick_object(UserId, StoreId, ItemId, ObjectType, Timestamp, Position) :-
+pick_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :-
     % Pose and object type are not used
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
@@ -258,7 +260,7 @@ pick_object(UserId, StoreId, ItemId, ObjectType, Timestamp, Position) :-
         time_interval_tell(PickAct, Timestamp, Timestamp).
         %publish_pick_event(TimeStamp, [UserId, StoreId, ObjectType]).
 
-put_back_object(UserId, ItemId, ObjectType, Timestamp, Position, PosCoordinates) :-
+put_back_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :-
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk), 
@@ -274,8 +276,10 @@ put_back_object(UserId, ItemId, ObjectType, Timestamp, Position, PosCoordinates)
             executes_task(PutAct, Tsk),
             has_participant(PutAct, soma:'Hand'),
             is_performed_by(PutAct, User),
-            has_type(Motion, shop:'PuttingProductSomewhere'),
-            is_classified_by(PutAct, Motion)
+            has_type(Motion, shop:'PuttingProductOnAShelf'),
+            is_classified_by(PutAct, Motion),
+            has_type(Interval, dul:'TimeInterval'),
+            has_time_interval(PutAct, Interval)
         ]),
             %% TODO : create an instance of a Product. find Product type with object id or object type.
         tripledb_forget(Basket, soma:containsObject, ItemId),
@@ -299,11 +303,16 @@ user_logout(UserId, DeviceId, Timestamp, StoreId) :-
             instance_of(Tsk1,shop:'LoggingOut'),
             executes_task(LogoutAct, Tsk1),
             is_performed_by(LogoutAct, User),
-            triple(ShoppingAct,  soma:hasExecutionState, soma:'ExecutionState_Succeeded')
+            triple(ShoppingAct,  soma:hasExecutionState, soma:'ExecutionState_Succeeded'),
+            has_type(Interval, dul:'TimeInterval'),
+            has_time_interval(LogoutAct, Interval)
         ]),
     time_interval_tell(LogoutAct, Timestamp, Timestamp),
     time_interval_tell(ShoppingAct, Start, Timestamp).
     %publish_log_out(Timestamp, [UserId, StoreId]).
+    %tripledb_forget(_, shop:hasUserId, UserId),
+    %tripledb_forget(UserId, _, _).
+    % Delete all the data of the user id after publishing log out
 
 items_bought(UserId, Items) :-
     triple(User, shop:hasUserId, UserId),
