@@ -34,6 +34,12 @@
     
 
 
+    <!-- http://knowrob.org/kb/shop.owl#layerOfFacing -->
+
+    <owl:ObjectProperty rdf:about="http://knowrob.org/kb/shop.owl#layerOfFacing"/>
+    
+
+
     <!-- http://www.ease-crc.org/ont/SOMA.owl#hasPhysicalComponent -->
 
     <owl:ObjectProperty rdf:about="http://www.ease-crc.org/ont/SOMA.owl#hasPhysicalComponent"/>
@@ -64,6 +70,12 @@
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
         <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">This parameter denotes the number of the component in a set of components, arranged in some particular order</rdfs:comment>
     </owl:DatatypeProperty>
+    
+
+
+    <!-- http://knowrob.org/kb/shop.owl#erpFacingId -->
+
+    <owl:DatatypeProperty rdf:about="http://knowrob.org/kb/shop.owl#erpFacingId"/>
     
 
 
@@ -165,6 +177,8 @@
 
     <owl:NamedIndividual rdf:about="http://knowrob.org/kb/fridge.owl#Facing_10">
         <rdf:type rdf:resource="http://knowrob.org/kb/shop.owl#ProductFacing"/>
+        <shop:layerOfFacing rdf:resource="http://knowrob.org/kb/fridge.owl#ShelfLevel_1"/>
+        <shop:erpFacingId rdf:datatype="http://www.w3.org/2001/XMLSchema#positiveInteger">1</shop:erpFacingId>
         <urdf:hasBaseLinkName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">shelf_1_level_1_link</urdf:hasBaseLinkName>
         <urdf:hasEndLinkName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">shelf_1_level_1_facing_1_link</urdf:hasEndLinkName>
     </owl:NamedIndividual>
@@ -175,6 +189,8 @@
 
     <owl:NamedIndividual rdf:about="http://knowrob.org/kb/fridge.owl#Facing_11">
         <rdf:type rdf:resource="http://knowrob.org/kb/shop.owl#ProductFacing"/>
+        <shop:layerOfFacing rdf:resource="http://knowrob.org/kb/fridge.owl#ShelfLevel_1"/>
+        <shop:erpFacingId rdf:datatype="http://www.w3.org/2001/XMLSchema#positiveInteger">2</shop:erpFacingId>
         <urdf:hasBaseLinkName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">shelf_1_level_1_link</urdf:hasBaseLinkName>
         <urdf:hasEndLinkName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">shelf_1_level_1_facing_2_link</urdf:hasEndLinkName>
     </owl:NamedIndividual>
@@ -185,6 +201,8 @@
 
     <owl:NamedIndividual rdf:about="http://knowrob.org/kb/fridge.owl#Facing_12">
         <rdf:type rdf:resource="http://knowrob.org/kb/shop.owl#ProductFacing"/>
+        <shop:layerOfFacing rdf:resource="http://knowrob.org/kb/fridge.owl#ShelfLevel_1"/>
+        <shop:erpFacingId rdf:datatype="http://www.w3.org/2001/XMLSchema#positiveInteger">3</shop:erpFacingId>
         <urdf:hasBaseLinkName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">shelf_1_level_1_link</urdf:hasBaseLinkName>
         <urdf:hasEndLinkName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">shelf_1_level_1_facing_3_link</urdf:hasEndLinkName>
     </owl:NamedIndividual>
