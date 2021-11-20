@@ -44,7 +44,11 @@ PREDICATE(double_m_to_int_mm, 2)
   {
     if (tail_2.next(term_2))
     {
-      term_2 = int(boost::lexical_cast<double>(std::string(term_1)) * 1000);
+      std::string team_2_str = std::string(term_1);
+      if (team_2_str.at(0) != '_')
+      {
+        term_2 = int(boost::lexical_cast<double>(std::string(term_1)) * 1000);
+      }
     }
     else
     {

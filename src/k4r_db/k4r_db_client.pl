@@ -12,6 +12,7 @@
             post_facings/1,
             delete_facings/1,
             post_items_and_item_groups/1,
+            delete_items_and_item_groups/1,
             get_shelf_data/3,
             get_shelves_data/3,
             get_shelf_layer_data/3,
@@ -137,7 +138,7 @@ post_shelf_layers(StoreId) :-
     ).
 
 post_shelf_layers(StoreId, UnitId, Shelf) :-
-    make_store_filter(StoreId, StoreFilter),
+    make_store_id_filter(StoreId, StoreFilter),
     shop:assert_shelf_erp_id(Shelf),
     triple(Shelf, shop:erpShelfId, FloatShelfExternalReferenceId),
     ShelfExternalReferenceId is integer(FloatShelfExternalReferenceId),
@@ -173,7 +174,7 @@ post_facings(StoreId) :-
     has_type(ShelfLayer, shop:'ShelfLayer'),
     triple(Shelf, soma:hasPhysicalComponent, ShelfLayer),
     shelf_with_erp_id(Shelf, ShelfExternalReferenceId),
-    make_store_filter(StoreId, StoreFilter),
+    make_store_id_filter(StoreId, StoreFilter),
     make_ref_ext_id_filter(ShelfExternalReferenceId, ShelfFilter),
     shop:assert_layer_id(Shelf),
     triple(ShelfLayer, shop:erpShelfLayerId, ShelfLayerExternalReferenceId),
@@ -215,9 +216,11 @@ post_items_and_item_groups(StoreId) :-
     triple(Facing, rdf:type, shop:'ProductFacingStanding'),
     triple(Facing, shop:productInFacing, Item),
     has_type(Item, Product),
-    get_product_gtin_dan(Product, Gtin),
+    get_product_gtin(Product, Gtin),
+    get_pose_in_desired_reference_frame(Item, Facing, [PositionInFacingXInM, PositionInFacingYInM, PositionInFacingZInM], _),
+    double_m_to_int_mm([PositionInFacingXInM, PositionInFacingYInM, PositionInFacingZInM], [PositionInFacingXInMM, PositionInFacingYInMM, PositionInFacingZInMM]),
 
-    make_store_filter(StoreId, StoreFilter),
+    make_store_id_filter(StoreId, StoreFilter),
     make_ref_ext_id_filter(ShelfExternalReferenceId, ShelfFilter),
     make_ref_ext_id_filter(ShelfLayerExternalReferenceId, ShelfLayerFilter),    
     make_layer_relative_position_filter(LayerRelativePosition, FacingFilter),
@@ -226,30 +229,44 @@ post_items_and_item_groups(StoreId) :-
     get_facing_data_with_filter(StoreFilter, ShelfFilter, ShelfLayerFilter, FacingFilter, [id], [FacingId]),
     get_product_unit_data_with_filter(GtinFilter, [productUnitId], [ProductUnitId]),
     post_item_group(FacingId, ProductUnitId, Stock, ItemGroup),
+    get_entity_id(ItemGroup, ItemGroupId),
+    post_item(ItemGroupId, [PositionInFacingXInMM, PositionInFacingYInMM, PositionInFacingZInMM], _),
     fail.
 
 post_items_and_item_groups(_).
 
-delete_facings(StoreId) :-
-    get_facings_data(StoreId, [id], FacingIds),
+delete_items_and_item_groups(StoreId) :-
+    get_item_groups_data(StoreId, [id], ItemGroupIds),
     forall(
-        member([FacingId], FacingIds),     
-        delete_facing(FacingId)
+        member([ItemGroupId], ItemGroupIds),
+        (delete_items(ItemGroupId),
+        delete_item_group(ItemGroupId))  
     ).
 
-get_product_gtin_dan(Product, Gtin) :-
+delete_items(ItemGroupId) :-
+    make_item_group_id_filter(ItemGroupId, ItemGroupIdFilter),
+    get_item_data_with_filter(ItemGroupIdFilter, [id], ItemIds),
+    writeln(ItemIds),
+    forall(
+        member(ItemId, ItemIds),  
+        (writeln(ItemId),
+        delete_item(ItemId))   
+    ).
+
+get_product_gtin(Product, Gtin) :-
     subclass_of(Product, Desc),
     has_description(Desc,value(shop:articleNumberOfProduct,ArticleNumber)),
     triple(ArticleNumber, shop:gtin, Gtin), !.
+
 %% graphql queries
 
 make_filter(Key, Operator, Value, Type, Filter) :-
     atomics_to_string(["(filter: {", Key, ": {operator: \"", Operator, "\", value: \"", Value, "\", type: \"", Type, "\"}})"], Filter).
 
-make_store_filter(StoreId, StoreFilter) :-
+make_store_id_filter(StoreId, StoreFilter) :-
     make_filter("id", "eq", StoreId, "int", StoreFilter).
 
-make_unit_filter(UnitName, UnitFilter) :-
+make_unit_name_filter(UnitName, UnitFilter) :-
     make_filter("name", "eq", UnitName, "string", UnitFilter).
 
 make_ref_ext_id_filter(RefExtId, RefExtIdFilter) :-
@@ -261,6 +278,9 @@ make_layer_relative_position_filter(LayerRelativePosition, LayerRelativePosition
 make_gtin_filter(Gtin, GtinFilter) :-
     make_filter("gtin", "eq", Gtin, "string", GtinFilter).
 
+make_item_group_id_filter(ItemGroupId, ItemGroupIdFilter) :-
+    make_filter("itemGroupId", "eq", ItemGroupId, "int", ItemGroupIdFilter).
+
 get_graphql(GraphQLQuery, GraphQLResponse) :-
     post_graphql(GraphQLQuery, GraphQLResponseString),
     open_string(GraphQLResponseString, GraphQLResponseStream),
@@ -271,7 +291,7 @@ get_shelves_data(StoreId, KeyList, ValueLists) :-
     findall(ValueList, get_shelf_data(StoreId, KeyList, ValueList), ValueLists).
 
 get_shelf_data(StoreId, KeyList, ValueList) :-
-    make_store_filter(StoreId, StoreFilter),
+    make_store_id_filter(StoreId, StoreFilter),
     get_shelf_data_with_filter(StoreFilter, "", KeyList, ValueList).
 
 get_shelf_data_with_filter(StoreFilter, ShelfFilter, KeyList, ValueList) :-
@@ -292,7 +312,7 @@ get_shelf_layers_data(StoreId, KeyList, ValueLists) :-
     findall(ValueList, get_shelf_layer_data(StoreId, KeyList, ValueList), ValueLists).
 
 get_shelf_layer_data(StoreId, KeyList, ValueList) :-
-    make_store_filter(StoreId, StoreFilter),
+    make_store_id_filter(StoreId, StoreFilter),
     get_shelf_layer_data_with_filter(StoreFilter, "", "", KeyList, ValueList).
 
 get_shelf_layer_data_with_filter(StoreFilter, ShelfFilter, ShelfLayerFilter, KeyList, ValueList) :-
@@ -315,7 +335,7 @@ get_facings_data(StoreId, KeyList, ValueLists) :-
     findall(ValueList, get_facing_data(StoreId, KeyList, ValueList), ValueLists).
 
 get_facing_data(StoreId, KeyList, ValueList) :-
-    make_store_filter(StoreId, StoreFilter),
+    make_store_id_filter(StoreId, StoreFilter),
     get_facing_data_with_filter(StoreFilter, "", "", "", KeyList, ValueList).
 
 get_facing_data_with_filter(StoreFilter, ShelfFilter, ShelfLayerFilter, FacingFilter, KeyList, ValueList) :-
@@ -348,16 +368,64 @@ get_product_unit_data_with_filter(GtinFilter, KeyList, ValueList) :-
         string_to_atom(ProductGtinDict.Key, Value)),
         ValueList).
 
-
-
 get_unit_id(UnitName, Id) :-
-    make_unit_filter(UnitName, UnitFilter),
+    make_unit_name_filter(UnitName, UnitFilter),
     string_concat("{units", UnitFilter, UnitWithFilter),
     atomics_to_string([UnitWithFilter, "{id}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
     member(UnitDict, GraphQLResponse.units),
     Id = UnitDict.id.
 
+get_item_groups_data(StoreId, KeyList, ValueLists) :-
+    findall(ValueList, get_item_group_data(StoreId, KeyList, ValueList), ValueLists).
+
+get_item_group_data(StoreId, KeyList, ValueList) :-
+    make_store_id_filter(StoreId, StoreFilter),
+    get_item_group_data_with_filter(StoreFilter, "", "", "", "", KeyList, ValueList).
+
+get_item_group_data_with_filter(StoreFilter, ShelfFilter, ShelfLayerFilter, FacingFilter, ItemGroupFilter, KeyList, ValueList) :-
+    atomic_list_concat(KeyList, ',', KeysAtom),
+    atom_string(KeysAtom, KeysString),
+    string_concat("{stores", StoreFilter, StoreWithFilter),
+    string_concat("{shelves", ShelfFilter, ShelfWithFilter),
+    string_concat("{shelfLayers", ShelfLayerFilter,  ShelfLayerWithFilter),
+    string_concat("{facings", FacingFilter,  FacingWithFilter),
+    string_concat("{itemGroups", ItemGroupFilter,  ItemGroupWithFilter),
+    atomics_to_string([StoreWithFilter, ShelfWithFilter, ShelfLayerWithFilter, FacingWithFilter, ItemGroupWithFilter, "{", KeysString, "}}}}}}"], GraphQLQuery),
+    get_graphql(GraphQLQuery, GraphQLResponse),
+    member(StoreDict, GraphQLResponse.stores),
+    member(ShelfDict, StoreDict.shelves),
+    member(ShelfLayerDict, ShelfDict.shelfLayers),
+    member(FacingDict, ShelfLayerDict.facings),
+    member(ItemGroupDict, FacingDict.itemGroups),
+    findall(Value,
+        (member(Key, KeyList),
+        string_to_atom(ItemGroupDict.Key, Value)),
+        ValueList).
+
+get_items_data(KeyList, ValueLists) :-
+    findall(ValueList, get_item_data(KeyList, ValueList), ValueLists).
+
+get_item_data(KeyList, ValueList) :-
+    get_item_data_with_filter("", KeyList, ValueList).
+
+get_item_data_with_filter(ItemFilter, KeyList, ValueList) :-
+    atomic_list_concat(KeyList, ',', KeysAtom),
+    atom_string(KeysAtom, KeysString),
+    string_concat("{items", ItemFilter,  ItemWithFilter),
+    atomics_to_string([ItemWithFilter, "{", KeysString, "}}"], GraphQLQuery),
+    get_graphql(GraphQLQuery, GraphQLResponse),
+    length(GraphQLResponse.items, Length),
+    (
+        Length == 0
+        -> true;
+        writeln(GraphQLResponse.items),
+        member(ItemDict, GraphQLResponse.items),
+        findall(Value,
+        (member(Key, KeyList),
+        string_to_atom(ItemDict.Key, Value)),
+        ValueList)
+    ).
 
 /* post_facings(StoreId) :-
     get_all_shelves(ShelfList),
