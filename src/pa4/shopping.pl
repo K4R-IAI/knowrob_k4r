@@ -65,14 +65,13 @@ assert_frame_properties(Fridge) :-
     has_type(ShelfBase, shop:'ShelfBase'),
     get_child_link_(ShelfBase, ChildLink),
     get_object_dimension_from_urdf_(ChildLink, D, W, H),
-    % [D, W, H] = Dim,
-    writeln('half'),
+    % writeln('half'),
     shop:assert_object_shape_(ShelfBase, D, W, H, [0.5,0.5,0.5]),
-    writeln('half3'),
+    % writeln('half3'),
     get_object_pose_from_urdf_(ChildLink, T1, R1, Parent1),
-    writeln('half2'),
+    % writeln('half2'),
     assert_object_pose_(ShelfBase, ChildLink, [Parent1, T1, R1], D, W, H),
-    writeln('half1'),
+    % writeln('half1'),
     % ShelfBack
     triple(Frame, soma:hasPhysicalComponent, ShelfBack),
     has_type(ShelfBack, shop:'ShelfBack'),
@@ -95,6 +94,7 @@ assert_layer_properties(Fridge) :-
     get_object_pose_from_urdf_(ChildLink, T1, R1, ParentName),
     assert_object_pose_(Layer, ChildLink, [ParentName, T1, R1], D, W, H),
     assert_separator_properties(Layer),
+    assert_facing_properties(Layer),
     % tell(is_at(Layer, [ParentName, Translation, Rotation])),
     fail.
 
@@ -112,25 +112,17 @@ assert_separator_properties(Layer) :-
 
 assert_separator_properties(_).
 
-%% assert layer, separators and facigns on the layer. Assert their dimensions
-% insert_layer_components(LayerNumber, 2) :-
-%     % 1. assert the layer dimensions
-%     has_type(Layer, shop:'ShelfLayer'),
-%     triple(Layer, shop:erpShelfLayerId, LayerNum),
-%     is_at(Layer, [Parent, [X,_,_], _]),
-%     object_dimensions(Layer, D, W, H),
-%     DX is D/2.
-    %shop:perceived_pos__()
-    
-% 2. based on number of facings, attach the separators to the layer
-%  X pos of the separators has to be computed based on their order and from the x value of the Layer position
+assert_facing_properties(Layer) :-
+    triple(Facing, shop:layerOfFacing, Layer),
+    has_type(Facing, shop:'ProductFacing'),
+    get_child_link_(Facing, ChildLink),
+    get_object_dimension_from_urdf_(ChildLink, D, W, H),
+    shop:assert_object_shape_(Facing, D, W, H, [0.5,0.5,0.5]),
+    get_object_pose_from_urdf_(ChildLink, T1, R1, ParentName),
+    assert_object_pose_(Facing, ChildLink, [ParentName, T1, R1], D, W, H),
+    fail.
 
-% 3. assert the dimensions of facings 
-% a. (H of layer above - layer below) - 0.1
-% b. no layer above case - (H of shelf frame - layer of facing)-0.1 ?
-
-%compute_offset_(X, Axis, Offset) :-
-
+assert_facing_properties(_).
 
 get_child_link_(Object, Child) :-
     triple(Object, urdf:hasEndLinkName, Child).
@@ -155,49 +147,27 @@ assert_object_pose_(StaticObject, UrdfObj, UrdfPose, D, W, H) :-
     Stamp is Now + 10,
     time_scope(=(Now), =<(Stamp), FScope1),
     [P1, [X1, Y1, Z1], Rot] = UrdfPose,
-    writeln([UrdfObj, P1, X1, Y1, Z1, Rot]),
+    % writeln([UrdfObj, P1, X1, Y1, Z1, Rot]),
     time_scope(=(Now), =<('Infinity'), FScope),
     tf_set_pose(UrdfObj, UrdfPose, FScope),
     X is -(D/2),
     Y is -(W/2),
     Z is -(H/2),
     tf_set_pose(StaticObject,[UrdfObj, [X, Y, Z], [0,0,0,1]], FScope1),
-    writeln([StaticObject, UrdfObj, [X, Y, Z], [0,0,0,1]]),
+    % writeln([StaticObject, UrdfObj, [X, Y, Z], [0,0,0,1]]),
     Stamp2 is Now+5,
     time_scope(=(Now), =<(Stamp2), QScope),
-    writeln('success2'),
+    % writeln('success2'),
     ((get_child_link_(ParentName, P1),
     rdf_split_url(_,ParentFrame,ParentName)
     );
     ParentFrame = P1), !,
-    % tf_get_pose(StaticObject, [WorldFrame, T1, R1], QScope, _),
-    % tf_set_pose(StaticObject, [WorldFrame, T1, R1], FScope),
-    % writeln([StaticObject, WorldFrame, T1, R1]),
-    % ParentFrame \= WorldFrame -> 
-    % tell(is_at(StaticObject, [ParentFrame, T1, R1])).
     tf_get_pose(StaticObject, [ParentFrame, T1, R1], QScope, _),
-    tf_set_pose(StaticObject, [ParentFrame, T1, R1], FScope),
-    writeln([StaticObject, ParentFrame, T1, R1]).
-
-%%%% Get the pose and the dimension from urdf
-
-/* ros_package_path('knowrob_refills', X), atom_concat(X, '/urdf/fridge.urdf', Filename), urdf_load_file(fridge, Filename), 
-urdf_link_visual_shape(fridge, shelf_1_level_1_link, ST, O, MT, SId), urdf_joint_origin(fridge, shelf_1_level_0_joint, P).
-P: [u'shelf_1_base', [0.0, -0.06, 0.10665], [0.0, 0.0, 0.0, 1.0]],
-O: [u'shelf_1_level_1_link', [0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
-ST: {u'term': [u'box', 0.48, 0.35, 0.043]},
-MT: {u'term': [u'material', [{u'term': [u'rgba', [0.5, 0.5, 0.5, 0.800000011920929]]}]]},
-SId: shelf_1_level_1_link0,
-X: /home/kaviya/ros_ws/src/knowrob_refills,
-Filename: /home/kaviya/ros_ws/src/knowrob_refills/urdf/fridge.urdf. */
+    tf_set_pose(StaticObject, [ParentFrame, T1, R1], FScope).
+    % writeln([StaticObject, ParentFrame, T1, R1]).
 
 
-
-
-
-
-% create_planogram(ProductId, Name, ProductPose, StoreId) :-
-%     tell(),
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Events %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 user_login(UserId, DeviceId, Timestamp, StoreId) :-
     (triple(User, shop:hasUserId, UserId) -> true, 
@@ -238,6 +208,8 @@ user_login(UserId, DeviceId, Timestamp, StoreId) :-
 
 pick_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :-
     % Pose and object type are not used
+    % With the gtin 
+    get_facing_(Position, Facing),
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk), 
@@ -257,17 +229,20 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :-
             %% TODO : create an instance of a Product. find Product type with object id or object type.
             triple(Basket, soma:containsObject, ItemId)
         ]),
+         % TODO : find Product type with gtin
+        % Initialise the store and associate product types with facing
+        tripledb_forget(Facing, shop:productInFacing, ItemId),
         time_interval_tell(PickAct, Timestamp, Timestamp).
         %publish_pick_event(TimeStamp, [UserId, StoreId, ObjectType]).
 
 put_back_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :-
+    get_facing_(Position, Facing),
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk), 
     instance_of(Tsk, shop:'Shopping'),
     has_participant(ShoppingAct, Basket),
     instance_of(Basket, shop:'ShopperBasket'),
-    %% TODO : create a shopping basket, assign it to user, user holds basket, basket contains item
     tell(
         [    
             is_action(PutAct),
@@ -278,10 +253,14 @@ put_back_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :-
             is_performed_by(PutAct, User),
             has_type(Motion, shop:'PuttingProductOnAShelf'),
             is_classified_by(PutAct, Motion),
+            triple(Facing, shop:productInFacing, ItemId), 
+            % TODO : find Product type with gtin
+            % create an instance of a Product. Use the item instance
+            % in the above triple. 
             has_type(Interval, dul:'TimeInterval'),
             has_time_interval(PutAct, Interval)
         ]),
-            %% TODO : create an instance of a Product. find Product type with object id or object type.
+            
         tripledb_forget(Basket, soma:containsObject, ItemId),
         time_interval_tell(PutAct, Timestamp, Timestamp).
 
@@ -324,5 +303,13 @@ items_bought(UserId, Items) :-
     findall(ItemId,
         triple(Basket, soma:containsObject, ItemId),
     Items).
+
+get_facing_(Position, Facing) :-
+    [ShelfExt, LayerExt, FacingExt] = Position,
+    triple(Shelf, shop:erpShelfId, ShelfExt),
+    triple(Layer, shop:erpShelfLayerId, LayerExt),
+    triple(Shelf, soma:hasPhysicalComponent, Layer),
+    triple(Facing, shop:erpFacingId, FacingExt),
+    triple(Facing, shop:layerOfFacing, Layer).
 
 % items_bought(UserId, TimeStamp, Items) :-

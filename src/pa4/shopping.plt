@@ -36,9 +36,10 @@
 %     writeln([Facing, Pose, D]).
    
 
-% test('user login') :-
-%     %  gtrace,
-%     create_store(42, _, _),user_login(111111, 1, 1600953691, 42). 
+test('user login') :-
+    gtrace,
+    create_store(42, _, _),
+    user_login(111111, 1, 1600953691, 42). 
 
 % test('put') :-
 %     get_put_data(A, B, C, D, E, F),
