@@ -40,26 +40,20 @@ public:
 
   ~DataController() {}
 
-protected:
-  Json::Value get_data(const std::string link_tail = "")
+public:
+  bool get_data(std::stringstream &response, const std::string link_tail = "")
   {
     curlpp::Cleanup cleanup;
     long status_code = 0;
-    Json::Value data;
     try
     {
       this->request.setOpt(new curlpp::options::Url(this->link + link_tail));
 
-      std::ostringstream response;
       this->request.setOpt(new curlpp::options::WriteStream(&response));
       this->request.perform();
 
       status_code = curlpp::infos::ResponseCode::get(this->request);
-      if (status_code == 200)
-      {
-        data = string_to_json(response.str());
-      }
-      else
+      if (status_code != 200)
       {
         std::cerr << "GET failed - " << this->link + link_tail << " : " << status_code << std::endl;
       }
@@ -75,11 +69,11 @@ protected:
     {
       std::cerr << e.what() << std::endl;
     }
-
-    return data;
+    
+    return status_code == 200;
   }
 
-  bool post_data(const Json::Value &in_data, Json::Value &out_data, const std::string link_tail = "")
+  bool post_data(const std::string &data, std::stringstream &response, const std::string link_tail = "")
   {
     cURLpp::Cleanup cleanup;
     long status_code = 0;
@@ -90,22 +84,17 @@ protected:
       std::list<std::string> header;
       header.push_back("Content-Type: application/json");
       this->request.setOpt(new curlpp::options::HttpHeader(header));
-      this->request.setOpt(new curlpp::options::PostFields(in_data.toStyledString()));
+      this->request.setOpt(new curlpp::options::PostFields(data));
 
-      std::ostringstream response;
       this->request.setOpt(new curlpp::options::WriteStream(&response));
 
       this->request.perform();
 
       status_code = curlpp::infos::ResponseCode::get(this->request);
-      if (status_code == 200)
-      {
-        out_data = string_to_json(response.str());
-      }
-      else
+      if (status_code != 200)
       {
         std::cerr << "POST failed - " << this->link + link_tail << " : " << status_code << std::endl;
-        std::cerr << "data:\n" << in_data << std::endl;
+        std::cerr << "data:\n" << data << std::endl;
       }
     }
 
@@ -123,7 +112,7 @@ protected:
     return status_code == 200;
   }
 
-  bool put_data(const Json::Value &in_data, Json::Value &out_data, const std::string link_tail = "")
+  bool put_data(const std::string &data, std::stringstream &response, const std::string link_tail = "")
   {
     cURLpp::Cleanup cleanup;
     long status_code = 0;
@@ -135,22 +124,17 @@ protected:
       header.push_back("Content-Type: application/json");
       this->request.setOpt(new curlpp::options::HttpHeader(header));
       this->request.setOpt(new curlpp::options::CustomRequest("PUT"));
-      this->request.setOpt(new curlpp::options::PostFields(in_data.toStyledString()));
+      this->request.setOpt(new curlpp::options::PostFields(data));
 
-      std::ostringstream response;
       this->request.setOpt(new curlpp::options::WriteStream(&response));
 
       this->request.perform();
 
       status_code = curlpp::infos::ResponseCode::get(this->request);
-      if (status_code == 200)
-      {
-        out_data = string_to_json(response.str());
-      }
-      else
+      if (status_code != 200)
       {
         std::cerr << "PUT failed - " << this->link + link_tail << " : " << status_code << std::endl;
-        std::cerr << "data:\n" << in_data << std::endl;
+        std::cerr << "data:\n" << data << std::endl;
       }
     }
 

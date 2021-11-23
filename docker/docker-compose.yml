@@ -21,7 +21,7 @@ services:
       - KNOWROB_VERSION=${KNOWROB_VERSION}
       - KNOWROB_PORT=${KNOWROB_PORT}
       - KNOWROB_MONGODB_URI=${KNOWROB_MONGODB_URI}
-      - SANDBOX=true
+      - SANDBOX=false
     ports:
       - "${KNOWROB_PORT}:${KNOWROB_PORT}"
     entrypoint: /entrypoint.bash

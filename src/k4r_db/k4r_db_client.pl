@@ -1,10 +1,8 @@
 :- module(k4r_db_client,
           [
-            get_entity_id/2,
-            get_entity_by_key_value/4,
-            get_shelf_id_by_ext_id/3,
-            get_shelf_layer_id_by_ext_id/3,
-            get_products_by_shelf/2,
+            get_entity_data_from_id/4,
+            post_entity/3,
+
             post_shelves/1,
             delete_shelves/1,
             post_shelf_layers/1,
@@ -21,11 +19,6 @@
             get_facings_data/3,
             get_graphql/2,
             get_unit_id/2
-            % post_shelves_and_parts/1,
-            % post_facings/2,
-            % post_shelf_layers/2,
-            % post_shelf/3,
-            % get_products/0
           ]).
 
 /** <module> A client for the k4r db for Prolog.
@@ -60,46 +53,29 @@
 % @param Values A List of Values
 %
 
-get_entity_id(Entity, EntityId) :-
-    get_value_from_key(Entity, "id", EntityId).
+get_entity_value_from_key(EntityString, EntityKey, EntityValue) :-
+    open_string(EntityString, EntityStream),
+    json_read_dict(EntityStream, EntityDict),
+    EntityValue = EntityDict.EntityKey.
 
-get_entity_by_key_value(EntityList, EntityKey, EntityValue, Entity) :-
-    member(Entity, EntityList),
-    check_key_value(Entity, EntityKey, EntityValue).
+get_entity_id(EntityString, EntityId) :-
+    get_entity_value_from_key(EntityString, id, EntityId).
 
-% search queries
-
-get_shelf_id_by_ext_id(ShelfList, ExtRefIdFloat, ShelfId) :-
-    ExternalReferenceId is integer(ExtRefIdFloat),
-    get_entity_by_key_value(ShelfList, "externalReferenceId", ExternalReferenceId, Shelf),
-    get_entity_id(Shelf, ShelfId).
-
-get_shelf_layer_id_by_ext_id(ShelfLayerList, ExtRefIdFloat, ShelfLayerId) :-
-    ExternalReferenceId is integer(ExtRefIdFloat),
-    get_entity_by_key_value(ShelfLayerList, "externalReferenceId", ExternalReferenceId, ShelfLayer),
-    get_entity_id(ShelfLayer, ShelfLayerId).
-
-% and go on.....
-
-get_products_by_shelf(ShelfId, ProductList) :-
-    get_shelf_layers(ShelfId, ShelfLayerList),
-    get_item_groups(ItemGroupList),
+double_m_to_int_mm(DoubleMList, IntMMList) :-
     findall(
-        Product,
-        (
-            member(ShelfLayer, ShelfLayerList),
-            get_entity_id(ShelfLayer, ShelfLayerId),
-            get_facings(ShelfLayerId, FacingList),
-            member(Facing, FacingList),
-            get_entity_id(Facing, FacingId),
-            get_entity_by_key_value(ItemGroupList, "facingId", FacingId, ItemGroup),
-            get_value_from_key(ItemGroup, "productUnitId", ProductUnitId),
-            get_product_unit(ProductUnitId, ProductUnit),
-            get_value_from_key(ProductUnit, "productId", ProductId),
-            get_product(ProductId, Product)
-        ),
-        ProductList
-    ).
+        IntMM,
+        (member(DoubleM, DoubleMList),
+        (is_of_type(float, DoubleM), IntMM is integer(DoubleM * 1000))),
+        IntMMList).
+
+get_entity_data_from_id(EntityName, EntityId, EntityKeys, EntityData) :-
+    get_entity_from_id(EntityName, EntityId, EntityString),    
+    open_string(EntityString, EntityStream),
+    json_read_dict(EntityStream, EntityDict),
+    findall(EntityValue,
+        (member(EntityKey, EntityKeys),
+        string_to_atom(EntityDict.EntityKey, EntityValue)),
+        EntityData).
 
 post_shelves(StoreId) :-
     get_all_shelves(ShelfList),
@@ -125,8 +101,8 @@ post_shelf(StoreId, UnitId, Shelf) :-
 delete_shelves(StoreId) :-
     get_shelves_data(StoreId, [id], ShelfIds),    
     forall(
-        (member([ShelfId], ShelfIds)),     
-        delete_shelf(ShelfId)
+        member([ShelfId], ShelfIds),   
+        delete_entity_from_id('shelves', ShelfId)
     ).
 
 post_shelf_layers(StoreId) :-
@@ -166,8 +142,8 @@ post_shelf_layers(StoreId, UnitId, Shelf) :-
 delete_shelf_layers(StoreId) :-
     get_shelf_layers_data(StoreId, [id], ShelfLayerIds),    
     forall(
-        (member([ShelfLayerId], ShelfLayerIds)),     
-        delete_shelf_layer(ShelfLayerId)
+        member([ShelfLayerId], ShelfLayerIds),     
+        delete_entity_from_id('shelflayers', ShelfLayerId)
     ).
 
 post_facings(StoreId) :-
@@ -201,7 +177,7 @@ delete_facings(StoreId) :-
     get_facings_data(StoreId, [id], FacingIds),
     forall(
         member([FacingId], FacingIds),     
-        delete_facing(FacingId)
+        delete_entity_from_id('facings', FacingId)
     ).
 
 post_items_and_item_groups(StoreId) :-
@@ -219,6 +195,9 @@ post_items_and_item_groups(StoreId) :-
     get_product_gtin(Product, Gtin),
     get_pose_in_desired_reference_frame(Item, Facing, [PositionInFacingXInM, PositionInFacingYInM, PositionInFacingZInM], _),
     double_m_to_int_mm([PositionInFacingXInM, PositionInFacingYInM, PositionInFacingZInM], [PositionInFacingXInMM, PositionInFacingYInMM, PositionInFacingZInMM]),
+    is_of_type(integer, PositionInFacingXInMM),
+    is_of_type(integer, PositionInFacingYInMM),
+    is_of_type(integer, PositionInFacingZInMM),
 
     make_store_id_filter(StoreId, StoreFilter),
     make_ref_ext_id_filter(ShelfExternalReferenceId, ShelfFilter),
@@ -228,9 +207,10 @@ post_items_and_item_groups(StoreId) :-
     
     get_facing_data_with_filter(StoreFilter, ShelfFilter, ShelfLayerFilter, FacingFilter, [id], [FacingId]),
     get_product_unit_data_with_filter(GtinFilter, [productUnitId], [ProductUnitId]),
-    post_item_group(FacingId, ProductUnitId, Stock, ItemGroup),
+    
+    post_item_group([FacingId, ProductUnitId, Stock], ItemGroup),
     get_entity_id(ItemGroup, ItemGroupId),
-    post_item(ItemGroupId, [PositionInFacingXInMM, PositionInFacingYInMM, PositionInFacingZInMM], _),
+    post_item([ItemGroupId, PositionInFacingXInMM, PositionInFacingYInMM, PositionInFacingZInMM], _),
     fail.
 
 post_items_and_item_groups(_).
@@ -240,18 +220,18 @@ delete_items_and_item_groups(StoreId) :-
     forall(
         member([ItemGroupId], ItemGroupIds),
         (delete_items(ItemGroupId),
-        delete_item_group(ItemGroupId))  
+        delete_entity_from_id('itemgroups', ItemGroupId))  
     ).
 
 delete_items(ItemGroupId) :-
     make_item_group_id_filter(ItemGroupId, ItemGroupIdFilter),
     get_item_data_with_filter(ItemGroupIdFilter, [id], ItemIds),
-    writeln(ItemIds),
+    (is_of_type(list, ItemIds) ->
     forall(
         member(ItemId, ItemIds),  
-        (writeln(ItemId),
-        delete_item(ItemId))   
-    ).
+        delete_entity_from_id('items', ItemId)
+    );
+    true).
 
 get_product_gtin(Product, Gtin) :-
     subclass_of(Product, Desc),
@@ -415,17 +395,11 @@ get_item_data_with_filter(ItemFilter, KeyList, ValueList) :-
     string_concat("{items", ItemFilter,  ItemWithFilter),
     atomics_to_string([ItemWithFilter, "{", KeysString, "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
-    length(GraphQLResponse.items, Length),
-    (
-        Length == 0
-        -> true;
-        writeln(GraphQLResponse.items),
-        member(ItemDict, GraphQLResponse.items),
-        findall(Value,
-        (member(Key, KeyList),
+    findall(Value,
+        (member(ItemDict, GraphQLResponse.items), 
+        member(Key, KeyList),
         string_to_atom(ItemDict.Key, Value)),
-        ValueList)
-    ).
+        ValueList).
 
 /* post_facings(StoreId) :-
     get_all_shelves(ShelfList),
