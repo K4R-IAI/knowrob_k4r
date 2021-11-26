@@ -6,7 +6,6 @@
 */
 
 
-%%% TODO : Check if you are able to get the user
 
 :- module( shopping,
     [   
@@ -46,6 +45,38 @@ init_fridge(StoreId, Store, Fridge) :-
     % post_fridge_store(StoreId).
     shopping:assert_frame_properties(Fridge),
     shopping:assert_layer_properties(Fridge).
+
+get_product_class(Gtin, Product) :-
+    triple(ArticleNumber, shop:gtin, Gtin),
+    has_description(Desc,value(shop:articleNumberOfProduct,ArticleNumber)),
+    subclass_of(Product, Desc).
+
+insert_all_items(Store, ItemList) :-
+    forall(member([[ShelfExt, ShelfLayerExt, FacingExt], Gtin, Coordinates], ItemList),
+        insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, Coordinates)).
+
+insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, Coordinates):-
+    % get facing
+    get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
+    get_product_class(Gtin, Product).
+    % create an object of the type of Gtin
+    % tell(instance_of)
+    % associate gtin with the item
+    % insert position
+
+get_product_class(Gtin, Product) :-
+    triple(ArticleNumber, shop:gtin, Gtin),
+    subclass_of(Product, Desc),
+    has_description(Desc,value(shop:articleNumberOfProduct,ArticleNumber)).
+
+get_product_class(EAN, Product) :-
+    atomic_list_concat([ 'PREFIX product_cat: <http://purl.org/goodrelations/v1#>', 
+        'select ?ProductInstance where {?ProductInstance product_cat:hasEAN_UCC-13 "', 
+        EAN,'"}'], Query), 
+    sparql_query(Query, Row, 
+        [ endpoint('https://api.krr.triply.cc/datasets/mkumpel/NonFoodKG/services/NonFoodKG/sparql/'), 
+        variable_names([ProductInstance])] ),
+    row(Product) = Row.
 
 %% Create Store
 create_store(StoreId, Store, Fridge) :-
@@ -208,8 +239,9 @@ user_login(UserId, DeviceId, Timestamp, StoreId) :-
 
 pick_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :-
     % Pose and object type are not used
-    % With the gtin 
-    get_facing_(Position, Facing),
+    % With the gtin
+    get_store(StoreId, Store),
+    get_facing_(Store, Position, Facing),
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk), 
@@ -236,7 +268,8 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :-
         %publish_pick_event(TimeStamp, [UserId, StoreId, ObjectType]).
 
 put_back_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :-
-    get_facing_(Position, Facing),
+    get_store(StoreId, Store),
+    get_facing_(Store, Position, Facing),
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk), 
@@ -304,12 +337,17 @@ items_bought(UserId, Items) :-
         triple(Basket, soma:containsObject, ItemId),
     Items).
 
-get_facing_(Position, Facing) :-
+get_facing_(Store, Position, Facing) :-
+    has_location(Fridge, Store),
     [ShelfExt, LayerExt, FacingExt] = Position,
+    triple(Fridge, soma:hasPhysicalComponent, Shelf),
     triple(Shelf, shop:erpShelfId, ShelfExt),
     triple(Layer, shop:erpShelfLayerId, LayerExt),
     triple(Shelf, soma:hasPhysicalComponent, Layer),
     triple(Facing, shop:erpFacingId, FacingExt),
     triple(Facing, shop:layerOfFacing, Layer).
+
+get_store(StoreId, Store) :-
+    triple(Store, shop:hasShopId, StoreId).
 
 % items_bought(UserId, TimeStamp, Items) :-

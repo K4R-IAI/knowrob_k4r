@@ -1,4 +1,6 @@
 :- use_module('shopping.pl').
+:- use_module(library('shop_reasoner')).
+:- use_module(library('semweb/sparql_client')).
 
 :- begin_tests('shopping').
 
@@ -36,10 +38,31 @@
 %     writeln([Facing, Pose, D]).
    
 
-test('user login') :-
+% test('user login') :-
+%     gtrace,
+%     create_store(42, _, _),
+%     user_login(111111, 1, 1600953691, 42).
+
+% test('get facing') :-
+%     init_fridge(42, Store, Fridge),
+%     shopping:get_facing_(Store, [1,1,1], Facing), 
+%     writeln(Facing).
+
+% test('get product type'):-
+%     gtrace,
+%     EAN= "4010355410016", 
+%     atomic_list_concat([ 'PREFIX product_cat: <http://purl.org/goodrelations/v1#>', 
+%         'select ?ProductInstance where {?ProductInstance product_cat:hasEAN_UCC-13 "', 
+%         EAN,'"}'], Query), 
+%     sparql_query(Query, Row, 
+%         [ endpoint('https://api.krr.triply.cc/datasets/mkumpel/NonFoodKG/services/NonFoodKG/sparql/'), 
+%         variable_names([ProductInstance])] ), 
+%     row(Val) = Row.
+
+test('get product') :-
     gtrace,
-    create_store(42, _, _),
-    user_login(111111, 1, 1600953691, 42). 
+    get_product_gtin(shop:'GTIN_4013162021253', Gtin).
+    % shopping:get_product_class(4013162021253, Product).
 
 % test('put') :-
 %     get_put_data(A, B, C, D, E, F),
