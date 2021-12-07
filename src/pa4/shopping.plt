@@ -59,9 +59,8 @@
 %         variable_names([ProductInstance])] ), 
 %     row(Val) = Row.
 
-test('get product') :-
-    gtrace,
-    get_product_gtin(shop:'GTIN_4013162021253', Gtin).
+% test('get product') :-
+%     get_product_gtin(shop:'GTIN_4013162021253', Gtin).
     % shopping:get_product_class(4013162021253, Product).
 
 % test('put') :-
@@ -111,5 +110,12 @@ test('get product') :-
 % test('put back object') :-
 %     tell(is_physical_object(Object)),
 %     put_back_object(111111, Object, _, 1600953683.2281373, _).
+
+test('insert item') :-
+    init_fridge(1, Store, Fridge),
+    gtrace,
+    insert_item(Store, [1, 1, 1], 'I_4563','4062300025318', [0.5,0.5], Item).
+
+
 
 :- end_tests('shopping').

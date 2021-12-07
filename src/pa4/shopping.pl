@@ -17,7 +17,9 @@
         pick_object(r, r, r, r, r, r), %% how do we handle probability 
         user_logout(r, r, r, r),
         put_back_object/6,
-        items_bought(r, ?)
+        items_bought(r, ?),
+        insert_all_items(+,+),
+        insert_item(+,+,+,+,+,-)
     ]).
 
 :- use_foreign_library('libkafka_plugin.so').
@@ -53,16 +55,27 @@ get_product_class(Gtin, Product) :-
 
 insert_all_items(Store, ItemList) :-
     forall(member([[ShelfExt, ShelfLayerExt, FacingExt], Gtin, Coordinates], ItemList),
-        insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, Coordinates)).
+        insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, _)).
 
-insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, Coordinates):-
+insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, ItemInstance):- % Coordinates - [x,y] is fine
     % get facing
-    get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
-    get_product_class(Gtin, Product).
     % create an object of the type of Gtin
     % tell(instance_of)
     % associate gtin with the item
     % insert position
+    [x,y] = Coordinates,
+    get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
+    ((\+ get_product_class(Gtin, Product) ->
+    create_article_number(gtin(Gtin), AN),
+    create_article_type(AN, Product));
+    true),
+    tell(
+        [instance_of(ItemInstance, Product),
+        is_at(ItemInstance, [Facing, [x,y,0],[0,0,0,1]]),
+        triple(ItemInstance, shop:hasItemId, ItemId)
+    ]),
+    belief_new_object(Product, ItemInstance).
+    
 
 get_product_class(Gtin, Product) :-
     triple(ArticleNumber, shop:gtin, Gtin),
@@ -105,6 +118,7 @@ assert_frame_properties(Fridge) :-
     % writeln('half1'),
     % ShelfBack
     triple(Frame, soma:hasPhysicalComponent, ShelfBack),
+    % error ????!!!
     has_type(ShelfBack, shop:'ShelfBack'),
     get_child_link_(ShelfBack, ChildLinkBack),
     % urdf_link_visual_shape(fridge, ChildLinkBack, Dim1, _, _, _),
