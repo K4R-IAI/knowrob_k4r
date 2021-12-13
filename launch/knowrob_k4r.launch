@@ -2,7 +2,8 @@
   <!-- Configure settings file. -->
   <arg name="knowrob_settings" default="$(find knowrob)/settings/default.pl" />
   <env name="KNOWROB_SETTINGS" value="$(arg knowrob_settings)" />
-  <param name="sandbox" value="$(optenv SANDBOX true)"/>
+  <param name="dt_url" value="$(optenv URL https://dt-api.sandbox.knowledge4retail.org/k4r/api/v0/)"/>
+  <param name="graphql_url" value="$(optenv URL https://dt-api.sandbox.knowledge4retail.org/k4r/graphql)"/>
 
   <param name="mongodb_uri" value="$(optenv KNOWROB_MONGODB_URI mongodb://localhost:27017)" />
   
