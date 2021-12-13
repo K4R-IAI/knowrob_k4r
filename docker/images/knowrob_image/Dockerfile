@@ -12,7 +12,7 @@ RUN cd /home/ros/src/knowrob \
     && git checkout k4r/v1.0
 
 RUN cd /home/ros/src \
-    && git clone -b v1.0 https://github.com/K4R-IAI/knowrob_k4r \
+    && git clone -b K8S https://github.com/K4R-IAI/knowrob_k4r \
     && git clone -b v0.2 https://github.com/K4R-IAI/knowrob_refills
 
 RUN cd /home/ros/src/rosprolog \
