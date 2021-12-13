@@ -6,7 +6,6 @@
 */
 
 
-
 :- module( shopping,
     [   
         init_fridge/3,
@@ -45,42 +44,39 @@ init_fridge(StoreId, Store, Fridge) :-
     % StoreId, Store, Fridge
     create_store(StoreId, Store, Fridge),
     % post_fridge_store(StoreId).
-    shopping:assert_frame_properties(Fridge),
-    shopping:assert_layer_properties(Fridge).
-
-get_product_class(Gtin, Product) :-
-    triple(ArticleNumber, shop:gtin, Gtin),
-    has_description(Desc,value(shop:articleNumberOfProduct,ArticleNumber)),
-    subclass_of(Product, Desc).
+    once(shopping:assert_frame_properties(Fridge)),
+    once(shopping:assert_layer_properties(Fridge)).
 
 insert_all_items(Store, ItemList) :-
     forall(member([[ShelfExt, ShelfLayerExt, FacingExt], Gtin, Coordinates], ItemList),
         insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, _)).
 
-insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, ItemInstance):- % Coordinates - [x,y] is fine
+% ToDO -- If the item id already exists then just update the position
+insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordinates, ItemInstance):- % Coordinates - [x,y] is fine
     % get facing
     % create an object of the type of Gtin
     % tell(instance_of)
     % associate gtin with the item
     % insert position
-    [x,y] = Coordinates,
+    [X ,Y] = Coordinates,
     get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
-    ((\+ get_product_class(Gtin, Product) ->
-    create_article_number(gtin(Gtin), AN),
-    create_article_type(AN, Product));
-    true),
-    tell(
-        [instance_of(ItemInstance, Product),
-        is_at(ItemInstance, [Facing, [x,y,0],[0,0,0,1]]),
-        triple(ItemInstance, shop:hasItemId, ItemId)
-    ]),
-    belief_new_object(Product, ItemInstance).
-    
+    once(get_product_class(Gtin, Product)),
+    tell(instance_of(ItemInstance, Product)),
+    tell(triple(Facing, shop:productInFacing, ItemInstance)),
+    tell(is_at(ItemInstance, [Facing, [X,Y,0],[0,0,0,1]])),
+    tell(triple(ItemInstance, shop:hasItemId, ExtItemId)),
+    %]),
+    shop:belief_new_object(Product, ItemInstance).
+
+
+%update_item_position(ItemId, Coordinates) 
 
 get_product_class(Gtin, Product) :-
     triple(ArticleNumber, shop:gtin, Gtin),
-    subclass_of(Product, Desc),
-    has_description(Desc,value(shop:articleNumberOfProduct,ArticleNumber)).
+    has_type(Desc, owl:'Restriction'), 
+    has_description(Desc,value(shop:articleNumberOfProduct,ArticleNumber)),
+    subclass_of(Product, Desc).
+    % transitive(subclass_of(Product, shop:'Product')).
 
 get_product_class(EAN, Product) :-
     atomic_list_concat([ 'PREFIX product_cat: <http://purl.org/goodrelations/v1#>', 
@@ -90,6 +86,10 @@ get_product_class(EAN, Product) :-
         [ endpoint('https://api.krr.triply.cc/datasets/mkumpel/NonFoodKG/services/NonFoodKG/sparql/'), 
         variable_names([ProductInstance])] ),
     row(Product) = Row.
+
+get_product_class(Gtin, Product) :-
+    create_article_number(gtin(Gtin), AN),
+    create_article_type(AN, Product).
 
 %% Create Store
 create_store(StoreId, Store, Fridge) :-
@@ -281,7 +281,7 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :-
         time_interval_tell(PickAct, Timestamp, Timestamp).
         %publish_pick_event(TimeStamp, [UserId, StoreId, ObjectType]).
 
-put_back_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :-
+put_back_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :- % TODO: May be add coordinates too here
     get_store(StoreId, Store),
     get_facing_(Store, Position, Facing),
     triple(User, shop:hasUserId, UserId),
