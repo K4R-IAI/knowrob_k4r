@@ -8,6 +8,7 @@
 
 :- use_foreign_library('libk4r_db_client.so').
 :- use_module(library('k4r_db/k4r_db_client')).
+:- use_module(library('shop_reasoner')).
 
 
 %%% Fridge store number is 'fridge_1', name is "FridgePA4"
@@ -61,27 +62,51 @@ post_fridge_shelf_layers(StoreNumber) :-
     writeln(['Id', UnitId]),
     forall(member([ShelfId, ExtRefId], Data),
         (atom_number(ExtRefId, NumId),
-        triple(Frame, shop:erpShelfId, NumId),
-        holds(Frame, soma:hasPhysicalComponent, Layer),
-        has_type(Layer, shop:'ShelfLayer'),
-        writeln(['layer', Layer]),
-        object_dimensions(Layer, D, W, H),
-        writeln(['dim',D, W, H]),
-        is_at(Layer, [_, T, _]),
-        writeln(['pose',T, R]),
-        [_,_,Z] = T,
-        triple(Layer, shop:erpShelfLayerId, LayerId),
-        post_shelf_layer(ShelfId, [D, LayerId, H, LayerId, Z, "null", W, UnitId], _)
-        )).
-   
+        get_shelf_with_external_id(NumId, Shelf),
+        get_layers_in_shelf(Shelf, Layers),
+        post_shelf_layers_of_shelf(ShelfId, UnitId, Layers))
+    ).
 
+post_shelf_layers_of_shelf(ShelfId, UnitId, [Layer | Rest]) :-
+    % get associated shelf ids
+    % 
+    % triple(Shelf, soma:hasPhysicalComponent, Layer),
+    % has_type(Layer, shop:'ShelfLayer'),
+    writeln(['layer', Layer]),
+    object_dimensions(Layer, D, W, H),
+    writeln(['dim',D, W, H]),
+    is_at(Layer, [_, T, _]),
+    writeln(['pose',T, R]),
+    [_,_,Z] = T,
+    triple(Layer, shop:erpShelfLayerId, LayerId),
+    post_shelf_layer(ShelfId, [D, LayerId, H, LayerId, Z, "null", W, UnitId], _),
+    post_shelf_layers_of_shelf(ShelfId, UnitId, Rest).
+
+
+post_shelf_layers_of_shelf(_, _, []).
+
+post_fridge_facings(StoreNumber) :-
+    get_store_id(StoreNumber, StoreId),
+    get_shelf_layers_data(StoreId, [id, externalReferenceId], Value),
+    writeln(["shelf", Value]),
+    post_fridge_facings_of_layer(Value).
+
+post_fridge_facings_of_layer([[LayerId, ExtId] | Rest]) :-
+    atom_number(ExtId, NumId),
+    triple(Layer, shop:erpShelfLayerId, NumId),
+    % forcing the loop to continue even if there is a failure in posting
+    (triple(Facing, shop:layerOfFacing, Layer),
+    writeln(Facing),
+    k4r_db_client:post_facings(Layer, LayerId)); true,
+    post_fridge_facings_of_layer(Rest).
+
+post_fridge_facings_of_layer([]).
 
 get_store_id(StoreNum, StoreId) :-
-    writeln(StoreNum),
-    get_graphql("{stores", ["storeNumber", ["eq", StoreNum, "String"]], "{id}}", GraphQLResponse),
+    k4r_db_client:make_filter("storeNumber", "eq", "fridge1", "string", Filter),
+    string_concat("{stores", Filter, StoreFilter),
+    atomics_to_string([StoreFilter, "{", id, "}}"], GraphQLQuery),
+    get_graphql(GraphQLQuery, GraphQLResponse),
     member(StoreDict, GraphQLResponse.stores),
     StoreId = StoreDict.id,
     writeln(['id', StoreId]).
-
-
-    
