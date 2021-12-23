@@ -114,8 +114,14 @@
 test('insert item') :-
     init_fridge(1, Store, Fridge),
     gtrace,
-    insert_item(Store, [1, 1, 1], 'I_4563','4062300025318', [0.5,0.5], Item).
+    insert_item(Store, [1, 1, 1], "I4563",'4062300025318', [0.5,0.5], Item),
+    is_at(Item, Pose),
+    writeln(Pose),
+    insert_item(Store, [1, 1, 1], "I4563",'4062300025318', [0.9,0.2], Item),
+    is_at(Item, Pose1),
+    writeln(Pose1).
 
-
+/* test('get product class') :-
+    shopping:get_product_class('4062300025318', Product). */
 
 :- end_tests('shopping').

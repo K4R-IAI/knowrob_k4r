@@ -15,14 +15,13 @@
         user_login(r, r, r, r),
         pick_object(r, r, r, r, r, r), %% how do we handle probability 
         user_logout(r, r, r, r),
-        put_back_object/6,
+        put_back_object/7,
         items_bought(r, ?),
         insert_all_items(+,+),
         insert_item(+,+,+,+,+,-)
     ]).
 
 :- use_foreign_library('libkafka_plugin.so').
-:- use_foreign_library('librest_interface.so').
 :- use_module(library('semweb/rdf_db')).
 :- use_module(library('model/SOMA/ACT')).
 :- use_module(library('lang/terms/is_a')).
@@ -54,23 +53,42 @@ insert_all_items(StoreId, ItemList) :-
 
 % ToDO -- If the item id already exists then just update the position
 insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordinates, ItemInstance):- % Coordinates - [x,y] is fine
+    % check if item exists
+    ( item_exists(ExtItemId, ItemInstance),
+    update_item_position(Store, ItemInstance, ExtItemId, [ShelfExt, ShelfLayerExt, FacingExt], Coordinates)
+    );
     % get facing
     % create an object of the type of Gtin
     % tell(instance_of)
     % associate gtin with the item
     % insert position
+    (
     [X ,Y] = Coordinates,
     get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
     once(get_product_class(Gtin, Product)),
+    % tell([
     tell(instance_of(ItemInstance, Product)),
     tell(triple(Facing, shop:productInFacing, ItemInstance)),
     tell(is_at(ItemInstance, [Facing, [X,Y,0],[0,0,0,1]])),
     tell(triple(ItemInstance, shop:hasItemId, ExtItemId)),
-    %]),
-    shop:belief_new_object(Product, ItemInstance).
+    % ]),
+    % insert_item_platform(ExtItemId, Gtin, FacingExtId),
+    shop:belief_new_object(Product, ItemInstance)).
 
 
-%update_item_position(ItemId, Coordinates) 
+update_item_position(Store, ItemInstance, ExtItemId, [ShelfExt, ShelfLayerExt, FacingExt], [X, Y]) :-
+    (   item_exists(ExtItemId, ItemInstance),
+        get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
+        tell(triple(Facing, shop:productInFacing, ItemInstance)),
+        tell(is_at(ItemInstance, [Facing, [X,Y,0],[0,0,0,1]]))
+    ).
+    % update_item_platform(ExtItemId, Gtin, FacingExtId),
+    %insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, [X, Y], ItemInstance).
+
+
+item_exists(ExtItemId, Item) :-
+    triple(Item, shop:hasItemId, ExtItemId).
+
 
 get_product_class(Gtin, Product) :-
     triple(ArticleNumber, shop:gtin, Gtin),
@@ -257,12 +275,14 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :-
     % With the gtin
     get_store(StoreId, Store),
     get_facing_(Store, Position, Facing),
+    [_, _, FacingExtId] = Position,
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk), 
     instance_of(Tsk, shop:'Shopping'),
     has_participant(ShoppingAct, Basket),
     instance_of(Basket, shop:'ShopperBasket'),
+    item_exists(ItemId, Item),
     tell(
         [  
             is_action(PickAct),
@@ -273,17 +293,18 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :-
             is_performed_by(PickAct, User),
             has_type(Motion, soma:'PuttingProductInABasket'),
             is_classified_by(PickAct, Motion),
-            %% TODO : create an instance of a Product. find Product type with object id or object type.
-            triple(Basket, soma:containsObject, ItemId)
+            triple(Basket, soma:containsObject, Item)
         ]),
-         % TODO : find Product type with gtin
         % Initialise the store and associate product types with facing
-        tripledb_forget(Facing, shop:productInFacing, ItemId),
+        tripledb_forget(Facing, shop:productInFacing, Item),
+        % TODO: delete item in platform
+        % delete_item_platform(ItemId, FacingExtId),
         time_interval_tell(PickAct, Timestamp, Timestamp).
         %publish_pick_event(TimeStamp, [UserId, StoreId, ObjectType]).
 
-put_back_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :- % TODO: May be add coordinates too here
+put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Position) :-
     get_store(StoreId, Store),
+    [_, _, FacingExtId] = Position,
     get_facing_(Store, Position, Facing),
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
@@ -295,20 +316,22 @@ put_back_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :- % TODO: M
         [    
             is_action(PutAct),
             has_subevent(ShoppingAct, PutAct),
-            has_type(Tsk, soma:'Placing'),
+            has_type(Tsk, shop:'PuttingProductOnAShelf'),
             executes_task(PutAct, Tsk),
             has_participant(PutAct, soma:'Hand'),
             is_performed_by(PutAct, User),
-            has_type(Motion, shop:'PuttingProductOnAShelf'),
+            has_type(Motion, soma:'Placing'),
             is_classified_by(PutAct, Motion),
-            triple(Facing, shop:productInFacing, ItemId), 
+            %triple(Facing, shop:productInFacing, ExtItemId), 
             % TODO : find Product type with gtin
             % create an instance of a Product. Use the item instance
             % in the above triple. 
+            insert_item(Store, Position, ExtItemId, Gtin, Coordinates, ItemInstance),
             has_type(Interval, dul:'TimeInterval'),
             has_time_interval(PutAct, Interval)
         ]),
-            
+        % TODO : Add item to a facing in platform
+        % insert_item_platform(ExtItemId, Gtin, FacingExtId),
         tripledb_forget(Basket, soma:containsObject, ItemId),
         time_interval_tell(PutAct, Timestamp, Timestamp).
 
@@ -335,10 +358,10 @@ user_logout(UserId, DeviceId, Timestamp, StoreId) :-
             has_time_interval(LogoutAct, Interval)
         ]),
     time_interval_tell(LogoutAct, Timestamp, Timestamp),
-    time_interval_tell(ShoppingAct, Start, Timestamp).
+    time_interval_tell(ShoppingAct, Start, Timestamp),
+    tripledb_forget(_, shop:hasUserId, UserId).
+%tripledb_forget(UserId, _, _).
     %publish_log_out(Timestamp, [UserId, StoreId]).
-    %tripledb_forget(_, shop:hasUserId, UserId),
-    %tripledb_forget(UserId, _, _).
     % Delete all the data of the user id after publishing log out
 
 items_bought(UserId, Items) :-
