@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot name="dm_shelves" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="fridge" xmlns:xacro="http://ros.org/wiki/xacro">
 
   <xacro:include filename="$(find knowrob_refills)/urdf/dm_shelf_macros.urdf.xacro"/>
 
