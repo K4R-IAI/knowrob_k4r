@@ -47,7 +47,8 @@ init_fridge(StoreId, Store, Fridge) :-
     once(shopping:assert_frame_properties(Fridge)),
     once(shopping:assert_layer_properties(Fridge)).
 
-insert_all_items(Store, ItemList) :-
+insert_all_items(StoreId, ItemList) :-
+    get_store(StoreId, Store),
     forall(member([[ShelfExt, ShelfLayerExt, FacingExt], Gtin, Coordinates], ItemList),
         insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, _)).
 
