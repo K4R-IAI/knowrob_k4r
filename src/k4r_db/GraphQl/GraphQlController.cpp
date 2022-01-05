@@ -18,21 +18,21 @@ public:
     ros::param::get("sandbox", sandbox);
     if (sandbox)
     {
-      this->link = SANDBOX_GRAPHQL_URL;
-      this->request.setOpt<curlpp::options::SslVerifyPeer>(SANDBOX_VERIFY_PEER);
+      this->link = GRAPHQL_URL;
+      this->request.setOpt<curlpp::options::SslVerifyPeer>(VERIFY_PEER);
       this->request.setOpt(new curlpp::options::SslCertType(CERT_TYPE));
-      std::string knowrob_k4r_path = ros::package::getPath("knowrob_k4r") + SANDBOX_CERT_PATH;
+      std::string knowrob_k4r_path = ros::package::getPath("knowrob_k4r") + CERT_PATH;
       this->request.setOpt(new curlpp::options::SslCert(knowrob_k4r_path));
-      this->request.setOpt(new curlpp::options::SslCertPasswd(SANDBOX_CERT_PASSWD));
+      this->request.setOpt(new curlpp::options::SslCertPasswd(CERT_PASSWD));
     }
     else
     {
-      this->link = DEV_GRAPHQL_URL;
-      this->request.setOpt<curlpp::options::SslVerifyPeer>(DEV_VERIFY_PEER);
+      this->link = GRAPHQL_URL;
+      this->request.setOpt<curlpp::options::SslVerifyPeer>(VERIFY_PEER);
       this->request.setOpt(new curlpp::options::SslCertType(CERT_TYPE));
-      std::string knowrob_k4r_path = ros::package::getPath("knowrob_k4r") + DEV_CERT_PATH;
+      std::string knowrob_k4r_path = ros::package::getPath("knowrob_k4r") + CERT_PATH;
       this->request.setOpt(new curlpp::options::SslCert(knowrob_k4r_path));
-      this->request.setOpt(new curlpp::options::SslCertPasswd(DEV_CERT_PASSWD));
+      this->request.setOpt(new curlpp::options::SslCertPasswd(CERT_PASSWD));
     }
   }
 
