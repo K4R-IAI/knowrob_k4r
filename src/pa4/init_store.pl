@@ -38,7 +38,9 @@ test_log_in :-
     get_time(Now), 
     UserId is 100,
     DeviceId is 101,
-    user_login(UserId, DeviceId, Now, 5).
+    user_login(UserId, DeviceId, Now, 5),
+    get_user(UserId, User).
+    % writeln(User).
 
 test_pick_up :-
     %writeln("in pick up"),
@@ -49,7 +51,9 @@ test_pick_up :-
     get_time(Now),
     Position = [1, 1, 1],
     % Is position necessary? We do know the position given the id of the item
-    pick_object(UserId, StoreId, ItemId, Gtin, Now).
+    pick_object(UserId, StoreId, ItemId, Gtin, Now),
+    items_bought(UserId, Items).
+    % writeln(Items).
 
 test_put_back :-
     UserId is 100,
@@ -60,14 +64,17 @@ test_put_back :-
     Position = [1, 1, 1],
     Coordinates = [0.5, 0.5],
     put_back_object(UserId, StoreId, ItemId, Gtin, 
-        Now, Coordinates, Position).
+        Now, Coordinates, Position),
+    get_facing(ItemId, Facing).
+    % writeln(Facing).
 
 
 test_log_out :-
     get_time(Now), 
     UserId is 100,
     DeviceId is 101,
-    user_logout(UserId, DeviceId, Now, 5).
+    user_logout(UserId, DeviceId, Now, 5),
+    get_user(UserId, User).
 
 :- begin_tests('init_store').
 

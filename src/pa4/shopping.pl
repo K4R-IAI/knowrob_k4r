@@ -19,7 +19,9 @@
         items_bought(r, ?),
         insert_all_items(+,+),
         insert_item(+,+,+,+,+,-),
-        get_items_in_fridge/2
+        get_items_in_fridge/2,
+        get_user/2,
+        get_facing/2
     ]).
 
 :- use_foreign_library('libkafka_plugin.so').
@@ -47,14 +49,14 @@ init_fridge(StoreId, Store, Fridge) :-
     % post_fridge_store(StoreId).
     once(shopping:assert_frame_properties(Fridge)),
     % writeln('create shelves'),
-    once(shopping:assert_layer_properties(Fridge)),
+    once(shopping:assert_layer_properties(Fridge)).
     % writeln('create layers').
 
 insert_all_items(StoreId, ItemList) :-
     get_store(StoreId, Store),
     % writeln('insertttt'),
     forall(member([[ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates], ItemList),
-        (insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, ItemInstance),
+        (insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, ItemInstance)
         % writeln(ItemInstance)
     )).
 
@@ -389,8 +391,8 @@ items_bought(UserId, Items) :-
     instance_of(Tsk, shop:'Shopping'),
     has_participant(ShoppingAct, Basket),
     instance_of(Basket, shop:'ShopperBasket'),
-    findall(ItemId,
-        triple(Basket, soma:containsObject, ItemId),
+    findall(Item,
+        triple(Basket, soma:containsObject, Item),
     Items).
 
 get_facing_(Store, Position, Facing) :-
@@ -402,6 +404,10 @@ get_facing_(Store, Position, Facing) :-
     triple(Shelf, soma:hasPhysicalComponent, Layer),
     triple(Facing, shop:erpFacingId, FacingExt),
     triple(Facing, shop:layerOfFacing, Layer).
+
+get_facing(ItemId, Facing) :-
+    item_exists(ItemId, Item),
+    triple(Facing, shop:productInFacing, Item).
 
 get_store(StoreId, Store) :-
     triple(Store, shop:hasShopId, StoreId).
@@ -474,4 +480,7 @@ get_all_items_in_facing(Facing, Items) :-
             triple(Facing, shop:productInFacing, Item)),
     Items).
 
+get_user(UserId, User) :-
+    triple(User, shop:hasUserId, UserId);
+    print_message(warning, 'User has logged out').
 % items_bought(UserId, TimeStamp, Items) :-
