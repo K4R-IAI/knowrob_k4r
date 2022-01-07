@@ -1,5 +1,5 @@
 /** <module> shopping
- * A client for the k4r db for Prolog.
+ * 
 
 @author Kaviya Dhanabalachandran
 @license BSD
@@ -13,12 +13,13 @@
         assert_frame_properties/1,
         assert_layer_properties/1,
         user_login(r, r, r, r),
-        pick_object(r, r, r, r, r, r), %% how do we handle probability 
+        pick_object(r, r, r, r, r), %% how do we handle probability 
         user_logout(r, r, r, r),
         put_back_object/7,
         items_bought(r, ?),
         insert_all_items(+,+),
-        insert_item(+,+,+,+,+,-)
+        insert_item(+,+,+,+,+,-),
+        get_items_in_fridge/2
     ]).
 
 :- use_foreign_library('libkafka_plugin.so').
@@ -42,17 +43,24 @@
 init_fridge(StoreId, Store, Fridge) :-
     % StoreId, Store, Fridge
     create_store(StoreId, Store, Fridge),
+    % writeln('create fridge'),
     % post_fridge_store(StoreId).
     once(shopping:assert_frame_properties(Fridge)),
-    once(shopping:assert_layer_properties(Fridge)).
+    % writeln('create shelves'),
+    once(shopping:assert_layer_properties(Fridge)),
+    % writeln('create layers').
 
 insert_all_items(StoreId, ItemList) :-
     get_store(StoreId, Store),
-    forall(member([[ShelfExt, ShelfLayerExt, FacingExt], Gtin, Coordinates], ItemList),
-        insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, _)).
+    % writeln('insertttt'),
+    forall(member([[ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates], ItemList),
+        (insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, ItemInstance),
+        % writeln(ItemInstance)
+    )).
 
 % ToDO -- If the item id already exists then just update the position
 insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordinates, ItemInstance):- % Coordinates - [x,y] is fine
+    % writeln(['ITemsss', Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordinates]),
     % check if item exists
     ( item_exists(ExtItemId, ItemInstance),
     update_item_position(Store, ItemInstance, ExtItemId, [ShelfExt, ShelfLayerExt, FacingExt], Coordinates)
@@ -69,6 +77,7 @@ insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordi
     % tell([
     tell(instance_of(ItemInstance, Product)),
     tell(triple(Facing, shop:productInFacing, ItemInstance)),
+    % writeln([Facing, ItemInstance]),
     tell(is_at(ItemInstance, [Facing, [X,Y,0],[0,0,0,1]])),
     tell(triple(ItemInstance, shop:hasItemId, ExtItemId)),
     % ]),
@@ -140,7 +149,7 @@ assert_frame_properties(Fridge) :-
     % error ????!!!
     has_type(ShelfBack, shop:'ShelfBack'),
     get_child_link_(ShelfBack, ChildLinkBack),
-    % urdf_link_visual_shape(fridge, ChildLinkBack, Dim1, _, _, _),
+    %urdf_link_visual_shape(fridge, ChildLinkBack, Dim1, _, _, _),
     % [D1, W1, H1] = Dim1,
     get_object_dimension_from_urdf_(ChildLinkBack, D1, W1, H1),
     shop:assert_object_shape_(ShelfBack, D1, W1, H1, [0.5,0.5,0.5]),
@@ -210,7 +219,7 @@ assert_object_pose_(StaticObject, UrdfObj, UrdfPose, D, W, H) :-
     get_time(Now),
     Stamp is Now + 10,
     time_scope(=(Now), =<(Stamp), FScope1),
-    [P1, [X1, Y1, Z1], Rot] = UrdfPose,
+    [P1, [_, _, _], _] = UrdfPose,
     % writeln([UrdfObj, P1, X1, Y1, Z1, Rot]),
     time_scope(=(Now), =<('Infinity'), FScope),
     tf_set_pose(UrdfObj, UrdfPose, FScope),
@@ -270,19 +279,26 @@ user_login(UserId, DeviceId, Timestamp, StoreId) :-
         %publish_log_in(TimeStamp, [UserId, StoreId]).
 
 
-pick_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :-
+pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
     % Pose and object type are not used
     % With the gtin
     get_store(StoreId, Store),
-    get_facing_(Store, Position, Facing),
-    [_, _, FacingExtId] = Position,
+    % writeln(["All good 2"]),
+    get_item_position(ItemId, Facing),
+    % writeln(["All good 3"]),
+    triple(Facing, shop:erpFacingId, FacingExtId),
+    % get_facing_(Store, Position, Facing),
+    % [_, _, FacingExtId] = Position,
     triple(User, shop:hasUserId, UserId),
+    % writeln(["All good 4"]),
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk), 
+    % writeln(["All good 5"]),
     instance_of(Tsk, shop:'Shopping'),
     has_participant(ShoppingAct, Basket),
     instance_of(Basket, shop:'ShopperBasket'),
     item_exists(ItemId, Item),
+    % writeln(["All good 6"]),
     tell(
         [  
             is_action(PickAct),
@@ -295,6 +311,7 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :-
             is_classified_by(PickAct, Motion),
             triple(Basket, soma:containsObject, Item)
         ]),
+        % writeln(["All good 1"]),
         % Initialise the store and associate product types with facing
         tripledb_forget(Facing, shop:productInFacing, Item),
         % TODO: delete item in platform
@@ -305,7 +322,7 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp, Position) :-
 put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Position) :-
     get_store(StoreId, Store),
     [_, _, FacingExtId] = Position,
-    get_facing_(Store, Position, Facing),
+    % get_facing_(Store, Position, Facing),
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk), 
@@ -326,13 +343,14 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
             % TODO : find Product type with gtin
             % create an instance of a Product. Use the item instance
             % in the above triple. 
-            insert_item(Store, Position, ExtItemId, Gtin, Coordinates, ItemInstance),
             has_type(Interval, dul:'TimeInterval'),
             has_time_interval(PutAct, Interval)
         ]),
         % TODO : Add item to a facing in platform
         % insert_item_platform(ExtItemId, Gtin, FacingExtId),
-        tripledb_forget(Basket, soma:containsObject, ItemId),
+        insert_item(Store, Position, ExtItemId, Gtin, Coordinates, _),
+        triple(Item, shop:hasItemId, ExtItemId),
+        tripledb_forget(Basket, soma:containsObject, Item),
         time_interval_tell(PutAct, Timestamp, Timestamp).
 
 user_logout(UserId, DeviceId, Timestamp, StoreId) :-
@@ -387,5 +405,73 @@ get_facing_(Store, Position, Facing) :-
 
 get_store(StoreId, Store) :-
     triple(Store, shop:hasShopId, StoreId).
+
+get_items_in_fridge(StoreId, Items) :-
+    %%%%
+    % Get all shelves in the store
+    % Get all layers in the store
+    % Get all facings in the layer
+    % Get all items in the facing
+    get_store(StoreId, Store),
+    holds(Fridge, dul:hasLocation, Store),
+    % writeln(['Store', Store]),
+    get_all_shelves_in_fridge(Fridge, Shelves),
+    % writeln(['Shelf', Shelves]),
+    get_all_layers_in_shelves(Shelves, Layers),
+    % writeln(['Layer', Layers]),
+    get_all_facings_in_layers(Layers, Facings),
+    % writeln(['F', Facings]),
+    get_all_items_in_fridge_facing(Facings, Items).
+    
+
+get_all_shelves_in_fridge(Fridge, Shelves) :-
+    findall(Shelf,
+        (triple(Fridge, soma:hasPhysicalComponent, Shelf),
+        has_type(Shelf, shop:'ShelfFrame')),
+    Shelves).
+
+get_all_layers_in_shelves(Shelves, LayersList) :-
+    get_all_layers_in_shelves(Shelves, Temp, LayersList).
+
+get_all_layers_in_shelves([], T1, T1).
+
+get_all_layers_in_shelves([Shelf| Rest], T, LL) :-
+    get_layers_in_shelf(Shelf, Layers),
+    append(T, Layers, T1),
+    get_all_layers_in_shelves(Rest, T1, LL).
+
+get_all_facings_in_layers([], T, T).
+
+get_all_facings_in_layers([L | Rest], Temp, FacingList) :-
+    ((get_facings_in_layer(L, Facings),
+    append(Temp, Facings, Temp1));
+    (Temp1 = Temp)),
+    get_all_facings_in_layers(Rest, Temp1, FacingList).
+
+get_all_facings_in_layers(L, F) :- 
+    get_all_facings_in_layers(L, T, F).
+
+get_all_items_in_fridge_facing([], Temp, Temp).
+
+get_all_items_in_fridge_facing([Facing | Rest], Temp, Items) :-
+    ((get_all_items_in_facing(Facing, Item),
+    append(Temp, Item, Temp1));
+    (Temp1 = Temp)),
+    get_all_items_in_fridge_facing(Rest, Temp1, Items).
+
+get_item_position(ItemId, Facing) :-
+    % writeln(['Item id', ItemId]),
+    triple(ItemInstance, shop:hasItemId, ItemId),
+    % writeln(['item', ItemInstance]),
+    triple(Facing, shop:productInFacing, ItemInstance).
+
+get_all_items_in_fridge_facing(Facings, Items) :-
+    get_all_items_in_fridge_facing(Facings, Temp, Items).
+
+get_all_items_in_facing(Facing, Items) :-
+    findall(Item,
+        (   has_type(Facing, shop:'ProductFacing'),
+            triple(Facing, shop:productInFacing, Item)),
+    Items).
 
 % items_bought(UserId, TimeStamp, Items) :-
