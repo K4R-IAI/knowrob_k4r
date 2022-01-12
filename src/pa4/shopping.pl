@@ -44,12 +44,14 @@
 
 init_fridge(StoreId, Store, Fridge) :-
     % StoreId, Store, Fridge
-    create_store(StoreId, Store, Fridge),
+    ((triple(Store, shop:hasShopId, StoreId),
+    print_message(warning, 'Store already exist'));
+    (create_store(StoreId, Store, Fridge),
     % writeln('create fridge'),
     % post_fridge_store(StoreId).
     once(shopping:assert_frame_properties(Fridge)),
     % writeln('create shelves'),
-    once(shopping:assert_layer_properties(Fridge)).
+    once(shopping:assert_layer_properties(Fridge)))).
     % writeln('create layers').
 
 insert_all_items(StoreId, ItemList) :-
