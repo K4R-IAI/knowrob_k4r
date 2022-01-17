@@ -24,6 +24,7 @@
         get_facing/2
     ]).
 
+:- use_module(library('semweb/sparql_client')).
 :- use_foreign_library('libkafka_plugin.so').
 :- use_module(library('semweb/rdf_db')).
 :- use_module(library('model/SOMA/ACT')).
@@ -82,7 +83,8 @@ insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordi
     tell(instance_of(ItemInstance, Product)),
     tell(triple(Facing, shop:productInFacing, ItemInstance)),
     % writeln([Facing, ItemInstance]),
-    tell(is_at(ItemInstance, [Facing, [X,Y,0],[0,0,0,1]])),
+    rdf_split_url(_,ParentFrame,Facing),
+    tell(is_at(ItemInstance, [ParentFrame, [X,Y,0],[0,0,0,1]])),
     tell(triple(ItemInstance, shop:hasItemId, ExtItemId)),
     % ]),
     % insert_item_platform(ExtItemId, Gtin, FacingExtId),
@@ -142,7 +144,7 @@ assert_frame_properties(Fridge) :-
     get_child_link_(ShelfBase, ChildLink),
     get_object_dimension_from_urdf_(ChildLink, D, W, H),
     % writeln('half'),
-    shop:assert_object_shape_(ShelfBase, D, W, H, [0.5,0.5,0.5]),
+    assert_object_shape_(ShelfBase, D, W, H, [0.5,0.5,0.5]),
     % writeln('half3'),
     get_object_pose_from_urdf_(ChildLink, T1, R1, Parent1),
     % writeln('half2'),
@@ -156,9 +158,10 @@ assert_frame_properties(Fridge) :-
     %urdf_link_visual_shape(fridge, ChildLinkBack, Dim1, _, _, _),
     % [D1, W1, H1] = Dim1,
     get_object_dimension_from_urdf_(ChildLinkBack, D1, W1, H1),
-    shop:assert_object_shape_(ShelfBack, D1, W1, H1, [0.5,0.5,0.5]),
+    assert_object_shape_(ShelfBack, D1, W1, H1, [0.5,0.5,0.5]),
     get_object_pose_from_urdf_(ChildLinkBack, Translation1, Rotation1, ParentName1),
-    tell(is_at(ShelfBack, [ParentName1, Translation1, Rotation1])).
+    assert_object_pose_(ShelfBack, ChildLinkBack, [ParentName1, Translation1,Rotation1], D1, W1, H1).
+    % tell(is_at(ShelfBack, [ParentName1, Translation1, Rotation1])).
 
 assert_layer_properties(Fridge) :-
     triple(Fridge, soma:hasPhysicalComponent, Frame),
@@ -167,7 +170,7 @@ assert_layer_properties(Fridge) :-
     has_type(Layer, shop:'ShelfLayer'),
     get_child_link_(Layer, ChildLink),
     get_object_dimension_from_urdf_(ChildLink, D, W, H),
-    shop:assert_object_shape_(Layer, D, W, H, [0.5,0.5,0.5]),
+    assert_object_shape_(Layer, D, W, H, [0.5,0.5,0.5]),
     get_object_pose_from_urdf_(ChildLink, T1, R1, ParentName),
     assert_object_pose_(Layer, ChildLink, [ParentName, T1, R1], D, W, H),
     assert_separator_properties(Layer),
@@ -182,7 +185,7 @@ assert_separator_properties(Layer) :-
     has_type(Separator, shop:'ShelfSeparator'),
     get_child_link_(Separator, ChildLink),
     get_object_dimension_from_urdf_(ChildLink, D, W, H),
-    shop:assert_object_shape_(Separator, D, W, H, [0.5,0.5,0.5]),
+    assert_object_shape_(Separator, D, W, H, [0.5,0.5,0.5]),
     get_object_pose_from_urdf_(ChildLink, T1, R1, ParentName),
     assert_object_pose_(Separator, ChildLink, [ParentName, T1, R1], D, W, H),
     fail.
@@ -194,7 +197,7 @@ assert_facing_properties(Layer) :-
     has_type(Facing, shop:'ProductFacing'),
     get_child_link_(Facing, ChildLink),
     get_object_dimension_from_urdf_(ChildLink, D, W, H),
-    shop:assert_object_shape_(Facing, D, W, H, [0.5,0.5,0.5]),
+    assert_object_shape_(Facing, D, W, H, [0.5,0.5,0.5]),
     get_object_pose_from_urdf_(ChildLink, T1, R1, ParentName),
     assert_object_pose_(Facing, ChildLink, [ParentName, T1, R1], D, W, H),
     fail.
@@ -485,4 +488,27 @@ get_all_items_in_facing(Facing, Items) :-
 get_user(UserId, User) :-
     triple(User, shop:hasUserId, UserId);
     print_message(warning, 'User has logged out').
+
+
+assert_object_shape_(Object, D, W, H, RGBValue):- 
+  (object_dimensions(Object, D, W, H) -> 
+    (triple(Object,soma:hasShape,Shape),
+  triple(Shape,dul:hasRegion,ShapeRegion));
+  tell(has_type(Shape, soma:'Shape')),
+  tell(holds(Object,soma:hasShape,Shape)),
+  tell(object_dimensions(Object, D, W, H)),
+  triple(Shape,dul:hasRegion,ShapeRegion)),
+  D1 is D/2, W1 is W/2, H1 is H/2, 
+  Pos = [D1, W1, H1], 
+  Rot = [0, 0, 0, 1],
+  tell(is_individual(Origin)),
+  tell(triple(ShapeRegion,'http://knowrob.org/kb/urdf.owl#hasOrigin',Origin)),
+  tell(triple(Origin, soma:hasPositionVector, term(Pos))),
+  tell(triple(Origin, soma:hasOrientationVector, term(Rot))),
+
+  tell(has_type(ColorType, soma:'Color')),
+  tell(holds(Object,soma:hasColor,ColorType)),
+  tell(object_color_rgb(Object, RGBValue)), 
+  triple(ColorType,dul:hasRegion,Region),
+  tell(triple(Region, soma:hasTransparencyValue, 1)), !.
 % items_bought(UserId, TimeStamp, Items) :-
