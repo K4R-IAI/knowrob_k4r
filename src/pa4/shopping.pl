@@ -250,11 +250,11 @@ assert_object_pose_(StaticObject, UrdfObj, UrdfPose, D, W, H) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Events %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 user_login(UserId, DeviceId, Timestamp, StoreId) :-
-    (triple(User, shop:hasUserId, UserId) -> true, 
+    ((triple(User, shop:hasUserId, UserId) -> true,  % when there is no existing error, it throws an instantiation error
     print_message(info, 'User has already registered and has not logged out'));
-   (triple(Store, shop:hasShopId, StoreId),
-   has_location(Fridge, Store),
-   tell([is_action(ParentAct),
+    (triple(Store, shop:hasShopId, StoreId),
+    has_location(Fridge, Store),
+    tell([is_action(ParentAct),
         has_participant(ParentAct, Fridge),
         has_type(PaInterval, dul:'TimeInterval'),
         has_time_interval(ParentAct, PaInterval),
@@ -282,8 +282,10 @@ user_login(UserId, DeviceId, Timestamp, StoreId) :-
         is_performed_by(LoggingInAction, User),
         has_type(Interval, dul:'TimeInterval'),
         has_time_interval(LoggingInAction, Interval)]),
-        time_interval_tell(LoggingInAction, Timestamp, Timestamp)).
-        %publish_log_in(TimeStamp, [UserId, StoreId]).
+        time_interval_tell(LoggingInAction, Timestamp, Timestamp),
+        writeln([Timestamp,UserId, StoreId]),
+        publish_log_in(Timestamp, [UserId, StoreId]))),
+        writeln("i am heree").
 
 
 pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
@@ -323,8 +325,8 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
         tripledb_forget(Facing, shop:productInFacing, Item),
         % TODO: delete item in platform
         % delete_item_platform(ItemId, FacingExtId),
-        time_interval_tell(PickAct, Timestamp, Timestamp).
-        %publish_pick_event(TimeStamp, [UserId, StoreId, ObjectType]).
+        time_interval_tell(PickAct, Timestamp, Timestamp),
+        publish_pick_event(Timestamp, [UserId, StoreId, Gtin]). % Not sure her if object type makes sense
 
 put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Position) :-
     get_store(StoreId, Store),
@@ -358,7 +360,8 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
         insert_item(Store, Position, ExtItemId, Gtin, Coordinates, _),
         triple(Item, shop:hasItemId, ExtItemId),
         tripledb_forget(Basket, soma:containsObject, Item),
-        time_interval_tell(PutAct, Timestamp, Timestamp).
+        time_interval_tell(PutAct, Timestamp, Timestamp),
+        publish_return_event(Timestamp, [UserId, StoreId, Gtin]). %% what needs to be here?? Gtin or object type or ?
 
 user_logout(UserId, DeviceId, Timestamp, StoreId) :-
     %% Device might be another participant in the login and logout action  
@@ -384,9 +387,9 @@ user_logout(UserId, DeviceId, Timestamp, StoreId) :-
         ]),
     time_interval_tell(LogoutAct, Timestamp, Timestamp),
     time_interval_tell(ShoppingAct, Start, Timestamp),
-    tripledb_forget(_, shop:hasUserId, UserId).
-%tripledb_forget(UserId, _, _).
-    %publish_log_out(Timestamp, [UserId, StoreId]).
+    tripledb_forget(_, shop:hasUserId, UserId),
+    publish_log_out(Timestamp, [UserId, StoreId]).
+    %tripledb_forget(UserId, _, _).
     % Delete all the data of the user id after publishing log out
 
 items_bought(UserId, Items) :-
