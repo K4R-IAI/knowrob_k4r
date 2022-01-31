@@ -4,6 +4,14 @@
 #include <iostream>
 // kafka
 #include "librdkafka/rdkafkacpp.h"
+class DeliverCallback : public RdKafka::DeliveryReportCb
+{
+public:
+    DeliverCallback();
+    ~DeliverCallback();
+
+    void dr_cb(RdKafka::Message &message);
+};
 
 class KafkaEventProducer 
 {
@@ -24,12 +32,8 @@ std::string topic_;
 const int32_t partition_;
 const int64_t offset_;
 RdKafka::Conf *conf_;
+DeliverCallback deliverCallback_;
 };
 
-class DeliverCallback : public RdKafka::DeliveryReportCb
-{
-public:
-    void dr_cb(RdKafka::Message &message);
-};
 
 #endif //__Kafka_Event_Producer__

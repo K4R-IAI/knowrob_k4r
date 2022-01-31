@@ -3,7 +3,7 @@
 #include <SWI-cpp.h>
 
 #include <jsoncpp/json/json.h>
-#include "include/kafka_event_producer.h"
+#include "knowrob_k4r/kafka_event_producer.h"
 #include <iostream>
 #include <ctime>
 
@@ -11,7 +11,6 @@ KafkaEventProducer get_producer_object()
 {   
     std::string broker_("localhost:9092");
     std::string topic_("test_kafka");
-    // const KafkaEventProducer 
     return KafkaEventProducer(broker_, topic_);
 }
 
@@ -22,7 +21,6 @@ const std::string convert_time(const std::string input_time)
     char date[20];
     // Date time Format 
     strftime(date, sizeof(date), "%F %T", &current_time);
-    std::cout << date << '\n';
     return date;
 }
 
@@ -35,7 +33,6 @@ PREDICATE(publish_log_in, 2)
     event_data["eventType"] = "LOG_IN";
     event_data["timestamp"] = convert_time((std::string)PL_A1);
 
-    std::cout << event_data << std::endl;
 
     Json::Value data;
     PlTail data_list(PL_A2);
@@ -47,10 +44,6 @@ PREDICATE(publish_log_in, 2)
     data["storeId"] = (int)traversal_term;
 
     event_data["data"] = data;
-
-    std::cout << event_data["data"] << std::endl;
-    std::cout << event_data["timestamp"] << std::endl;
-    std::cout << event_data["eventType"] << std::endl;
 
     get_producer_object().send_data(event_data.toStyledString());
     return true;
@@ -74,8 +67,6 @@ PREDICATE(publish_log_out, 2)
     data["storeId"] = (int)traversal_term;
 
     event_data["data"] = data;
-
-    std::cout << event_data << std::endl;
 
     get_producer_object().send_data(event_data.toStyledString());
     return true;
@@ -104,8 +95,6 @@ PREDICATE(publish_pick_event, 2)
 
     event_data["data"] = data;
 
-    std::cout << event_data << std::endl;
-
     get_producer_object().send_data(event_data.toStyledString());
     return true;
 }
@@ -132,8 +121,6 @@ PREDICATE(publish_put_back, 2)
     data["quantity"] = 1.0; // Not sure if this will stay as 1.0
 
     event_data["data"] = data;
-
-    std::cout << event_data << std::endl;
 
     get_producer_object().send_data(event_data.toStyledString());
     return true;

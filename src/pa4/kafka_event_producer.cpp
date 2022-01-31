@@ -1,18 +1,18 @@
-#include "include/kafka_event_producer.h"
+#include "knowrob_k4r/kafka_event_producer.h"
 
-KafkaEventProducer::KafkaEventProducer(std::string& broker,
-                        std::string& topic):
-                        broker_(broker),
-                        topic_(topic),
-                        partition_(RdKafka::Topic::PARTITION_UA),
-                        offset_(RdKafka::Topic::OFFSET_BEGINNING),
-                        conf_(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL))
+KafkaEventProducer::KafkaEventProducer(std::string &broker,
+                                       std::string &topic) : broker_(broker),
+                                                             topic_(topic),
+                                                             partition_(RdKafka::Topic::PARTITION_UA),
+                                                             offset_(RdKafka::Topic::OFFSET_BEGINNING),
+                                                             conf_(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL))
 {
 }
 
+KafkaEventProducer::~KafkaEventProducer() {}
+
 RdKafka::Conf* KafkaEventProducer::set_producer_config(RdKafka::Conf *conf)
 {   
-    DeliverCallback deliverCallback;
     std::string errstr;
 
      if (conf->set("metadata.broker.list", this->broker_, errstr) != RdKafka::Conf::CONF_OK)
@@ -21,7 +21,7 @@ RdKafka::Conf* KafkaEventProducer::set_producer_config(RdKafka::Conf *conf)
         exit(1);
     }
 
-     if (conf->set("dr_cb", &deliverCallback, errstr) != RdKafka::Conf::CONF_OK)
+     if (conf->set("dr_cb", &this->deliverCallback_, errstr) != RdKafka::Conf::CONF_OK)
     {
         std::cerr << "Error in setting a message callback" << std::endl;
         exit(1);
@@ -77,20 +77,24 @@ void KafkaEventProducer::send_data(const std::string event_data)
 
     producer->poll(0);
 
-    std::cerr << "Flushing final messages" << std::endl;
-    producer->flush(10 * 1000 /* wait for max 10 seconds */);
+    std::cout << "Flushing final messages" << std::endl;
+    producer->flush(10 * 1000); /* wait for max 10 seconds */
     // outq_len -> Returns the current out queue length.
     if (producer->outq_len() > 0)
         std::cerr << "% " << producer->outq_len() << " messages were not delivered" << std::endl;
-
+   
     delete producer;
 }
 
+DeliverCallback::DeliverCallback() {}
+
 void DeliverCallback::dr_cb(RdKafka::Message &message)
-{
-     if (message.err())
-            std::cerr << "Message delivery failed: " << message.errstr() << std::endl;
-        else
-            std::cerr << "Message delivered to topic " << message.topic_name() << " [" << message.partition() << "] at offset " << message.offset() << std::endl;
+{   
+    if (message.err())
+        std::cerr << "Message delivery failed: " << message.errstr() << std::endl;
+    else
+        std::cerr << "Message delivered to topic " << message.topic_name() << " [" << message.partition() << "] at offset " << message.offset() << std::endl;
     
 }
+
+DeliverCallback::~DeliverCallback() {}

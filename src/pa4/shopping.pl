@@ -361,7 +361,7 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
         triple(Item, shop:hasItemId, ExtItemId),
         tripledb_forget(Basket, soma:containsObject, Item),
         time_interval_tell(PutAct, Timestamp, Timestamp),
-        publish_return_event(Timestamp, [UserId, StoreId, Gtin]). %% what needs to be here?? Gtin or object type or ?
+        publish_put_back(Timestamp, [UserId, StoreId, Gtin]). %% what needs to be here?? Gtin or object type or ?
 
 user_logout(UserId, DeviceId, Timestamp, StoreId) :-
     %% Device might be another participant in the login and logout action  
