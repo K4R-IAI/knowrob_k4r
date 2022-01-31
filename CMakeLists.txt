@@ -3,7 +3,7 @@ project(knowrob_k4r)
 
 find_package(catkin REQUIRED COMPONENTS
   knowrob
-  knowrob_refills
+  knowrob_stocktaking
 )
 
 find_package(catkin REQUIRED COMPONENTS

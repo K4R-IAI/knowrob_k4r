@@ -1,7 +1,7 @@
 <launch>
   <!-- Configure settings file. -->
   <arg name="knowrob_settings" default="$(find knowrob)/settings/default.pl" />
-  <arg name="logs_folder" default="$(find knowrob_refills)/refills_dump_2020-11-19_21-57-45_pp" />
+  <arg name="logs_folder" default="$(find knowrob_stocktaking)/refills_dump_2020-11-19_21-57-45_pp" />
   <env name="KNOWROB_SETTINGS" value="$(arg knowrob_settings)" />
   
   <include file="$(find rosprolog)/launch/rosprolog.launch">

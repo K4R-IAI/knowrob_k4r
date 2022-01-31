@@ -13,7 +13,7 @@ RUN cd /home/ros/src/knowrob \
 
 RUN cd /home/ros/src \
     && git clone -b pa4 https://github.com/kaviyachandran/knowrob_k4r/ \
-    && git clone -b v0.2 https://github.com/K4R-IAI/knowrob_refills
+    && git clone -b v0.2 https://github.com/K4R-IAI/knowrob_stocktaking
 
 RUN cd /home/ros/src/rosprolog \
     && git remote add k4r https://github.com/K4R-IAI/rosprolog \

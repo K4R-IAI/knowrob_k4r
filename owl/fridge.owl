@@ -18,7 +18,7 @@
      xmlns:srdl2-comp="http://knowrob.org/kb/srdl2-comp.owl#">
     <owl:Ontology rdf:about="http://knowrob.org/kb/fridge.owl">
         <owl:imports rdf:resource="package://knowrob/owl/srdl2.owl"/>
-        <owl:imports rdf:resource="package://knowrob_refills/owl/shop.owl"/>
+        <owl:imports rdf:resource="package://knowrob_stocktaking/owl/shop.owl"/>
     </owl:Ontology>
     
 
