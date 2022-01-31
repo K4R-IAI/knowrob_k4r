@@ -41,8 +41,7 @@ catkin_package(
 )
 
 set(CMAKE_CXX_FLAGS "-std=c++0x -pthread ${CMAKE_CXX_FLAGS}")
-include_directories(include ${SWIPL_INCLUDE_DIRS} ${CURLPP_INCLUDE_DIRS} ${JSONCPP_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
-
+include_directories(include SYSTEM ${SWIPL_INCLUDE_DIRS} ${CURLPP_INCLUDE_DIRS} ${JSONCPP_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
 
 ##############
@@ -65,10 +64,12 @@ add_dependencies(k4r_db_client
 ##### Pa4 #####
 ###############
 
+set(HEADER include/knowrob_k4r/kafka_event_producer.h)
+
 add_library(kafka_plugin SHARED
-            src/pa4/kafka_plugin.cpp
             src/pa4/kafka_event_producer.cpp
-            include/kafka_event_producer.h
+            src/pa4/kafka_plugin.cpp
+            ${HEADER}
             )
 
 target_link_libraries(kafka_plugin 
