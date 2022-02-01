@@ -9,8 +9,8 @@
 
 KafkaEventProducer get_producer_object()  
 {   
-    std::string broker_("localhost:9092");
-    std::string topic_("test_kafka");
+    std::string broker_("kafka:9092");
+    std::string topic_("k4r.ext.fridge");
     return KafkaEventProducer(broker_, topic_);
 }
 
