@@ -25,10 +25,10 @@ get_increment([], Temp, Temp).
     % post_fridge_shelf_layers('fridge1').
 
 
-test('post facings') :-
-    init_fridge('fridge1', S, F),
-    gtrace,
-    pa4_db_client:post_fridge_facings("fridge1").
+% test('post facings') :-
+%     init_fridge('fridge1', S, F),
+%     gtrace,
+%     pa4_db_client:post_fridge_facings("fridge1").
 
 % test('loop') :-
 %     A = [2,3,4,5],
