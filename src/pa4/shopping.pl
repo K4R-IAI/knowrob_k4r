@@ -45,7 +45,7 @@
 
 init_fridge(StoreId, Store, Fridge) :-
     % StoreId, Store, Fridge
-    ((triple(Store, shop:hasShopId, StoreId),
+    ((triple(Store, shop:hasShopNumber, StoreId) -> true,
     print_message(warning, 'Store already exist'));
     (create_store(StoreId, Store, Fridge),
     % writeln('create fridge'),
@@ -57,10 +57,10 @@ init_fridge(StoreId, Store, Fridge) :-
 
 insert_all_items(StoreId, ItemList) :-
     get_store(StoreId, Store),
-    % writeln('insertttt'),
+    writeln('insertttt'),
     forall(member([[ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates], ItemList),
-        (insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, ItemInstance)
-        % writeln(ItemInstance)
+        (insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, ItemInstance),
+        writeln(ItemInstance)
     )).
 
 % ToDO -- If the item id already exists then just update the position
@@ -130,7 +130,7 @@ create_store(StoreId, Store, Fridge) :-
     has_type(Fridge, shop:'SmartFridge'),
     load_fridge_urdf_,
     tell([ instance_of(Store, shop:'Shop'),
-        triple(Store, shop:hasShopId, StoreId),
+        triple(Store, shop:hasShopNumber, StoreId),
         has_location(Fridge, Store)
         ]).
 
@@ -252,7 +252,7 @@ assert_object_pose_(StaticObject, UrdfObj, UrdfPose, D, W, H) :-
 user_login(UserId, DeviceId, Timestamp, StoreId) :-
     ((triple(User, shop:hasUserId, UserId) -> true,  % when there is no existing error, it throws an instantiation error
     print_message(info, 'User has already registered and has not logged out'));
-    (triple(Store, shop:hasShopId, StoreId),
+    (triple(Store, shop:hasShopNumber, StoreId),
     has_location(Fridge, Store),
     tell([is_action(ParentAct),
         has_participant(ParentAct, Fridge),
@@ -283,9 +283,8 @@ user_login(UserId, DeviceId, Timestamp, StoreId) :-
         has_type(Interval, dul:'TimeInterval'),
         has_time_interval(LoggingInAction, Interval)]),
         time_interval_tell(LoggingInAction, Timestamp, Timestamp),
-        writeln([Timestamp,UserId, StoreId]),
-        publish_log_in(Timestamp, [UserId, StoreId]))),
-        writeln("i am heree").
+        %writeln([Timestamp,UserId, StoreId]),
+        publish_log_in(Timestamp, [UserId, StoreId]))).
 
 
 pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
@@ -418,7 +417,7 @@ get_facing(ItemId, Facing) :-
     triple(Facing, shop:productInFacing, Item).
 
 get_store(StoreId, Store) :-
-    triple(Store, shop:hasShopId, StoreId).
+    triple(Store, shop:hasShopNumber, StoreId).
 
 get_items_in_fridge(StoreId, Items) :-
     %%%%
@@ -428,14 +427,15 @@ get_items_in_fridge(StoreId, Items) :-
     % Get all items in the facing
     get_store(StoreId, Store),
     holds(Fridge, dul:hasLocation, Store),
-    % writeln(['Store', Store]),
+    writeln(['Store', Store]),
     get_all_shelves_in_fridge(Fridge, Shelves),
-    % writeln(['Shelf', Shelves]),
+    writeln(['Shelf', Shelves]),
     get_all_layers_in_shelves(Shelves, Layers),
-    % writeln(['Layer', Layers]),
+    writeln(['Layer', Layers]),
     get_all_facings_in_layers(Layers, Facings),
-    % writeln(['F', Facings]),
-    get_all_items_in_fridge_facing(Facings, Items).
+    writeln(['F', Facings]),
+    get_all_items_in_fridge_facing(Facings, Items),
+    writeln(Items).
     
 
 get_all_shelves_in_fridge(Fridge, Shelves) :-
