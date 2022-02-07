@@ -20,7 +20,7 @@ public:
     ros::param::get("sandbox", sandbox);
     if (sandbox)
     {
-      this->link = GRAPHQL_URL + std::string(link_tail);
+      this->link = URL + std::string(link_tail);
       this->request.setOpt<curlpp::options::SslVerifyPeer>(VERIFY_PEER);
       this->request.setOpt(new curlpp::options::SslCertType(CERT_TYPE));
       std::string knowrob_k4r_path = ros::package::getPath("knowrob_k4r") + CERT_PATH;
@@ -29,7 +29,7 @@ public:
     }
     else
     {
-      this->link = GRAPHQL_URL + std::string(link_tail);
+      this->link = URL + std::string(link_tail);
       this->request.setOpt<curlpp::options::SslVerifyPeer>(VERIFY_PEER);
       this->request.setOpt(new curlpp::options::SslCertType(CERT_TYPE));
       std::string knowrob_k4r_path = ros::package::getPath("knowrob_k4r") + CERT_PATH;
