@@ -11,7 +11,6 @@
 :- use_foreign_library('libk4r_db_client.so').
 :- use_module(library('k4r_db/k4r_db_client')).
 :- use_module(library('shop_reasoner')).
-:- use_module(library('utils')).
 :- use_module(library('semweb/rdf_db'),
     [ rdf_split_url/3 ]).
 
@@ -49,7 +48,7 @@ post_fridge_shelf(StoreNumber) :-
     % writeln([ X1, Y1, Z1, W]),
     get_unit_id('meter', UnitId), % UnitId id 1 for meter
     ProductGroupId is 416, % manually added
-    post_shelf(StoreId, ProductGroupId, ["null", D,ShelfId,H ,W1, X1,Y1,Z1,X, Y,Z, W, UnitId], Shelf).
+    post_shelf(StoreId, ProductGroupId, ["null", D,ShelfId,H ,W1, X1,Y1,Z1,X, Y,Z, W, UnitId], _).
 
 
 post_fridge_shelf_layers(StoreNumber) :-
@@ -74,7 +73,7 @@ post_shelf_layers_of_shelf(ShelfId, UnitId, [Layer | Rest]) :-
     object_dimensions(Layer, D, W, H),
     writeln(['dim',D, W, H]),
     is_at(Layer, [_, T, _]),
-    writeln(['pose',T, R]),
+    % writeln(['pose',T, R]),
     [_,_,Z] = T,
     triple(Layer, shop:erpShelfLayerId, LayerId),
     post_shelf_layer(ShelfId, [D, LayerId, H, LayerId, Z, "null", W, UnitId], _),
@@ -120,7 +119,7 @@ post_items_in_shelf(Shelf, _) :-
 
 post_items_in_shelf(Shelf, PlatformShelfId) :-
     writeln("post_items_in_shelf"),
-    get_layer_and_facing_data(PlatformShelfId, Key{shelfLayers: [externalReferenceId], facings: [id, layerRelativePosition]}, LayersDict),
+    get_layer_and_facing_data(PlatformShelfId, _{shelfLayers: [externalReferenceId], facings: [id, layerRelativePosition]}, LayersDict),
     forall(member(LayerDict, LayersDict.shelfLayers),
         (atom_number(LayerDict.externalReferenceId, NumId),
         triple(Layer, shop:erpShelfLayerId, NumId),
