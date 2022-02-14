@@ -1,4 +1,5 @@
 :- use_module('pa4_db_client.pl').
+:- use_module('environment.pl').
 
 :- begin_tests('pa4_db_client').
 
@@ -34,5 +35,11 @@ get_increment([], Temp, Temp).
 %     A = [2,3,4,5],
 %     get_increment(A, [], B),
 %     writeln(B).
+
+test('get store data') :-
+    StoreNum is 4952,
+    gtrace,
+    get_store_param(Param),
+    get_store(StoreNum, Param, Store).
 
 :- end_tests('pa4_db_client').

@@ -3,6 +3,7 @@
             post_fridge_store/1,
             post_fridge_shelf/1,
             get_store_id/2,
+            get_store/3,
             post_fridge_shelf_layers/1,
             post_items_in_store/1
           ]).
@@ -11,7 +12,7 @@
 :- use_module(library('k4r_db/k4r_db_client')).
 :- use_module(library('shop_reasoner')).
 :- use_module(library('semweb/rdf_db'),
-	[ rdf_split_url/3 ]).
+    [ rdf_split_url/3 ]).
 
 :- rdf_db:rdf_register_ns(soma,
     'http://www.ease-crc.org/ont/SOMA.owl#', [keep(true)]).
@@ -199,10 +200,20 @@ list_to_string_(KeyList, KeyString) :-
     atom_string(KeyListConcat, KeyString).
 
 get_store_id(StoreNum, StoreId) :-
-    k4r_db_client:make_filter("storeNumber", "eq", StoreNum, "string", Filter),
-    string_concat("{stores", Filter, StoreFilter),
+    get_store_filter_("storeNumber", "eq", StoreNum, "string", StoreFilter),
     atomics_to_string([StoreFilter, "{", id, "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
     member(StoreDict, GraphQLResponse.stores),
     StoreId = StoreDict.id,
     writeln(['id', StoreId]).
+
+get_store(StoreNum, StoreParam, Store) :-
+    get_store_filter_("storeNumber", "eq", StoreNum, "string", StoreFilter),
+    list_to_string_(StoreParam, KeyParamStr),
+    atomics_to_string([StoreFilter, "{", KeyParamStr,  "}}"], Query),
+    get_graphql(GraphQLQuery, GraphQLResponse),
+    writeln(GraphQLResponse).
+
+get_store_filter_(Param, Op, Value, Type, StoreFilter) :-
+    k4r_db_client:make_filter(Param, Op, Value, Type, Filter),
+    string_concat("{stores", Filter, StoreFilter).
