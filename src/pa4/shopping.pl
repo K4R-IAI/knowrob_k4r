@@ -49,7 +49,18 @@ init_fridge(StoreId, Store, Fridge) :-
     print_message(warning, 'Store already exist'));
     (create_store(StoreId, Store, Fridge),
     % writeln('create fridge'),
-    % post_fridge_store(StoreId).
+    % post_fridge_store(["null", 
+    %     "addressCity test", 
+    %     "addressCountry test", 
+    %     "addressPostcode test", 
+    %     "addressState test", 
+    %     "addressStreet test", 
+    %     "addressStreetNumber test", 
+    %     "cadPlanId test",
+    %     21.1,
+    %     21.2,
+    %     "fridgepa4",
+    % StoreId], Store),
     once(shopping:assert_frame_properties(Fridge)),
     % writeln('create shelves'),
     once(shopping:assert_layer_properties(Fridge)))).

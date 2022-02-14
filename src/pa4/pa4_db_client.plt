@@ -37,8 +37,8 @@ get_increment([], Temp, Temp).
 %     writeln(B).
 
 test('get store data') :-
-    StoreNum is 4952,
-    gtrace,
+    StoreNum is 12034,
+    %gtrace,
     get_store_param(Param),
     get_store(StoreNum, Param, Store).
 

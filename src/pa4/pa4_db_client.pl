@@ -1,6 +1,6 @@
 :- module(pa4_db_client,
           [
-            post_fridge_store/1,
+            post_fridge_store/2,
             post_fridge_shelf/1,
             get_store_id/2,
             get_store/3,
@@ -11,6 +11,7 @@
 :- use_foreign_library('libk4r_db_client.so').
 :- use_module(library('k4r_db/k4r_db_client')).
 :- use_module(library('shop_reasoner')).
+:- use_module(library('utils')).
 :- use_module(library('semweb/rdf_db'),
     [ rdf_split_url/3 ]).
 
@@ -22,21 +23,8 @@
 
 
 %%% Fridge store number is 'fridge_1', name is "FridgePA4"
-post_fridge_store(StoreNumberInternal):-
-    post_store(
-        ["null", 
-        "addressCity test", 
-        "addressCountry test", 
-        "addressPostcode test", 
-        "addressState test", 
-        "addressStreet test", 
-        "addressStreetNumber test", 
-        "cadPlanId test",
-        21.1,
-        21.2,
-        "fridgepa4",
-        StoreNumberInternal], 
-        Store).
+post_fridge_store(StoreData, Store):-
+    post_store(StoreData, Store).
 
 post_fridge_shelf(StoreNumber) :-
     triple(Store, shop:hasShopNumber, StoreNumber), 
@@ -195,9 +183,6 @@ get_layer_and_facing_data(PlatformShelfId, KeyList, LayersDict) :- % test{shelfL
     % writeln(Layer.facings))
     % ).
 
-list_to_string_(KeyList, KeyString) :-
-    atomic_list_concat(KeyList, ',', KeyListConcat),
-    atom_string(KeyListConcat, KeyString).
 
 get_store_id(StoreNum, StoreId) :-
     get_store_filter_("storeNumber", "eq", StoreNum, "string", StoreFilter),
@@ -210,9 +195,10 @@ get_store_id(StoreNum, StoreId) :-
 get_store(StoreNum, StoreParam, Store) :-
     get_store_filter_("storeNumber", "eq", StoreNum, "string", StoreFilter),
     list_to_string_(StoreParam, KeyParamStr),
-    atomics_to_string([StoreFilter, "{", KeyParamStr,  "}}"], Query),
+    atomics_to_string([StoreFilter, "{", KeyParamStr,  "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
-    writeln(GraphQLResponse).
+    (GraphQLResponse.stores == [] -> Store = GraphQLResponse.stores;
+    member(Store, GraphQLResponse.stores)).
 
 get_store_filter_(Param, Op, Value, Type, StoreFilter) :-
     k4r_db_client:make_filter(Param, Op, Value, Type, Filter),
