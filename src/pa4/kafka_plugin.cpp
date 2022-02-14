@@ -31,7 +31,7 @@ PREDICATE(publish_log_in, 2)
     Json::Value event_data;
 
     event_data["eventType"] = "LOG_IN";
-    event_data["timestamp"] = convert_time((std::string)PL_A1);
+    event_data["timestamp"] = (std::string)PL_A1;
 
 
     Json::Value data;
@@ -55,7 +55,7 @@ PREDICATE(publish_log_out, 2)
     Json::Value event_data;
 
     event_data["eventType"] = "LOG_OUT";
-    event_data["timestamp"] = convert_time((std::string)PL_A1);
+    event_data["timestamp"] = (std::string)PL_A1;
 
     Json::Value data;
     PlTail data_list(PL_A2);
@@ -78,7 +78,7 @@ PREDICATE(publish_pick_event, 2)
     Json::Value event_data;
 
     event_data["eventType"] = "PRODUCT_REMOVED";
-    event_data["timestamp"] = convert_time((std::string)PL_A1);
+    event_data["timestamp"] = (std::string)PL_A1;
 
     Json::Value data;
     PlTail data_list(PL_A2);
@@ -105,7 +105,7 @@ PREDICATE(publish_put_back, 2)
     Json::Value event_data;
 
     event_data["eventType"] = "PRODUCT_RETURNED";
-    event_data["timestamp"] = convert_time((std::string)PL_A1);
+    event_data["timestamp"] = (std::string)PL_A1;
 
     Json::Value data;
     PlTail data_list(PL_A2);
