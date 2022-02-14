@@ -360,11 +360,12 @@ PREDICATE(post_shelf_layer, 3)
 const Json::Value facing_array_to_facing_json(const Json::Value &facing_array)
 {
   Json::Value facing_json;
-  if (facing_array.size() == 3)
+  if (facing_array.size() == 4)
   {
     facing_json["layerRelativePosition"] = facing_array[0];
     facing_json["noOfItemsDepth"] = facing_array[1];
     facing_json["noOfItemsWidth"] = facing_array[2];
+    facing_json["externalReferenceId"] = facing_array[3];
   }
   else
   {
@@ -373,7 +374,7 @@ const Json::Value facing_array_to_facing_json(const Json::Value &facing_array)
   return facing_json;
 }
 
-PREDICATE(post_facing, 3)
+PREDICATE(post_facing, 4)
 {
   std::string link_tail = "shelflayers/" + std::string(PL_A1) + "/facings/";
   DataController facing_controller(link_tail.c_str());
