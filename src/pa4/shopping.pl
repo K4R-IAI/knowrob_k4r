@@ -61,9 +61,11 @@ init_fridge(StoreId, Store, Fridge) :-
     %     21.2,
     %     "fridgepa4",
     % StoreId], Store),
-    once(shopping:assert_frame_properties(Fridge)),
+    % get_entity_id(Store, StorePlatformId),
+    once(shopping:assert_frame_properties(Fridge, StorePlatformId, Shelf)),
+    get_entity_id(Shelf, ShelfPlatformId),
     % writeln('create shelves'),
-    once(shopping:assert_layer_properties(Fridge)))).
+    once(shopping:assert_layer_properties(Fridge, ShelfPlatformId)))).
     % writeln('create layers').
 
 insert_all_items(StoreId, ItemList) :-
@@ -146,9 +148,10 @@ create_store(StoreId, Store, Fridge) :-
         ]).
 
 %% Create the physical rep with properties of the fridge
-assert_frame_properties(Fridge) :-
+assert_frame_properties(Fridge, StorePlatformId, ShelfPosted) :-
     triple(Fridge, soma:hasPhysicalComponent, Frame),
     has_type(Frame, shop:'ShelfFrame'),
+    triple(Frame, shop:erpShelfId, ExtRefId),
     % ShelfBase
     triple(Frame, soma:hasPhysicalComponent, ShelfBase),
     has_type(ShelfBase, shop:'ShelfBase'),
@@ -171,10 +174,12 @@ assert_frame_properties(Fridge) :-
     get_object_dimension_from_urdf_(ChildLinkBack, D1, W1, H1),
     assert_object_shape_(ShelfBack, D1, W1, H1, [0.5,0.5,0.5]),
     get_object_pose_from_urdf_(ChildLinkBack, Translation1, Rotation1, ParentName1),
-    assert_object_pose_(ShelfBack, ChildLinkBack, [ParentName1, Translation1,Rotation1], D1, W1, H1).
+    assert_object_pose_(ShelfBack, ChildLinkBack, [ParentName1, Translation1,Rotation1], D1, W1, H1),
+    is_at(ShelfBase, ['base_link', Tr2, R2]),
+    post_fridge_shelf(StorePlatformId, [H, W, D], Tr2, R2, ExtRefId, ShelfPosted).
     % tell(is_at(ShelfBack, [ParentName1, Translation1, Rotation1])).
 
-assert_layer_properties(Fridge) :-
+assert_layer_properties(Fridge, ShelfPlatformId) :-
     triple(Fridge, soma:hasPhysicalComponent, Frame),
     has_type(Frame, shop:'ShelfFrame'),
     triple(Frame, soma:hasPhysicalComponent, Layer),
@@ -184,8 +189,11 @@ assert_layer_properties(Fridge) :-
     assert_object_shape_(Layer, D, W, H, [0.5,0.5,0.5]),
     get_object_pose_from_urdf_(ChildLink, T1, R1, ParentName),
     assert_object_pose_(Layer, ChildLink, [ParentName, T1, R1], D, W, H),
-    assert_separator_properties(Layer),
-    assert_facing_properties(Layer),
+    is_at(Layer, [_, [_,_, Z], _]),
+    post_fridge_shelf_layer(ShelfPlatformId, [D, W, H], Z, LayerPosted),
+    get_entity_id(LayerPosted, LayerPlId),
+    %assert_separator_properties(Layer),
+    assert_facing_properties(Layer, LayerPlId),
     % tell(is_at(Layer, [ParentName, Translation, Rotation])),
     fail.
 
@@ -203,7 +211,7 @@ assert_separator_properties(Layer) :-
 
 assert_separator_properties(_).
 
-assert_facing_properties(Layer) :-
+assert_facing_properties(Layer, LayerPlId) :-
     triple(Facing, shop:layerOfFacing, Layer),
     has_type(Facing, shop:'ProductFacing'),
     get_child_link_(Facing, ChildLink),
@@ -211,9 +219,11 @@ assert_facing_properties(Layer) :-
     assert_object_shape_(Facing, D, W, H, [0.5,0.5,0.5]),
     get_object_pose_from_urdf_(ChildLink, T1, R1, ParentName),
     assert_object_pose_(Facing, ChildLink, [ParentName, T1, R1], D, W, H),
+    triple(Facing, shop:erpFacingId, LayerRelPos),
+    post_fridge_facing(LayerPlId, LayerRelPos),
     fail.
 
-assert_facing_properties(_).
+assert_facing_properties(_, _).
 
 get_child_link_(Object, Child) :-
     triple(Object, urdf:hasEndLinkName, Child).
@@ -306,6 +316,10 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
     get_item_position(ItemId, Facing),
     % writeln(["All good 3"]),
     triple(Facing, shop:erpFacingId, FacingExtId),
+    triple(Facing, shop:layerOfFacing, Layer),
+    triple(Layer, shop:erpShelfLayerId, LayerId),
+    triple(Shelf, soma:hasPhysicalComponent, Layer),
+    triple(Shelf, shop:erpShelfId, ShelfId),
     % get_facing_(Store, Position, Facing),
     % [_, _, FacingExtId] = Position,
     triple(User, shop:hasUserId, UserId),
@@ -317,6 +331,7 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
     has_participant(ShoppingAct, Basket),
     instance_of(Basket, shop:'ShopperBasket'),
     item_exists(ItemId, Item),
+    is_at(Item, [X, Y, _], _),
     % writeln(["All good 6"]),
     tell(
         [  
@@ -334,7 +349,7 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
         % Initialise the store and associate product types with facing
         tripledb_forget(Facing, shop:productInFacing, Item),
         % TODO: delete item in platform
-        % delete_item_platform(ItemId, FacingExtId),
+        delete_item_platform(FacingExtId, StoreId, LayerId, ShelfId, Gtin, [X, Y]),
         time_interval_tell(PickAct, Timestamp, Timestamp),
         publish_pick_event(Timestamp, [UserId, StoreId, Gtin]). % Not sure her if object type makes sense
 

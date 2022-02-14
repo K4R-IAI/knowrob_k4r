@@ -2,6 +2,7 @@
           [
             post_fridge_store/2,
             post_fridge_shelf/1,
+            post_fridge_shelf/6,
             get_store_id/2,
             get_store/3,
             post_fridge_shelf_layers/1,
@@ -50,6 +51,11 @@ post_fridge_shelf(StoreNumber) :-
     ProductGroupId is 416, % manually added
     post_shelf(StoreId, ProductGroupId, ["null", D,ShelfId,H ,W1, X1,Y1,Z1,X, Y,Z, W, UnitId], _).
 
+post_fridge_shelf(StorePlatformId, [H, W1, D], [X1, Y1, Z1], [X, Y, Z, W], ExtRefId, ShelfPosted) :-
+    get_unit_id('meter', UnitId), % UnitId id 1 for meter
+    ProductGroupId is 416, % manually added
+    post_shelf(StorePlatformId, ProductGroupId, ["null", D,ExtRefId,H ,W1, X1,Y1,Z1,X, Y,Z, W, UnitId], ShelfPosted).
+
 
 post_fridge_shelf_layers(StoreNumber) :-
     get_store_id(StoreNumber, StoreId),
@@ -61,10 +67,10 @@ post_fridge_shelf_layers(StoreNumber) :-
         (atom_number(ExtRefId, NumId),
         get_shelf_with_external_id(NumId, Shelf),
         get_layers_in_shelf(Shelf, Layers),
-        post_shelf_layers_of_shelf(ShelfId, UnitId, Layers))
+        post_shelf_layers_of_shelf_(ShelfId, UnitId, Layers))
     ).
 
-post_shelf_layers_of_shelf(ShelfId, UnitId, [Layer | Rest]) :-
+post_shelf_layers_of_shelf_(ShelfId, UnitId, [Layer | Rest]) :-
     % get associated shelf ids
     % 
     % triple(Shelf, soma:hasPhysicalComponent, Layer),
@@ -80,7 +86,11 @@ post_shelf_layers_of_shelf(ShelfId, UnitId, [Layer | Rest]) :-
     post_shelf_layers_of_shelf(ShelfId, UnitId, Rest).
 
 
-post_shelf_layers_of_shelf(_, _, []).
+post_shelf_layers_of_shelf_(_, _, []).
+
+post_fridge_shelf_layer(ShelfPlId, [D, W, H], ExtRefId, Z, LayerPosted) :-
+    get_unit_id('meter', UnitId),
+    post_shelf_layer(ShelfPlId, [D, ExtRefId, H, ExtRefId, Z, "null", W, UnitId], LayerPosted).
 
 post_fridge_facings(StoreNumber) :-
     get_store_id(StoreNumber, StoreId),
@@ -99,6 +109,12 @@ post_fridge_facings_of_layer([[LayerId, ExtId] | Rest]) :-
     post_fridge_facings_of_layer(Rest).
 
 post_fridge_facings_of_layer([]).
+
+post_fridge_facing(LayerPlId, ExtRefId) :-
+    get_number_of_items_in_facing(Facing, NoOfItemDepthFloat),
+    NoOfItemDepth is 1,
+    NoOfItemWidth is 1,
+    post_facing(LayerPlId, [ExtRefId, NoOfItemDepth, NoOfItemWidth, ExtRefId], _)
 
 post_items_in_store(StoreNumber) :-
     get_store_id(StoreNumber, StoreId),
@@ -163,6 +179,34 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
     k4r_db_client:get_entity_id(ItemGroup, ItemGroupId),
     post_item([ItemGroupId, X_mm, Y_mm, Z_mm], _),
     post_items_in_facing(Rest, ParentName, FacingPlatformId).
+
+delete_item_platform(FacingExtId, StoreId, LayerId, ShelfId, Gtin, [X, Y]).
+    % Queries
+%     {
+%   stores(filter: {id: {operator: "eq", value: "1034", type: "string"}}) {
+%     shelves(filter: {id: {operator: "eq", value: "1908", type: "string"}}){
+%       shelfLayers(filter: {id: {operator: "eq", value: "2700", type: "string"}})
+%       {
+%         facings(filter: {layerRelativePosition: {operator: "eq", value: "1", type: "string"}}) {
+%           id
+%           itemGroups {
+%             id
+%             productUnitId
+%           }
+%         }
+%       }
+%     }
+%   }
+% }
+% Get the position of the item
+% {
+%   items(filter: {itemGroupId: {operator: "eq", value: "1536", type: "string"}}){
+%     id
+%     positionInFacingX
+%     positionInFacingY
+%     positionInFacingZ
+%   } 
+% }
 
 
 get_layer_and_facing_data(PlatformShelfId, KeyList, LayersDict) :- % test{shelfLayers: [externalReferenceId], facings: [id, layerRelativePosition]}
