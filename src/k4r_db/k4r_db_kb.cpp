@@ -454,12 +454,13 @@ PREDICATE(put_item_group, 3)
 const Json::Value item_array_to_item_json(const Json::Value &item_array)
 {
   Json::Value item_json;
-  if (item_array.size() == 4)
+  if (item_array.size() == 5)
   {
     item_json["itemGroupId"] = item_array[0];
     item_json["positionInFacingX"] = item_array[1];
     item_json["positionInFacingY"] = item_array[2];
     item_json["positionInFacingZ"] = item_array[3];
+    item_json["externalReferenceId"] = item_array[4];
   }
   else
   {
