@@ -7,7 +7,8 @@
             get_store/3,
             post_fridge_shelf_layers/1,
             post_items_in_store/1,
-            delete_item_platform/6
+            delete_item_platform/6,
+            delete_item_and_update_itemgroup/1
           ]).
 
 :- use_foreign_library('libk4r_db_client.so').
@@ -233,16 +234,19 @@ delete_item_and_update_itemgroup(ExtItemId) :-
     member(ItemData, Response.items),
     ItemGroupId = ItemData.itemGroupId,
     delete_entity_from_id("items", ItemData.id),
+    %writeln('item group'),
     get_item_group_data(ItemGroupId, Data),
-    Stock = Data.stock - 1, 
-    % TODO : test the put predicate
-    put_item_group([Data.id, Data.productUnitId, Data.facingId, Stock], _).
+    %writeln(Data),
+    Stock is Data.stock - 1,
+    put_item_group([Data.facingId, Data.productUnitId, Stock], _, ItemGroupId).
 
 get_item_group_data(ItemGroupId, Data) :-
     get_filter_("{itemGroups","id", "eq", ItemGroupId, "string", ItemGroupFilter),
     atomics_to_string([ItemGroupFilter, "{", productUnitId, ",", facingId, ",", stock, "}}"], GraphQLQuery),
+    %writeln(["Query", GraphQLQuery]),
     get_graphql(GraphQLQuery, GraphQLResponse),
-    member(Data, GraphQLResponse.items).
+    %writeln(["Response", GraphQLResponse.itemGroups]),
+    member(Data, GraphQLResponse.itemGroups).
 
 get_layer_and_facing_data(PlatformShelfId, KeyList, LayersDict) :- % test{shelfLayers: [externalReferenceId], facings: [id, layerRelativePosition]}
     k4r_db_client:make_store_id_filter(PlatformShelfId, Filter),

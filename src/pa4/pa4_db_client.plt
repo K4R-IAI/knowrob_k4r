@@ -45,7 +45,7 @@ get_increment([], Temp, Temp).
     delete_entity_from_id('stores', StoreId). */
 
 test('get item data') :-
-    Gtin = "4010355341815",
-    delete_item_platform('fridge1', 1, 1, 1, Gtin, [500,500]).
+    gtrace,
+    delete_item_and_update_itemgroup("id4323").
 
 :- end_tests('pa4_db_client').
