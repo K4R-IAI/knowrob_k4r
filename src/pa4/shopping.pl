@@ -10,7 +10,7 @@
     [   
         init_fridge/3,
         create_store(+, -, -),
-        assert_frame_properties/1,
+        assert_frame_properties/3,
         assert_layer_properties/1,
         user_login(r, r, r, r),
         pick_object(r, r, r, r, r), %% how do we handle probability 
