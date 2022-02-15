@@ -410,6 +410,7 @@ const Json::Value item_group_array_to_item_group_json(const Json::Value &item_gr
   return item_group_json;
 }
 
+// post_item_group([FacingId, ProductUnitId, Stock], ItemGroup)
 PREDICATE(post_item_group, 2)
 {
   std::string link_tail = "itemgroups/";
@@ -418,6 +419,25 @@ PREDICATE(post_item_group, 2)
   std::stringstream out_data;
   Json::Value item_group = item_group_array_to_item_group_json(PlTerm_to_json(PL_A1));
   if (item_group_controller.post_data(item_group.toStyledString().c_str(), out_data))
+  {
+    PL_A2 = out_data.str().c_str();
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+// put_item_group([FacingId, ProductUnitId, Stock], ItemGroup, ItemGroupId)
+PREDICATE(put_item_group, 3)
+{
+  std::string link_tail = "itemgroups/";
+  DataController item_group_controller(link_tail.c_str());
+
+  std::stringstream out_data;
+  Json::Value item_group = item_group_array_to_item_group_json(PlTerm_to_json(PL_A1));
+  if (item_group_controller.put_data(item_group.toStyledString().c_str(), out_data, std::string(PL_A3)))
   {
     PL_A2 = out_data.str().c_str();
     return true;
