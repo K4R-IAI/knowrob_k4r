@@ -36,10 +36,16 @@ get_increment([], Temp, Temp).
 %     get_increment(A, [], B),
 %     writeln(B).
 
-test('get store data') :-
+/* test('get store data') :-
     StoreNum is 12034,
     %gtrace,
     get_store_param(Param),
-    get_store(StoreNum, Param, Store).
+    get_store(StoreNum, Param, Store),
+    get_store_id(StoreNum, StoreId),
+    delete_entity_from_id('stores', StoreId). */
+
+test('get item data') :-
+    Gtin = "4010355341815",
+    delete_item_platform('fridge1', 1, 1, 1, Gtin, [500,500]).
 
 :- end_tests('pa4_db_client').

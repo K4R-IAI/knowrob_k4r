@@ -6,7 +6,8 @@
             get_store_id/2,
             get_store/3,
             post_fridge_shelf_layers/1,
-            post_items_in_store/1
+            post_items_in_store/1,
+            delete_item_platform/6
           ]).
 
 :- use_foreign_library('libk4r_db_client.so').
@@ -114,7 +115,7 @@ post_fridge_facing(LayerPlId, ExtRefId) :-
     get_number_of_items_in_facing(Facing, NoOfItemDepthFloat),
     NoOfItemDepth is 1,
     NoOfItemWidth is 1,
-    post_facing(LayerPlId, [ExtRefId, NoOfItemDepth, NoOfItemWidth, ExtRefId], _)
+    post_facing(LayerPlId, [ExtRefId, NoOfItemDepth, NoOfItemWidth, ExtRefId], _).
 
 post_items_in_store(StoreNumber) :-
     get_store_id(StoreNumber, StoreId),
@@ -177,27 +178,44 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
 
     post_item_group([FacingPlatformId, ProductUnitId, 1], ItemGroup),
     k4r_db_client:get_entity_id(ItemGroup, ItemGroupId),
-    post_item([ItemGroupId, X_mm, Y_mm, Z_mm], _),
+    triple(Item, shop:hasItemId, ExtItemId),
+    post_item([ItemGroupId, X_mm, Y_mm, Z_mm, ExtItemId], _),
     post_items_in_facing(Rest, ParentName, FacingPlatformId).
 
-delete_item_platform(FacingExtId, StoreId, LayerId, ShelfId, Gtin, [X, Y]).
+% TODO : Use this to post the data without havign to loop through all
+delete_item_platform(StoreNum, LayerId, ShelfId, FacingExtId, Gtin, [X, Y]) :-
+    k4r_db_client:make_gtin_filter(Gtin, GtinFilter),
+    k4r_db_client:get_product_unit_data_with_filter(GtinFilter, [productUnitId], [ProductUnitId]),
+
+    get_filter_("{stores","storeNumber", "eq", StoreNum, "string", StoreFilter),
+    get_filter_("{shelves","externalReferenceId", "eq", ShelfId, "string", ShelfFilter),
+    get_filter_("{shelfLayers","externalReferenceId", "eq", LayerId, "string", LayerFilter),
+    get_filter_("{facings","layerRelativePosition", "eq", FacingExtId, "string", FacingFilter),
+    get_filter_("{itemGroups","productUnitId", "eq", ProductUnitId, "string", ItemGroupFilter),
+
+    atomics_to_string([StoreFilter, ShelfFilter, LayerFilter, FacingFilter, ItemGroupFilter, "{", id, ",", stock,"}}}}}}"], IdQuery),
+    get_graphql(IdQuery, IdResponse),
+    member(ItemGroupId, IdResponse.facings.itemGroups),
+    writeln(ItemGroupId),
+
+    get_filter_("{items","itemGroupId", "eq", ItemGroupId.id, "string", ItemFilter),
+    atomics_to_string([ItemFilter, "{", id, positionInFacingX, positionInFacingY, "}}}}}}"], ItemQuery). 
+
     % Queries
-%     {
-%   stores(filter: {id: {operator: "eq", value: "1034", type: "string"}}) {
-%     shelves(filter: {id: {operator: "eq", value: "1908", type: "string"}}){
-%       shelfLayers(filter: {id: {operator: "eq", value: "2700", type: "string"}})
-%       {
-%         facings(filter: {layerRelativePosition: {operator: "eq", value: "1", type: "string"}}) {
-%           id
-%           itemGroups {
-%             id
-%             productUnitId
-%           }
-%         }
-%       }
-%     }
-%   }
-% }
+/*     {
+        stores(filter: {id: {operator: "eq", value: "1034", type: "string"}}) {
+           shelves(filter: {id: {operator: "eq", value: "1908", type: "string"}}){
+             shelfLayers(filter: {id: {operator: "eq", value: "2700", type: "string"}})
+             {
+               facings(filter: {layerRelativePosition: {operator: "eq", value: "1", type: "string"}}) {
+                 itemGroups(filter: {productUnitId: {operator: "eq", value: "1388", type: "string"}}) {
+                   id         
+                }
+               }
+             }
+           }
+         }
+       } */
 % Get the position of the item
 % {
 %   items(filter: {itemGroupId: {operator: "eq", value: "1536", type: "string"}}){
@@ -208,6 +226,23 @@ delete_item_platform(FacingExtId, StoreId, LayerId, ShelfId, Gtin, [X, Y]).
 %   } 
 % }
 
+delete_item_and_update_itemgroup(ExtItemId) :-
+    get_filter_("{items","externalReferenceId", "eq", ExtItemId, "string", ItemFilter),
+    atomics_to_string([ItemFilter, "{", id, ",", itemGroupId, "}}"], GraphQLQuery),
+    get_graphql(GraphQLQuery, Response), 
+    member(ItemData, Response.items),
+    ItemGroupId = ItemData.itemGroupId,
+    delete_entity_from_id("items", ItemData.id),
+    get_item_group_data(ItemGroupId, Data),
+    Stock = Data.stock - 1, 
+    % TODO : test the put predicate
+    put_item_group([Data.id, Data.productUnitId, Data.facingId, Stock], _).
+
+get_item_group_data(ItemGroupId, Data) :-
+    get_filter_("{itemGroups","id", "eq", ItemGroupId, "string", ItemGroupFilter),
+    atomics_to_string([ItemGroupFilter, "{", productUnitId, ",", facingId, ",", stock, "}}"], GraphQLQuery),
+    get_graphql(GraphQLQuery, GraphQLResponse),
+    member(Data, GraphQLResponse.items).
 
 get_layer_and_facing_data(PlatformShelfId, KeyList, LayersDict) :- % test{shelfLayers: [externalReferenceId], facings: [id, layerRelativePosition]}
     k4r_db_client:make_store_id_filter(PlatformShelfId, Filter),
@@ -228,7 +263,7 @@ get_layer_and_facing_data(PlatformShelfId, KeyList, LayersDict) :- % test{shelfL
 
 
 get_store_id(StoreNum, StoreId) :-
-    get_store_filter_("storeNumber", "eq", StoreNum, "string", StoreFilter),
+    get_filter_("{stores","storeNumber", "eq", StoreNum, "string", StoreFilter),
     atomics_to_string([StoreFilter, "{", id, "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
     member(StoreDict, GraphQLResponse.stores),
@@ -236,13 +271,13 @@ get_store_id(StoreNum, StoreId) :-
     writeln(['id', StoreId]).
 
 get_store(StoreNum, StoreParam, Store) :-
-    get_store_filter_("storeNumber", "eq", StoreNum, "string", StoreFilter),
+    get_filter_("{stores", "storeNumber", "eq", StoreNum, "string", StoreFilter),
     list_to_string_(StoreParam, KeyParamStr),
     atomics_to_string([StoreFilter, "{", KeyParamStr,  "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
     (GraphQLResponse.stores == [] -> Store = GraphQLResponse.stores;
     member(Store, GraphQLResponse.stores)).
 
-get_store_filter_(Param, Op, Value, Type, StoreFilter) :-
+get_filter_(FieldName, Param, Op, Value, Type, CompleteFilter) :-
     k4r_db_client:make_filter(Param, Op, Value, Type, Filter),
-    string_concat("{stores", Filter, StoreFilter).
+    string_concat(FieldName, Filter, CompleteFilter).
