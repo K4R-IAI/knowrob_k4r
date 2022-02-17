@@ -70,10 +70,10 @@ init_fridge(StoreId, Store, Fridge) :-
 
 insert_all_items(StoreId, ItemList) :-
     get_store(StoreId, Store),
-    writeln('insertttt'),
+    %writeln('insertttt'),
     forall(member([[ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates], ItemList),
-        (insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, ItemInstance),
-        writeln(ItemInstance)
+        (insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, ItemInstance)
+        %writeln(ItemInstance)
     )).
 
 % ToDO -- If the item id already exists then just update the position
@@ -453,16 +453,15 @@ get_items_in_fridge(StoreId, Items) :-
     % Get all items in the facing
     get_store(StoreId, Store),
     holds(Fridge, dul:hasLocation, Store),
-    writeln(['Store', Store]),
+    %writeln(['Store', Store]),
     get_all_shelves_in_fridge(Fridge, Shelves),
-    writeln(['Shelf', Shelves]),
+    %writeln(['Shelf', Shelves]),
     get_all_layers_in_shelves(Shelves, Layers),
-    writeln(['Layer', Layers]),
+    %writeln(['Layer', Layers]),
     get_all_facings_in_layers(Layers, Facings),
-    writeln(['F', Facings]),
-    get_all_items_in_fridge_facing(Facings, Items),
-    writeln(Items).
-    
+    %writeln(['F', Facings]),
+    get_all_items_in_fridge_facing(Facings, Items).
+    %writeln(Items).
 
 get_all_shelves_in_fridge(Fridge, Shelves) :-
     findall(Shelf,
