@@ -1,12 +1,18 @@
 :- module(pa4_db_client,
           [
+            get_facing_id/2,
+            get_store_id/2,
+            get_store/3,
+            get_product_unit_id/2,
+            get_item_group_id/3,
             post_fridge_store/2,
             post_fridge_shelf/1,
             post_fridge_shelf/6,
-            get_store_id/2,
-            get_store/3,
             post_fridge_shelf_layers/1,
+            post_fridge_facing/3,
             post_items_in_store/1,
+            post_item_groups/3,
+            update_item_position_platform/2,
             delete_item_platform/6,
             delete_item_and_update_itemgroup/1
           ]).
@@ -112,11 +118,11 @@ post_fridge_facings_of_layer([[LayerId, ExtId] | Rest]) :-
 
 post_fridge_facings_of_layer([]).
 
-post_fridge_facing(LayerPlId, ExtRefId) :-
-    get_number_of_items_in_facing(Facing, NoOfItemDepthFloat),
+post_fridge_facing(LayerPlId, LayerRelPos, ExtRefId) :-
+    get_number_of_items_in_facing(Facing, Count),
     NoOfItemDepth is 1,
     NoOfItemWidth is 1,
-    post_facing(LayerPlId, [ExtRefId, NoOfItemDepth, NoOfItemWidth, ExtRefId], _).
+    post_facing(LayerPlId, [LayerRelPos, Count, NoOfItemWidth, ExtRefId], _).
 
 post_items_in_store(StoreNumber) :-
     get_store_id(StoreNumber, StoreId),
@@ -168,8 +174,7 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
     writeln(["Items", Item]),
     has_type(Item, Product),
     get_product_gtin(Product, Gtin),
-    k4r_db_client:make_gtin_filter(Gtin, GtinFilter),
-    k4r_db_client:get_product_unit_data_with_filter(GtinFilter, [productUnitId], [ProductUnitId]),
+    get_product_unit_id(Gtin, ProductGroupId),
     writeln(["PUnitId", ProductUnitId]),
     % TODO : Enable the count
     %shop_reasoner:get_number_of_items_in_facing(Facing, NoOfItems),
@@ -185,8 +190,7 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
 
 % TODO : Use this to post the data without havign to loop through all
 delete_item_platform(StoreNum, LayerId, ShelfId, FacingExtId, Gtin, [X, Y]) :-
-    k4r_db_client:make_gtin_filter(Gtin, GtinFilter),
-    k4r_db_client:get_product_unit_data_with_filter(GtinFilter, [productUnitId], [ProductUnitId]),
+    get_product_unit_id(Gtin, ProductGroupId),
 
     get_filter_("{stores","storeNumber", "eq", StoreNum, "string", StoreFilter),
     get_filter_("{shelves","externalReferenceId", "eq", ShelfId, "string", ShelfFilter),
@@ -227,6 +231,16 @@ delete_item_platform(StoreNum, LayerId, ShelfId, FacingExtId, Gtin, [X, Y]) :-
 %   } 
 % }
 
+update_item_position_platform(ExtItemId, [X, Y, 0]) :-
+    get_filter_("{items","externalReferenceId", "eq", ExtItemId, "string", ItemFilter),
+    get_item_param(Fields),
+    list_to_string(Fields, FieldsStr),
+    atomics_to_string([ItemFilter, "{", FieldsStr, "}}"], GraphQLQuery),
+    writeln(GraphQLQuery),
+    get_graphql(GraphQLQuery, Response),
+    member(ItemData, Response.items),
+    put_item([ItemData.itemGroupId, X, Y, ItemData.positionInFacingZ, ExtItemId], _, ItemData.id).
+
 delete_item_and_update_itemgroup(ExtItemId) :-
     get_filter_("{items","externalReferenceId", "eq", ExtItemId, "string", ItemFilter),
     atomics_to_string([ItemFilter, "{", id, ",", itemGroupId, "}}"], GraphQLQuery),
@@ -265,6 +279,28 @@ get_layer_and_facing_data(PlatformShelfId, KeyList, LayersDict) :- % test{shelfL
     % writeln(Layer.facings))
     % ).
 
+get_item_group_id(FacingId, ProductUnitId, ItemGrpId) :-
+    get_filter_("{facings","id", "eq", FacingId, "string", FacingFilter),
+    get_filter_("{itemGroups","productUnitId", "eq", ProductUnitId, "string", ItemGroupFilter),
+    atomics_to_string([FacingFilter, ItemGroupFilter, "{", id, "}}}"], IdQuery),
+    get_graphql(IdQuery, IdResponse),
+    writeln(IdResponse.facings),
+    member(ItemGrpList, IdResponse.facings),
+    member(ItemGrp, ItemGrpList.itemGroups),
+    ItemGrpId = ItemGrp.id.
+
+get_product_unit_id(Gtin, ProductUnitId) :-
+    k4r_db_client:make_gtin_filter(Gtin, GtinFilter),
+    k4r_db_client:get_product_unit_data_with_filter(GtinFilter, [productUnitId], [ProductUnitId]).
+
+get_facing_id([StoreNum, ShelfExt, LayerExt, FacingExt], FacingId):-
+    get_filter_("{stores","storeNumber", "eq", StoreNum, "string", StoreFilter),
+    get_filter_("{shelves","externalReferenceId", "eq", ShelfId, "string", ShelfFilter),
+    get_filter_("{shelfLayers","externalReferenceId", "eq", LayerId, "string", LayerFilter),
+    get_filter_("{facings","layerRelativePosition", "eq", FacingExtId, "string", FacingFilter),
+    atomics_to_string([StoreFilter, ShelfFilter, LayerFilter, FacingFilter, "{", id, "}}}}}"], IdQuery),
+    get_graphql(IdQuery, IdResponse),
+    member(FacingId, IdResponse.facings).  
 
 get_store_id(StoreNum, StoreId) :-
     get_filter_("{stores","storeNumber", "eq", StoreNum, "string", StoreFilter),
@@ -285,3 +321,13 @@ get_store(StoreNum, StoreParam, Store) :-
 get_filter_(FieldName, Param, Op, Value, Type, CompleteFilter) :-
     k4r_db_client:make_filter(Param, Op, Value, Type, Filter),
     string_concat(FieldName, Filter, CompleteFilter).
+
+get_item_param(ItemFields) :-
+    ItemFields = [
+        id,
+        itemGroupId,
+        externalReferenceId,
+        positionInFacingX,
+        positionInFacingY,
+        positionInFacingZ
+    ].
