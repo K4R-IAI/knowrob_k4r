@@ -449,6 +449,8 @@ PREDICATE(put_item_group, 3)
   }
 }
 
+
+
 // Item
 
 const Json::Value item_array_to_item_json(const Json::Value &item_array)
@@ -477,6 +479,25 @@ PREDICATE(post_item, 2)
   std::stringstream out_data;
   Json::Value item = item_array_to_item_json(PlTerm_to_json(PL_A1));
   if (item_controller.post_data(item.toStyledString().c_str(), out_data))
+  {
+    PL_A2 = out_data.str().c_str();
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+// Data, Item, ItemId
+PREDICATE(put_item, 3)
+{
+  std::string link_tail = "items/";
+  DataController item_controller(link_tail.c_str());
+
+  std::stringstream out_data;
+  Json::Value item = item_array_to_item_json(PlTerm_to_json(PL_A1));
+  if (item_controller.put_data(item.toStyledString().c_str(), out_data, std::string(PL_A3)))
   {
     PL_A2 = out_data.str().c_str();
     return true;
