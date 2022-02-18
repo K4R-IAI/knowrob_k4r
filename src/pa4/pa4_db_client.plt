@@ -44,8 +44,13 @@ get_increment([], Temp, Temp).
     get_store_id(StoreNum, StoreId),
     delete_entity_from_id('stores', StoreId). */
 
-test('get item data') :-
-    gtrace,
-    delete_item_and_update_itemgroup("id4323").
+test('get item group id') :-
+    get_item_group_id("9795", "1388", Id).
+
+test('update item data') :-
+    update_item_position_platform("id1234", [450, 550, 0]).
+
+/* test('get item data') :-
+    delete_item_and_update_itemgroup("id4323"). */
 
 :- end_tests('pa4_db_client').
