@@ -18,7 +18,7 @@
         put_back_object/7,
         items_bought(r, ?),
         insert_all_items(+,+),
-        insert_item(+,+,+,+,+,-),
+        insert_item(+,+,+,+,+,+,-),
         get_items_in_fridge/2,
         get_user/2,
         get_facing/2
@@ -32,6 +32,7 @@
 :- use_module(library('model/DUL/Event')).
 :- use_module(library('model/SOMA/EXT')).
 :- use_module(library('ros/urdf/URDF')).
+:- use_module(library('shop_reasoner')).
 
 :- use_module(library('ros/tf/tf_plugin'), 
                 [tf_get_pose/4, tf_set_pose/3]).
@@ -46,8 +47,10 @@
 init_fridge(StoreId, Store, Fridge) :-
     % StoreId, Store, Fridge
     ((triple(Store, shop:hasShopNumber, StoreId) -> true,
-    print_message(warning, 'Store already exist'));
-    (create_store(StoreId, Store, Fridge),
+    print_message(warning, 'Store already exist in Knowrob'));
+    (create_store(StoreNumber, StoreName, Country, State, City, [Street, StreetNum, PostCode, Additional], [Latitude, Longitude], Store),
+    has_type(Fridge, shop:'SmartFridge'),
+    load_fridge_urdf_,
     % writeln('create fridge'),
     % post_fridge_store(["null", 
     %     "addressCity test", 
@@ -72,14 +75,16 @@ insert_all_items(StoreId, ItemList) :-
     get_store(StoreId, Store),
     %writeln('insertttt'),
     forall(member([[ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates], ItemList),
-        (insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, ItemInstance)
+        (insert_item(Store, StoreId, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, ItemInstance)
         %writeln(ItemInstance)
     )).
 
 % ToDO -- If the item id already exists then just update the position
-insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordinates, ItemInstance):- % Coordinates - [x,y] is fine
+insert_item(Store, StoreId, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordinates, ItemInstance):- % Coordinates - [x,y] is fine
     % writeln(['ITemsss', Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordinates]),
     % check if item exists
+    get_facing_id([StoreId, ShelfExt, ShelfLayerExt, FacingExt], PlatformFacingId),
+    get_product_unit_id(Gtin, ProductUnitId),
     ( item_exists(ExtItemId, ItemInstance),
     update_item_position(Store, ItemInstance, ExtItemId, [ShelfExt, ShelfLayerExt, FacingExt], Coordinates)
     );
@@ -99,17 +104,22 @@ insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordi
     rdf_split_url(_,ParentFrame,Facing),
     tell(is_at(ItemInstance, [ParentFrame, [X,Y,0],[0,0,0,1]])),
     tell(triple(ItemInstance, shop:hasItemId, ExtItemId)),
+
+    (get_item_group_id(PlatformFacingId, ProductUnitId, ItemGrpId);
+    ( post_item_group([PlatformFacingId, ProductUnitId, 1], ItemGroup),
+    k4r_db_client:get_entity_id(ItemGroup, ItemGrpId))),
+    post_item(ItemGrpId, [X, Y, Z], ExtItemId),
     % ]),
     % insert_item_platform(ExtItemId, Gtin, FacingExtId),
     shop:belief_new_object(Product, ItemInstance)).
 
 
 update_item_position(Store, ItemInstance, ExtItemId, [ShelfExt, ShelfLayerExt, FacingExt], [X, Y]) :-
-    (   item_exists(ExtItemId, ItemInstance),
+        item_exists(ExtItemId, ItemInstance),
         get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
         tell(triple(Facing, shop:productInFacing, ItemInstance)),
-        tell(is_at(ItemInstance, [Facing, [X,Y,0],[0,0,0,1]]))
-    ).
+        tell(is_at(ItemInstance, [Facing, [X,Y,0],[0,0,0,1]])),
+        update_item_position_platform(ExtItemId, [X, Y, 0]).
     % update_item_platform(ExtItemId, Gtin, FacingExtId),
     %insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, [X, Y], ItemInstance).
 
@@ -118,12 +128,15 @@ item_exists(ExtItemId, Item) :-
     triple(Item, shop:hasItemId, ExtItemId).
 
 
-get_product_class(Gtin, Product) :-
+/* get_product_class(Gtin, Product) :-
     triple(ArticleNumber, shop:gtin, Gtin),
     has_type(Desc, owl:'Restriction'), 
     has_description(Desc,value(shop:articleNumberOfProduct,ArticleNumber)),
-    subclass_of(Product, Desc).
+    subclass_of(Product, Desc). */
     % transitive(subclass_of(Product, shop:'Product')).
+
+get_product_class(Gtin, Product) :-
+    get_product_type(Gtin, Product).
 
 get_product_class(EAN, Product) :-
     atomic_list_concat([ 'PREFIX product_cat: <http://purl.org/goodrelations/v1#>', 
@@ -219,8 +232,10 @@ assert_facing_properties(Layer, LayerPlId) :-
     assert_object_shape_(Facing, D, W, H, [0.5,0.5,0.5]),
     get_object_pose_from_urdf_(ChildLink, T1, R1, ParentName),
     assert_object_pose_(Facing, ChildLink, [ParentName, T1, R1], D, W, H),
-    triple(Facing, shop:erpFacingId, LayerRelPos),
-    post_fridge_facing(LayerPlId, LayerRelPos),
+    triple(Facing, shop:erpFacingId, ExtRefId),
+    rdf_split_url(_,ParentFrame,Layer),
+    is_at(Facing, [ParentFrame, [LayerRelPos, _, _], _]),
+    post_fridge_facing(LayerPlId, LayerRelPos, ExtRefId),
     fail.
 
 assert_facing_properties(_, _).
@@ -332,6 +347,7 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
     instance_of(Basket, shop:'ShopperBasket'),
     item_exists(ItemId, Item),
     is_at(Item, [X, Y, _], _),
+    triple(Item, shop:hasItemId, ExtItemId),
     % writeln(["All good 6"]),
     tell(
         [  
@@ -349,9 +365,9 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
         % Initialise the store and associate product types with facing
         tripledb_forget(Facing, shop:productInFacing, Item),
         % TODO: delete item in platform
-        delete_item_platform(FacingExtId, StoreId, LayerId, ShelfId, Gtin, [X, Y]),
+        delete_item_and_update_itemgroup(ExtItemId),
         time_interval_tell(PickAct, Timestamp, Timestamp),
-        publish_pick_event(Timestamp, [UserId, StoreId, Gtin]). % Not sure her if object type makes sense
+        publish_pick_event(Timestamp, [UserId, StoreId, Gtin]). % Not sure here if object type makes sense
 
 put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Position) :-
     get_store(StoreId, Store),
@@ -382,7 +398,8 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
         ]),
         % TODO : Add item to a facing in platform
         % insert_item_platform(ExtItemId, Gtin, FacingExtId),
-        insert_item(Store, Position, ExtItemId, Gtin, Coordinates, _),
+        triple(Store, shop:hasShopNumber, StoreId),
+        insert_item(Store, StoreId, Position, ExtItemId, Gtin, Coordinates, _),
         triple(Item, shop:hasItemId, ExtItemId),
         tripledb_forget(Basket, soma:containsObject, Item),
         time_interval_tell(PutAct, Timestamp, Timestamp),
