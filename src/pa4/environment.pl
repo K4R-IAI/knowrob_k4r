@@ -7,7 +7,9 @@
 
 :- module( environment,
     [ create_store/8,
-    get_store_param/1
+    create_store_from_platfrom/2,
+    get_store_param/1,
+    get_shelf_param/1
     ]
     ).
 
@@ -30,23 +32,25 @@
     %latitude,
     %longitude]
 
-create_store(StoreNumber, StoreName, Country, State, City, [Street, StreetNum, PostCode, Additional], [Latitude, Longitude], Store) :-
+create_store_from_platfrom(StoreNumber, Store):-
     (var(StoreNumber) -> 
         print_message(warning, 'Provide a suitable store number'));
     (get_store_param(Param),
     get_store(StoreNumber, Param, PlatformStore),
     ((is_list_empty_(PlatformStore) -> 
-    print_message(info, 'Not present'),
-    % Add to create a new store internally
-    create_store_(StoreNumber, StoreName, Country, State, City, [Street, StreetNum, PostCode, Additional], [Latitude, Longitude], Fridge, Store),
-    % post to platform
-    post_fridge_store([Additional, City, Country, PostCode, State, Street, StreetNum, "", Latitude, Longitude, StoreName,StoreNumber], StoreEntity)
-    );
+    print_message(info, 'Store not in platform'));
     (AddressValue = [StoreData.addressStreet, StoreData.addressStreetNumber, StoreData.addressPostcode, StoreData.addressAdditional],
     GeoCoo  = [StoreData.latitude, StoreData.longitude],
     create_store_(StoreNumber, StoreData.storeName, StoreData.addressCountry, StoreData.addressState, StoreData.addressCity, AddressValue, GeoCoo, Fridge, Store),
     print_message(info, 'Store exists in the platform')))).
 
+create_store(StoreNumber, StoreName, Country, State, City, [Street, StreetNum, PostCode, Additional], [Latitude, Longitude], Store) :-
+    (var(StoreNumber) -> 
+        print_message(warning, 'Provide a suitable store number'));
+    % Add to create a new store internally
+    (create_store_(StoreNumber, StoreName, Country, State, City, [Street, StreetNum, PostCode, Additional], [Latitude, Longitude], Fridge, Store),
+    % post to platform
+    post_fridge_store([Additional, City, Country, PostCode, State, Street, StreetNum, "", Latitude, Longitude, StoreName,StoreNumber], _)).
 
 
 create_store_(StoreNumber, StoreName, Country, State, City, AddressValue, GeoCoordinates, Fridge, Store) :-
@@ -76,9 +80,29 @@ create_store_(StoreNumber, StoreName, Country, State, City, AddressValue, GeoCoo
     ignore(tell(triple(AddressRegion, shop:hasAddressValue, AddStr))).
 
 
-is_list_empty_([]).
+assert_shelf_platform(Fridge, [Shelf | Rest]) :-
+    atom_number(Shelf.externalReferenceId, ExtRefId),
+    convert_to_m(Shelf.lengthUnitId, Shelf.positionX, X),
+    convert_to_m(Shelf.lengthUnitId, Shelf.positionY, Y),
+    convert_to_m(Shelf.lengthUnitId, Shelf.positionZ, Z),
+    convert_to_m(Shelf.lengthUnitId, Shelf.orientationX, X1),
+    convert_to_m(Shelf.lengthUnitId, Shelf.orientationY, Y1),
+    convert_to_m(Shelf.lengthUnitId, Shelf.orientationZ, Z1),
+    convert_to_m(Shelf.lengthUnitId, Shelf.orientationW, W1),
+    convert_to_m(Shelf.lengthUnitId, Shelf.depth, D),
+    convert_to_m(Shelf.lengthUnitId, Shelf.width, W),
+    convert_to_m(Shelf.lengthUnitId, Shelf.height, H),
+    tell([ has_type(Frame, shop:'ShelfFrame'),
+        triple(Fridge, soma:hasPhysicalComponent, Frame),
+        triple(Frame, shop:erpShelfId, ExtRefId),
+        is_at(Frame, ['map', [X, Y, Z],[X1, Y1, Z1, W1]]),
+        object_dimensions(Frame, D, W, H)]),
+    triple(Frame, soma:hasShape, Shape),
+    triple(Shape, dul:hasRegion, ShapeRegion),
+    ignore(tell(triple(ShapeRegion, soma:hasFilePath, Shelf.cadPlanId))),
+    assert_shelf_platform(Fridge, Rest).
 
-is_string_empty_("").
+assert_shelf_platform(_, []).
 
 get_store_param(StoreParam) :-
     StoreParam = [ storeName,
@@ -91,4 +115,35 @@ get_store_param(StoreParam) :-
     addressAdditional,
     latitude,
     longitude].
+
+get_shelf_param(ShelfParam) :-
+    ShelfParam = [
+        positionX,
+        positionY,
+        positionZ,
+        orientationX,
+        orientationY,
+        orientationZ,
+        orientationW,
+        width,
+        height,
+        depth,
+        lengthUnitId, % 1 for m, 2 for mm, 3 for cm
+        cadPlanId, % cad model path?
+        externalReferenceId
+    ].
+
+get_later_param(LayerParam) :-
+    LayerParam = [
+        id,
+        shelfId,
+        level,
+        type,
+        positionZ,
+        width,
+        height,
+        depth,
+        lengthUnitId,
+        externalReferenceId
+    ].
     

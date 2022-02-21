@@ -48,7 +48,7 @@ init_fridge(StoreId, Store, Fridge) :-
     % StoreId, Store, Fridge
     ((triple(Store, shop:hasShopNumber, StoreId) -> true,
     print_message(warning, 'Store already exist in Knowrob'));
-    (create_store(StoreNumber, StoreName, Country, State, City, [Street, StreetNum, PostCode, Additional], [Latitude, Longitude], Store),
+    (assert_store(StoreId, Store),
     has_type(Fridge, shop:'SmartFridge'),
     load_fridge_urdf_,
     % writeln('create fridge'),
@@ -70,6 +70,9 @@ init_fridge(StoreId, Store, Fridge) :-
     % writeln('create shelves'),
     once(shopping:assert_layer_properties(Fridge, ShelfPlatformId)))).
     % writeln('create layers').
+
+assert_store(StoreId, Store) :-
+    create_store_from_platfrom(StoreId, Store).
 
 insert_all_items(StoreId, ItemList) :-
     get_store(StoreId, Store),
@@ -162,7 +165,11 @@ create_store(StoreId, Store, Fridge) :-
 
 %% Create the physical rep with properties of the fridge
 assert_frame_properties(Fridge, StorePlatformId, ShelfPosted) :-
-    triple(Fridge, soma:hasPhysicalComponent, Frame),
+    get_shelf_param(ShelfParam),
+    get_all_shelf_data(StorePlatformId, ShelfParam, ShelfData),
+    (\+ is_list_empty_(ShelfData) ->
+    assert_shelf_platform(ShelfData));
+    (triple(Fridge, soma:hasPhysicalComponent, Frame),
     has_type(Frame, shop:'ShelfFrame'),
     triple(Frame, shop:erpShelfId, ExtRefId),
     % ShelfBase
@@ -189,7 +196,7 @@ assert_frame_properties(Fridge, StorePlatformId, ShelfPosted) :-
     get_object_pose_from_urdf_(ChildLinkBack, Translation1, Rotation1, ParentName1),
     assert_object_pose_(ShelfBack, ChildLinkBack, [ParentName1, Translation1,Rotation1], D1, W1, H1),
     is_at(ShelfBase, ['base_link', Tr2, R2]),
-    post_fridge_shelf(StorePlatformId, [H, W, D], Tr2, R2, ExtRefId, ShelfPosted).
+    post_fridge_shelf(StorePlatformId, [H, W, D], Tr2, R2, ExtRefId, ShelfPosted)).
     % tell(is_at(ShelfBack, [ParentName1, Translation1, Rotation1])).
 
 assert_layer_properties(Fridge, ShelfPlatformId) :-
