@@ -5,13 +5,13 @@
             get_store/3,
             get_product_unit_id/2,
             get_item_group_id/3,
+            get_all_shelf_data/3,
             post_fridge_store/2,
             post_fridge_shelf/1,
             post_fridge_shelf/6,
             post_fridge_shelf_layers/1,
             post_fridge_facing/3,
             post_items_in_store/1,
-            post_item_groups/3,
             update_item_position_platform/2,
             delete_item_platform/6,
             delete_item_and_update_itemgroup/1
@@ -317,6 +317,15 @@ get_store(StoreNum, StoreParam, Store) :-
     get_graphql(GraphQLQuery, GraphQLResponse),
     (GraphQLResponse.stores == [] -> Store = GraphQLResponse.stores;
     member(Store, GraphQLResponse.stores)).
+
+get_all_shelf_data(StorePlatformId, ShelfParam, ShelfData) :-
+    get_filter_("{shelves", "storeId", "eq", StorePlatformId, "string", ShelfFilter),
+    list_to_string(ShelfParam, KeyParamStr),
+    atomics_to_string([ShelfFilter, "{", KeyParamStr,  "}}"], GraphQLQuery),
+    get_graphql(GraphQLQuery, GraphQLResponse),
+    writeln(GraphQLResponse),
+    (GraphQLResponse.shelves == [] ->  ShelfData = GraphQLResponse.shelves;
+    ShelfData = GraphQLResponse.shelves).
 
 get_filter_(FieldName, Param, Op, Value, Type, CompleteFilter) :-
     k4r_db_client:make_filter(Param, Op, Value, Type, Filter),
