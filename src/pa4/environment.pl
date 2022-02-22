@@ -79,9 +79,12 @@ create_store_(StoreNumber, StoreName, Country, State, City, AddressValue, GeoCoo
     ignore(tell(triple(CoordRegion, shop:hasGeometricCoordinateValue, GeoString))),
     ignore(tell(triple(AddressRegion, shop:hasAddressValue, AddStr))).
 
+assert_shelf_platform(Fridge, ShelfData, Ids) :-
+    assert_shelf_platform(Fridge, ShelfData, [], Ids).
 
-assert_shelf_platform(Fridge, [Shelf | Rest]) :-
+assert_shelf_platform(Fridge, [Shelf | Rest], Temp, ShelfIds) :-
     atom_number(Shelf.externalReferenceId, ExtRefId),
+    Temp1 = [Temp, Sheld.id],
     convert_to_m(Shelf.lengthUnitId, Shelf.positionX, X),
     convert_to_m(Shelf.lengthUnitId, Shelf.positionY, Y),
     convert_to_m(Shelf.lengthUnitId, Shelf.positionZ, Z),
@@ -100,9 +103,9 @@ assert_shelf_platform(Fridge, [Shelf | Rest]) :-
     triple(Frame, soma:hasShape, Shape),
     triple(Shape, dul:hasRegion, ShapeRegion),
     ignore(tell(triple(ShapeRegion, soma:hasFilePath, Shelf.cadPlanId))),
-    assert_shelf_platform(Fridge, Rest).
+    assert_shelf_platform(Fridge, Rest, Temp1, ShelfIds).
 
-assert_shelf_platform(_, []).
+assert_shelf_platform(_, [], Temp, Temp).
 
 get_store_param(StoreParam) :-
     StoreParam = [ storeName,
@@ -118,6 +121,7 @@ get_store_param(StoreParam) :-
 
 get_shelf_param(ShelfParam) :-
     ShelfParam = [
+        id,
         positionX,
         positionY,
         positionZ,
