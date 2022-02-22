@@ -9,7 +9,8 @@
     [ create_store/8,
     create_store_from_platfrom/2,
     get_store_param/1,
-    get_shelf_param/1
+    get_shelf_param/1,
+    get_layer_param/1
     ]
     ).
 
@@ -103,9 +104,15 @@ assert_shelf_platform(Fridge, [Shelf | Rest], Temp, ShelfIds) :-
     triple(Frame, soma:hasShape, Shape),
     triple(Shape, dul:hasRegion, ShapeRegion),
     ignore(tell(triple(ShapeRegion, soma:hasFilePath, Shelf.cadPlanId))),
+    assert_layer_platform(ShelfId, ExtRefId),
     assert_shelf_platform(Fridge, Rest, Temp1, ShelfIds).
 
 assert_shelf_platform(_, [], Temp, Temp).
+
+assert_layer_platform(ShelfId, ExtRefId) :-
+    get_all_layers(ShelfId, LayerData),
+    assert_layers_platform(ShelfId, LayerList, ShalfLayerId).
+
 
 get_store_param(StoreParam) :-
     StoreParam = [ storeName,
@@ -137,7 +144,7 @@ get_shelf_param(ShelfParam) :-
         externalReferenceId
     ].
 
-get_later_param(LayerParam) :-
+get_layer_param(LayerParam) :-
     LayerParam = [
         id,
         shelfId,

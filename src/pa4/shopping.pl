@@ -73,11 +73,6 @@ init_fridge(StoreId, Store, Fridge) :-
     % get_entity_id(Store, StorePlatformId),
     once(shopping:assert_frame_properties(Fridge, StorePlatformId, ShelfPlatformId)),
     % writeln('create shelves'),
-    %% TODO : get layer data and assert layer platform
-    get_layer_param(Param),
-    get_all_layer_data(ShelfPlatformId, Param, LayerData),
-    (\+ is_list_empty_(LayerData) ->
-    assert_layer_platform(Fridge, LayerData, LayerPlIds));
     once(shopping:assert_layer_properties(Fridge, ShelfPlatformId)))).
     % writeln('create layers').
 
@@ -366,7 +361,8 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
     has_participant(ShoppingAct, Basket),
     instance_of(Basket, shop:'ShopperBasket'),
     item_exists(ItemId, Item),
-    is_at(Item, [X, Y, _], _),
+    rdf_split_url(_,ParentFrame,Facing),
+    is_at(Item, [ParentFrame, [X, Y, _], _]),
     triple(Item, shop:hasItemId, ExtItemId),
     % writeln(["All good 6"]),
     tell(
