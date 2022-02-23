@@ -53,7 +53,33 @@ test('update item data') :-
 test('get shelf data') :-
     get_shelf_param(Param),
     get_all_shelf_data("1034", Param, ShelfData).
-/* test('get item data') :-
-    delete_item_and_update_itemgroup("id4323"). */
+
+test('get item data') :- % 692
+    get_all_items("1536", ItemData),
+    writeln(ItemData).
+
+test('get item grps data') :- % 1536, 1537
+    get_all_item_groups("9795", ItemData),
+    forall(member(Item, ItemData),
+        writeln(Item.id)).
+
+test('get facing data') :- % 9795, 9796, 9797
+    get_all_facings_platform("2700", Data),
+    forall(member(F, Data),
+        writeln(F.id)).
+
+test('get all layers') :- % 2699, 2700
+    get_all_layers_platform("1908",Data),
+    forall(member(F, Data),
+        writeln(F.id)).
+
+test('get gtin') :-
+    get_gtin("806", Gtin),
+    writeln(Gtin).
+
+test('get dimension') :-
+    gtrace,
+    get_product_dimenion_platform("806", D, W, H),
+    writeln([D, W, H]).
 
 :- end_tests('pa4_db_client').

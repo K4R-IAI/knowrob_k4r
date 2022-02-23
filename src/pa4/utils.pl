@@ -36,4 +36,5 @@ convert_to_m(2, In, Out) :- % 2 is mm
     Out is In/1000.
 
 convert_to_m(3, In, Out) :- % 3 is cm
+    writeln(In),
     Out is In/100.

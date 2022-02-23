@@ -19,7 +19,7 @@
 
 create_store_and_init_fridge :-
     % writeln('initttttt'),
-    init_fridge(5, Store, Fridge),
+    init_fridge(5, _, _),
     %writeln('insertingg'),
     insert_all_items(5, 
         [
@@ -39,7 +39,7 @@ test_log_in :-
     UserId is 100,
     DeviceId is 101,
     user_login(UserId, DeviceId, Now, 5),
-    get_user(UserId, User).
+    get_user(UserId, _).
     % writeln(User).
 
 test_pick_up :-

@@ -6,14 +6,23 @@
             get_product_unit_id/2,
             get_item_group_id/3,
             get_all_shelf_data/3,
+            get_all_items/2,
+            get_all_item_groups/2,
+            get_all_facings_platform/2,
+            get_all_layers_platform/2,
+            get_gtin/2,
+            get_product_dimenion_platform/4,
+            get_store_param/1,
+            get_shelf_param/1,
+            get_layer_param/1,
+            get_item_param/1,
             post_fridge_store/2,
             post_fridge_shelf/1,
             post_fridge_shelf/6,
             post_fridge_shelf_layers/1,
-            post_fridge_facing/3,
+            post_fridge_facing/4,
             post_items_in_store/1,
             update_item_position_platform/2,
-            delete_item_platform/6,
             delete_item_and_update_itemgroup/1
           ]).
 
@@ -118,9 +127,8 @@ post_fridge_facings_of_layer([[LayerId, ExtId] | Rest]) :-
 
 post_fridge_facings_of_layer([]).
 
-post_fridge_facing(LayerPlId, LayerRelPos, ExtRefId) :-
-    get_number_of_items_in_facing(Facing, Count),
-    NoOfItemDepth is 1,
+post_fridge_facing(LayerPlId, LayerRelPos, ExtRefId, Count) :-
+    %NoOfItemDepth is 1,
     NoOfItemWidth is 1,
     post_facing(LayerPlId, [LayerRelPos, Count, NoOfItemWidth, ExtRefId], _).
 
@@ -174,7 +182,7 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
     writeln(["Items", Item]),
     has_type(Item, Product),
     get_product_gtin(Product, Gtin),
-    get_product_unit_id(Gtin, ProductGroupId),
+    get_product_unit_id(Gtin, ProductUnitId),
     writeln(["PUnitId", ProductUnitId]),
     % TODO : Enable the count
     %shop_reasoner:get_number_of_items_in_facing(Facing, NoOfItems),
@@ -189,12 +197,13 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
     post_items_in_facing(Rest, ParentName, FacingPlatformId).
 
 % TODO : Use this to post the data without havign to loop through all
-delete_item_platform(StoreNum, LayerId, ShelfId, FacingExtId, Gtin, [X, Y]) :-
+/* delete_item_platform(StoreNum, LayerId, ShelfId, FacingExtId, Gtin, [X, Y]) :-
     get_product_unit_id(Gtin, ProductGroupId),
 
     get_filter_("{stores","storeNumber", "eq", StoreNum, "string", StoreFilter),
     get_filter_("{shelves","externalReferenceId", "eq", ShelfId, "string", ShelfFilter),
     get_filter_("{shelfLayers","externalReferenceId", "eq", LayerId, "string", LayerFilter),
+    % TODO : Must be changed to externalReferenceId
     get_filter_("{facings","layerRelativePosition", "eq", FacingExtId, "string", FacingFilter),
     get_filter_("{itemGroups","productUnitId", "eq", ProductUnitId, "string", ItemGroupFilter),
 
@@ -204,7 +213,7 @@ delete_item_platform(StoreNum, LayerId, ShelfId, FacingExtId, Gtin, [X, Y]) :-
     writeln(ItemGroupId),
 
     get_filter_("{items","itemGroupId", "eq", ItemGroupId.id, "string", ItemFilter),
-    atomics_to_string([ItemFilter, "{", id, positionInFacingX, positionInFacingY, "}}}}}}"], ItemQuery). 
+    atomics_to_string([ItemFilter, "{", id, positionInFacingX, positionInFacingY, "}}}}}}"], ItemQuery).  */
 
     % Queries
 /*     {
@@ -295,9 +304,10 @@ get_product_unit_id(Gtin, ProductUnitId) :-
 
 get_facing_id([StoreNum, ShelfExt, LayerExt, FacingExt], FacingId):-
     get_filter_("{stores","storeNumber", "eq", StoreNum, "string", StoreFilter),
-    get_filter_("{shelves","externalReferenceId", "eq", ShelfId, "string", ShelfFilter),
-    get_filter_("{shelfLayers","externalReferenceId", "eq", LayerId, "string", LayerFilter),
-    get_filter_("{facings","layerRelativePosition", "eq", FacingExtId, "string", FacingFilter),
+    get_filter_("{shelves","externalReferenceId", "eq", ShelfExt, "string", ShelfFilter),
+    get_filter_("{shelfLayers","externalReferenceId", "eq", LayerExt, "string", LayerFilter),
+    % TODO : Must be changed to externalReferenceId
+    get_filter_("{facings","layerRelativePosition", "eq", FacingExt, "string", FacingFilter),
     atomics_to_string([StoreFilter, ShelfFilter, LayerFilter, FacingFilter, "{", id, "}}}}}"], IdQuery),
     get_graphql(IdQuery, IdResponse),
     member(FacingId, IdResponse.facings).  
@@ -327,6 +337,58 @@ get_all_shelf_data(StorePlatformId, ShelfParam, ShelfData) :-
     (GraphQLResponse.shelves == [] ->  ShelfData = GraphQLResponse.shelves;
     ShelfData = GraphQLResponse.shelves).
 
+get_all_items(ItemGrpId, ItemData) :-
+    get_filter_("{items","itemGroupId", "eq", ItemGrpId, "string", ItemFilter),
+    get_item_param(Fields),
+    list_to_string(Fields, FieldsStr),
+    atomics_to_string([ItemFilter, "{", FieldsStr, "}}"], GraphQLQuery),
+    get_graphql(GraphQLQuery, GraphQLResponse),
+    ItemData = GraphQLResponse.items.
+
+get_all_item_groups(FacingId, ItemGrps) :-
+    get_filter_("{itemGroups","facingId", "eq", FacingId, "string", ItemGroupFilter),
+    get_item_grp_param(Fields),
+    list_to_string(Fields, FieldsStr),
+    atomics_to_string([ItemGroupFilter, "{", FieldsStr, "}}"], GraphQLQuery),
+    get_graphql(GraphQLQuery, GraphQLResponse),
+    writeln(GraphQLResponse),
+    ItemGrps = GraphQLResponse.itemGroups,
+    writeln(ItemGrps).
+
+get_all_facings_platform(LayerId, Data) :-
+    get_filter_("{facings","shelfLayerId", "eq", LayerId, "string", FacingFilter),
+    get_facing_param(Fields),
+    list_to_string(Fields, FieldsStr),
+    atomics_to_string([FacingFilter, "{", FieldsStr, "}}"], GraphQLQuery),
+    get_graphql(GraphQLQuery, GraphQLResponse),
+    Data = GraphQLResponse.facings.
+
+get_all_layers_platform(ShelfId, Data) :-
+    get_filter_("{shelfLayers","shelfId", "eq", ShelfId, "string", LayerFilter),
+    get_layer_param(Fields),
+    list_to_string(Fields, FieldsStr),
+    atomics_to_string([LayerFilter, "{", FieldsStr, "}}"], GraphQLQuery),
+    get_graphql(GraphQLQuery, GraphQLResponse),
+    Data = GraphQLResponse.shelfLayers.
+
+get_gtin(ProductUnitId, Gtin) :-
+    get_filter_("{productGtins","productUnitId", "eq", ProductUnitId, "string", GtinFilter),
+    atomics_to_string([GtinFilter, "{", gtin, "}}"], GraphQLQuery),
+    get_graphql(GraphQLQuery, GraphQLResponse),
+    member(Data, GraphQLResponse.productGtins),
+    Gtin = Data.gtin.
+
+get_product_dimenion_platform(ProductUnitId, D, W, H) :-
+    get_filter_("{productUnits","id", "eq", ProductUnitId, "string", UnitIdFilter),
+    get_product_unit_param(Fields),
+    list_to_string(Fields, FieldsStr),
+    atomics_to_string([UnitIdFilter, "{", FieldsStr, "}}"], GraphQLQuery),
+    get_graphql(GraphQLQuery, GraphQLResponse),
+    member(Data, GraphQLResponse.productUnits),
+    convert_to_m(Data.dimensionUnit, Data.length, D),
+    convert_to_m(Data.dimensionUnit, Data.width, W),
+    convert_to_m(Data.dimensionUnit, Data.height, H).
+
 get_filter_(FieldName, Param, Op, Value, Type, CompleteFilter) :-
     k4r_db_client:make_filter(Param, Op, Value, Type, Filter),
     string_concat(FieldName, Filter, CompleteFilter).
@@ -339,4 +401,85 @@ get_item_param(ItemFields) :-
         positionInFacingX,
         positionInFacingY,
         positionInFacingZ
+    ].
+
+get_item_grp_param(Fields) :-
+    Fields = [
+        id,
+        productUnitId,
+        facingId,
+        stock
+    ].
+
+get_facing_param(Fields) :-
+    Fields = [
+        id,
+        shelfLayerId,
+        layerRelativePosition,
+        noOfItemsWidth,
+        noOfItemsDepth,
+        externalReferenceId
+    ].
+
+get_product_unit_param(Fields) :-
+    Fields = [
+        id,
+        productId,
+        unitCode,
+        numeratorBaseUnit,
+        denominatorBaseUnit,
+        length,
+        width,
+        height,
+        dimensionUnit,
+        volume,
+        volumeUnit,
+        netWeight,
+        grossWeight,
+        weightUnit,
+        maxStackSize
+    ].
+
+get_layer_param(Fields) :-
+    Fields = [
+        id,
+        shelfId,
+        level,
+        type,
+        positionZ,
+        width,
+        height,
+        depth,
+        lengthUnitId,
+        externalReferenceId
+    ].
+
+get_store_param(StoreParam) :-
+    StoreParam = [ storeName,
+    addressCountry,
+    addressState,
+    addressCity,
+    addressStreet,
+    addressStreetNumber,
+    addressPostcode,
+    addressAdditional,
+    latitude,
+    longitude].
+
+get_shelf_param(ShelfParam) :-
+    ShelfParam = [
+        id,
+        positionX,
+        positionY,
+        positionZ,
+        orientationX,
+        orientationY,
+        orientationZ,
+        orientationW,
+        width,
+        height,
+        depth,
+        lengthUnitId, % 1 for m, 2 for mm, 3 for cm
+        cadPlanId, % cad model path?
+        externalReferenceId
     ].

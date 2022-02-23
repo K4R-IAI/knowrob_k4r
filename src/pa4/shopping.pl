@@ -48,42 +48,32 @@ init_fridge(StoreId, Store, Fridge) :-
     % StoreId, Store, Fridge
     ((triple(Store, shop:hasShopNumber, StoreId) -> true,
     print_message(warning, 'Store already exist in Knowrob'));
-    (
-    tripledb_load(
+    (assert_store(StoreId, StorePlatformId, Store),
+    get_shelf_param(ShelfParam),
+    get_all_shelf_data(StorePlatformId, ShelfParam, ShelfData),
+    (\+ is_list_empty_(ShelfData) ->
+    tell(has_type(Fridge, shop:'SmartFridge')),
+    assert_shelf_platform(Fridge, ShelfData, ShelfPlatformIdList));
+    (tripledb_load(
     'package://knowrob_k4r/owl/fridge.owl',
     [ namespace(fridge, 
       'http://knowrob.org/kb/fridge.owl#')
     ]),
-    assert_store(StoreId, Store),
     has_type(Fridge, shop:'SmartFridge'),
     load_fridge_urdf_,
-    % writeln('create fridge'),
-    % post_fridge_store(["null", 
-    %     "addressCity test", 
-    %     "addressCountry test", 
-    %     "addressPostcode test", 
-    %     "addressState test", 
-    %     "addressStreet test", 
-    %     "addressStreetNumber test", 
-    %     "cadPlanId test",
-    %     21.1,
-    %     21.2,
-    %     "fridgepa4",
-    % StoreId], Store),
-    % get_entity_id(Store, StorePlatformId),
     once(shopping:assert_frame_properties(Fridge, StorePlatformId, ShelfPlatformId)),
     % writeln('create shelves'),
-    once(shopping:assert_layer_properties(Fridge, ShelfPlatformId)))).
-    % writeln('create layers').
+    once(shopping:assert_layer_properties(Fridge, ShelfPlatformId)),
+    tell(has_location(Fridge, Store))))).
 
-assert_store(StoreId, Store) :-
-    create_store_from_platfrom(StoreId, Store).
+assert_store(StoreId, StorePlatformId, Store) :-
+    create_store_from_platfrom(StoreId, StorePlatformId, Store).
 
 insert_all_items(StoreId, ItemList) :-
     get_store(StoreId, Store),
     %writeln('insertttt'),
     forall(member([[ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates], ItemList),
-        (insert_item(Store, StoreId, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, ItemInstance)
+        (insert_item(Store, StoreId, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, _)
         %writeln(ItemInstance)
     )).
 
@@ -91,8 +81,6 @@ insert_all_items(StoreId, ItemList) :-
 insert_item(Store, StoreId, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordinates, ItemInstance):- % Coordinates - [x,y] is fine
     % writeln(['ITemsss', Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordinates]),
     % check if item exists
-    get_facing_id([StoreId, ShelfExt, ShelfLayerExt, FacingExt], PlatformFacingId),
-    get_product_unit_id(Gtin, ProductUnitId),
     ( item_exists(ExtItemId, ItemInstance),
     update_item_position(Store, ItemInstance, ExtItemId, [ShelfExt, ShelfLayerExt, FacingExt], Coordinates)
     );
@@ -101,7 +89,8 @@ insert_item(Store, StoreId, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gti
     % tell(instance_of)
     % associate gtin with the item
     % insert position
-    (
+    (  get_facing_id([StoreId, ShelfExt, ShelfLayerExt, FacingExt], PlatformFacingId),
+    get_product_unit_id(Gtin, ProductUnitId),
     [X ,Y] = Coordinates,
     get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
     once(get_product_class(Gtin, Product)),
@@ -116,7 +105,7 @@ insert_item(Store, StoreId, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gti
     (get_item_group_id(PlatformFacingId, ProductUnitId, ItemGrpId);
     ( post_item_group([PlatformFacingId, ProductUnitId, 1], ItemGroup),
     k4r_db_client:get_entity_id(ItemGroup, ItemGrpId))),
-    post_item(ItemGrpId, [X, Y, Z], ExtItemId),
+    post_item(ItemGrpId, [X, Y, 0], ExtItemId),
     % ]),
     % insert_item_platform(ExtItemId, Gtin, FacingExtId),
     shop:belief_new_object(Product, ItemInstance)).
@@ -146,14 +135,20 @@ item_exists(ExtItemId, Item) :-
 get_product_class(Gtin, Product) :-
     get_product_type(Gtin, Product).
 
-get_product_class(EAN, Product) :-
-    atomic_list_concat([ 'PREFIX product_cat: <http://purl.org/goodrelations/v1#>', 
-        'select ?ProductInstance where {?ProductInstance product_cat:hasEAN_UCC-13 "', 
-        EAN,'"}'], Query), 
-    sparql_query(Query, Row, 
-        [ endpoint('https://api.krr.triply.cc/datasets/mkumpel/NonFoodKG/services/NonFoodKG/sparql/'), 
-        variable_names([ProductInstance])] ),
-    row(Product) = Row.
+% get_product_class(EAN, Product) :-
+%     atomic_list_concat([ 'PREFIX product_cat: <http://purl.org/goodrelations/v1#>', 
+%         'select ?ProductInstance where {?ProductInstance product_cat:hasEAN_UCC-13 "', 
+%         EAN,'"}'], Query), 
+%     sparql_query(Query, Row, 
+%         [ endpoint('https://api.krr.triply.cc/datasets/mkumpel/NonFoodKG/services/NonFoodKG/sparql/'), 
+%         variable_names([ProductInstance])] ),
+%     row(Product) = Row.
+
+get_product_class(Gtin, Product) :-
+    get_product_unit_id(Gtin, ProductUnitId),
+    get_product_dimenion_platform(ProductUnitId, D, W, H),
+    create_article_number(gtin(Gtin), AN),
+    create_article_type(AN,[D,W,H], Product).
 
 get_product_class(Gtin, Product) :-
     create_article_number(gtin(Gtin), AN),
@@ -170,12 +165,7 @@ create_store(StoreId, Store, Fridge) :-
 
 %% Create the physical rep with properties of the fridge
 assert_frame_properties(Fridge, StorePlatformId, ShelfPlatformId) :-
-    get_shelf_param(ShelfParam),
-    get_all_shelf_data(StorePlatformId, ShelfParam, ShelfData),
-    (\+ is_list_empty_(ShelfData) ->
-    assert_shelf_platform(Fridge, ShelfData, ShelfPlatformIdList),
-    member(ShelfPlatformId, ShelfPlatformIdList));
-    (triple(Fridge, soma:hasPhysicalComponent, Frame),
+    triple(Fridge, soma:hasPhysicalComponent, Frame),
     has_type(Frame, shop:'ShelfFrame'),
     triple(Frame, shop:erpShelfId, ExtRefId),
     % ShelfBase
@@ -203,11 +193,10 @@ assert_frame_properties(Fridge, StorePlatformId, ShelfPlatformId) :-
     assert_object_pose_(ShelfBack, ChildLinkBack, [ParentName1, Translation1,Rotation1], D1, W1, H1),
     is_at(ShelfBase, ['base_link', Tr2, R2]),
     post_fridge_shelf(StorePlatformId, [H, W, D], Tr2, R2, ExtRefId, ShelfPosted),
-    get_entity_id(ShelfPosted, ShelfPlatformId)).
+    get_entity_id(ShelfPosted, ShelfPlatformId).
     % tell(is_at(ShelfBack, [ParentName1, Translation1, Rotation1])).
 
 assert_layer_properties(Fridge, ShelfPlatformId) :-
-    
     (triple(Fridge, soma:hasPhysicalComponent, Frame),
     has_type(Frame, shop:'ShelfFrame'),
     triple(Frame, soma:hasPhysicalComponent, Layer),
@@ -250,7 +239,8 @@ assert_facing_properties(Layer, LayerPlId) :-
     triple(Facing, shop:erpFacingId, ExtRefId),
     rdf_split_url(_,ParentFrame,Layer),
     is_at(Facing, [ParentFrame, [LayerRelPos, _, _], _]),
-    post_fridge_facing(LayerPlId, LayerRelPos, ExtRefId),
+    get_number_of_items_in_facing(Facing, Count),
+    post_fridge_facing(LayerPlId, LayerRelPos, ExtRefId, Count),
     fail.
 
 assert_facing_properties(_, _).
@@ -301,7 +291,7 @@ assert_object_pose_(StaticObject, UrdfObj, UrdfPose, D, W, H) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Events %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 user_login(UserId, DeviceId, Timestamp, StoreId) :-
-    ((triple(User, shop:hasUserId, UserId) -> true,  % when there is no existing error, it throws an instantiation error
+    ((triple(_, shop:hasUserId, UserId) -> true,  % when there is no existing error, it throws an instantiation error
     print_message(info, 'User has already registered and has not logged out'));
     (triple(Store, shop:hasShopNumber, StoreId),
     has_location(Fridge, Store),
@@ -341,15 +331,15 @@ user_login(UserId, DeviceId, Timestamp, StoreId) :-
 pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
     % Pose and object type are not used
     % With the gtin
-    get_store(StoreId, Store),
+    %get_store(StoreId, Store),
     % writeln(["All good 2"]),
     get_item_position(ItemId, Facing),
     % writeln(["All good 3"]),
-    triple(Facing, shop:erpFacingId, FacingExtId),
+/*     triple(Facing, shop:erpFacingId, FacingExtId),
     triple(Facing, shop:layerOfFacing, Layer),
     triple(Layer, shop:erpShelfLayerId, LayerId),
     triple(Shelf, soma:hasPhysicalComponent, Layer),
-    triple(Shelf, shop:erpShelfId, ShelfId),
+    triple(Shelf, shop:erpShelfId, ShelfId), */
     % get_facing_(Store, Position, Facing),
     % [_, _, FacingExtId] = Position,
     triple(User, shop:hasUserId, UserId),
@@ -361,9 +351,8 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
     has_participant(ShoppingAct, Basket),
     instance_of(Basket, shop:'ShopperBasket'),
     item_exists(ItemId, Item),
-    rdf_split_url(_,ParentFrame,Facing),
-    is_at(Item, [ParentFrame, [X, Y, _], _]),
-    triple(Item, shop:hasItemId, ExtItemId),
+    %rdf_split_url(_,ParentFrame,Facing),
+    %is_at(Item, [ParentFrame, [X, Y, _], _]),
     % writeln(["All good 6"]),
     tell(
         [  
@@ -381,13 +370,12 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
         % Initialise the store and associate product types with facing
         tripledb_forget(Facing, shop:productInFacing, Item),
         % TODO: delete item in platform
-        delete_item_and_update_itemgroup(ExtItemId),
+        delete_item_and_update_itemgroup(ItemId),
         time_interval_tell(PickAct, Timestamp, Timestamp),
         publish_pick_event(Timestamp, [UserId, StoreId, Gtin]). % Not sure here if object type makes sense
 
 put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Position) :-
     get_store(StoreId, Store),
-    [_, _, FacingExtId] = Position,
     % get_facing_(Store, Position, Facing),
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
@@ -446,6 +434,7 @@ user_logout(UserId, DeviceId, Timestamp, StoreId) :-
     time_interval_tell(LogoutAct, Timestamp, Timestamp),
     time_interval_tell(ShoppingAct, Start, Timestamp),
     tripledb_forget(_, shop:hasUserId, UserId),
+    triple(_, shop:hasDeviceId, DeviceId),
     publish_log_out(Timestamp, [UserId, StoreId]).
     %tripledb_forget(UserId, _, _).
     % Delete all the data of the user id after publishing log out
@@ -526,7 +515,7 @@ get_all_facings_in_layers(L, F) :-
 get_all_items_in_fridge_facing([], Temp, Temp).
 
 get_all_items_in_fridge_facing([Facing | Rest], Temp, Items) :-
-    ((get_all_items_in_facing(Facing, Item),
+    ((get_all_items_in_facing_(Facing, Item),
     append(Temp, Item, Temp1));
     (Temp1 = Temp)),
     get_all_items_in_fridge_facing(Rest, Temp1, Items).
@@ -540,7 +529,7 @@ get_item_position(ItemId, Facing) :-
 get_all_items_in_fridge_facing(Facings, Items) :-
     get_all_items_in_fridge_facing(Facings, Temp, Items).
 
-get_all_items_in_facing(Facing, Items) :-
+get_all_items_in_facing_(Facing, Items) :-
     findall(Item,
         (   has_type(Facing, shop:'ProductFacing'),
             triple(Facing, shop:productInFacing, Item)),
