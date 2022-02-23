@@ -73,8 +73,8 @@ create_store_(StoreNumber, StoreName, Country, State, City, AddressValue, GeoCoo
         % instance_of(Fridge, shop:'SmartFridge'),
         % has_location(Fridge, Store)
     ]),
-    list_to_string_(GeoCoordinates, GeoString),
-    list_to_string_(AddressValue, AddStr),
+    list_to_string(GeoCoordinates, GeoString),
+    list_to_string(AddressValue, AddStr),
     ignore(tell(triple(CoordRegion, shop:hasGeometricCoordinateValue, GeoString))),
     ignore(tell(triple(AddressRegion, shop:hasAddressValue, AddStr))).
 

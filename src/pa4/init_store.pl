@@ -17,9 +17,11 @@
 % store Id - 5
 
 
+
 create_store_and_init_fridge :-
     % writeln('initttttt'),
-    init_fridge(5, _, _),
+    create_store(45, 'fridgepa42', "Ger", "BW" , "Bre", ["Uni", 45, 452343, ""], [40, 40], Store),
+    init_fridge(45, _, _),
     %writeln('insertingg'),
     insert_all_items(5, 
         [
@@ -79,8 +81,9 @@ test_log_out :-
 :- begin_tests('init_store').
 
 test('store init') :-
+    gtrace,
     create_store_and_init_fridge,
-    StoreId is 5,
+    StoreId = "fridge1",
     % gtrace,
     get_items_in_fridge(StoreId, Items).
     % writeln(Items).
