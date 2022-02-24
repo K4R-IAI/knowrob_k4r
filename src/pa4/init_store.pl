@@ -20,10 +20,10 @@
 
 create_store_and_init_fridge :-
     % writeln('initttttt'),
-    create_store(45, 'fridgepa42', "Ger", "BW" , "Bre", ["Uni", 45, 452343, ""], [40, 40], Store),
-    init_fridge(45, _, _),
+    %create_store(45, 'fridgepa42', "Ger", "BW" , "Bre", ["Uni", 45, 452343, ""], [40, 40], Store),
+    init_fridge(45, _, _), % store Pl Id 4958
     %writeln('insertingg'),
-    insert_all_items(5, 
+    insert_all_items(45, 
         [
             [[1, 1, 1], 'I4563','4062300025318', [0.5,0.5]], 
             [[1, 1, 1], 'I4564','4062300025318', [0.0,0.2]],

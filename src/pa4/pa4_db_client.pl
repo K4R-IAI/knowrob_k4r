@@ -19,6 +19,7 @@
             post_fridge_store/2,
             post_fridge_shelf/1,
             post_fridge_shelf/6,
+            post_fridge_shelf_layer/5,
             post_fridge_shelf_layers/1,
             post_fridge_facing/4,
             post_items_in_store/1,
@@ -273,8 +274,8 @@ get_item_group_data(ItemGroupId, Data) :-
 
 get_layer_and_facing_data(PlatformShelfId, KeyList, LayersDict) :- % test{shelfLayers: [externalReferenceId], facings: [id, layerRelativePosition]}
     k4r_db_client:make_store_id_filter(PlatformShelfId, Filter),
-    list_to_string_(KeyList.shelfLayers, LayerKeys),
-    list_to_string_(KeyList.facings, FacingKeys),
+    list_to_string(KeyList.shelfLayers, LayerKeys),
+    list_to_string(KeyList.facings, FacingKeys),
     string_concat("{shelves", Filter, ShelfFilter),
     string_concat("{shelfLayers{", LayerKeys, LayerFilter),
     string_concat(" facings{", FacingKeys, FacingFilter),
@@ -322,11 +323,11 @@ get_store_id(StoreNum, StoreId) :-
 
 get_store(StoreNum, StoreParam, Store) :-
     get_filter_("{stores", "storeNumber", "eq", StoreNum, "string", StoreFilter),
-    list_to_string_(StoreParam, KeyParamStr),
+    list_to_string(StoreParam, KeyParamStr),
     atomics_to_string([StoreFilter, "{", KeyParamStr,  "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
     (GraphQLResponse.stores == [] -> Store = GraphQLResponse.stores;
-    member(Store, GraphQLResponse.stores)).
+    Store = GraphQLResponse.stores).
 
 get_all_shelf_data(StorePlatformId, ShelfParam, ShelfData) :-
     get_filter_("{shelves", "storeId", "eq", StorePlatformId, "string", ShelfFilter),
@@ -455,7 +456,9 @@ get_layer_param(Fields) :-
     ].
 
 get_store_param(StoreParam) :-
-    StoreParam = [ storeName,
+    StoreParam = [
+    id,
+    storeName,
     addressCountry,
     addressState,
     addressCity,

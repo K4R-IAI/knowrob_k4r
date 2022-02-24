@@ -7,7 +7,8 @@
 
 :- module( environment,
     [ create_store/8,
-    create_store_from_platfrom/3
+    create_store_from_platfrom/3,
+    assert_shelf_platform/3
     ]
     ).
 
@@ -37,7 +38,8 @@ create_store_from_platfrom(StoreNumber, StorePlatformId, Store):-
     get_store(StoreNumber, Param, PlatformStore),
     ((is_list_empty_(PlatformStore) -> 
     print_message(info, 'Store not in platform'));
-    (AddressValue = [StoreData.addressStreet, StoreData.addressStreetNumber, StoreData.addressPostcode, StoreData.addressAdditional],
+    (member(StoreData, PlatformStore),
+    AddressValue = [StoreData.addressStreet, StoreData.addressStreetNumber, StoreData.addressPostcode, StoreData.addressAdditional],
     StorePlatformId = StoreData.id,
     GeoCoo  = [StoreData.latitude, StoreData.longitude],
     create_store_(StoreNumber, StoreData.storeName, StoreData.addressCountry, StoreData.addressState, StoreData.addressCity, AddressValue, GeoCoo, Store),
@@ -83,7 +85,7 @@ assert_shelf_platform(Fridge, ShelfData, Ids) :-
 
 assert_shelf_platform(Fridge, [Shelf | Rest], Temp, ShelfIds) :-
     atom_number(Shelf.externalReferenceId, ExtRefId),
-    Temp1 = [Temp, Sheld.id],
+    append(Temp,  Shelf.id, Temp1),
     convert_to_m(Shelf.lengthUnitId, Shelf.positionX, X),
     convert_to_m(Shelf.lengthUnitId, Shelf.positionY, Y),
     convert_to_m(Shelf.lengthUnitId, Shelf.positionZ, Z),
@@ -91,7 +93,7 @@ assert_shelf_platform(Fridge, [Shelf | Rest], Temp, ShelfIds) :-
     convert_to_m(Shelf.lengthUnitId, Shelf.orientationY, Y1),
     convert_to_m(Shelf.lengthUnitId, Shelf.orientationZ, Z1),
     convert_to_m(Shelf.lengthUnitId, Shelf.orientationW, W1),
-    convert_to_m(Shelf.lengthUnitId, Shelf.length, D),
+    convert_to_m(Shelf.lengthUnitId, Shelf.depth, D),
     convert_to_m(Shelf.lengthUnitId, Shelf.width, W),
     convert_to_m(Shelf.lengthUnitId, Shelf.height, H),
     tell([ has_type(Frame, shop:'ShelfFrame'),
@@ -106,7 +108,7 @@ assert_shelf_platform(Fridge, [Shelf | Rest], Temp, ShelfIds) :-
     triple(Frame, soma:hasShape, Shape),
     triple(Shape, dul:hasRegion, ShapeRegion),
     ignore(tell(triple(ShapeRegion, soma:hasFilePath, Shelf.cadPlanId))),
-    assert_layer_platform(Sheld.id, Frame),
+    ignore(assert_layer_platform(Shelf.id, Frame)),
     assert_shelf_platform(Fridge, Rest, Temp1, ShelfIds).
 
 assert_shelf_platform(_, [], Temp, Temp).

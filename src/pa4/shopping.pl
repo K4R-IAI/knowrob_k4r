@@ -36,6 +36,7 @@
 
 :- use_module(library('ros/tf/tf_plugin'), 
                 [tf_get_pose/4, tf_set_pose/3]).
+:- use_module('environment').
 
 :- rdf_db:rdf_register_ns(soma,
     'http://www.ease-crc.org/ont/SOMA.owl#', [keep(true)]).
@@ -43,17 +44,23 @@
 :- rdf_db:rdf_register_ns(urdf, 'http://knowrob.org/kb/urdf.owl#', [keep(true)]).
 :- rdf_db:rdf_register_ns(fridge, 'http://knowrob.org/kb/fridge.owl#', [keep(true)]).
 
+%TODO : Add a label to facing while doing it manually
 
 init_fridge(StoreId, Store, Fridge) :-
     % StoreId, Store, Fridge
     ((triple(Store, shop:hasShopNumber, StoreId) -> true,
     print_message(warning, 'Store already exist in Knowrob'));
     (assert_store(StoreId, StorePlatformId, Store),
-    get_shelf_param(ShelfParam),
-    get_all_shelf_data(StorePlatformId, ShelfParam, ShelfData),
-    (\+ is_list_empty_(ShelfData) ->
+    assert_shelf_(StorePlatformId, ShelfPlatformId)
+    % writeln('create shelves'),
+    )).
+
+assert_shelf_(StorePlId, ShelfPlatformId) :-
+    (get_shelf_param(ShelfParam),
+    get_all_shelf_data(StorePlId, ShelfParam, ShelfData),
+    is_list_empty_(ShelfData) ->
     tell(has_type(Fridge, shop:'SmartFridge')),
-    assert_shelf_platform(Fridge, ShelfData, ShelfPlatformIdList));
+    assert_shelf_platform(Fridge, ShelfData, ShelfPlatformId));
     (tripledb_load(
     'package://knowrob_k4r/owl/fridge.owl',
     [ namespace(fridge, 
@@ -61,10 +68,16 @@ init_fridge(StoreId, Store, Fridge) :-
     ]),
     has_type(Fridge, shop:'SmartFridge'),
     load_fridge_urdf_,
-    once(shopping:assert_frame_properties(Fridge, StorePlatformId, ShelfPlatformId)),
-    % writeln('create shelves'),
-    once(shopping:assert_layer_properties(Fridge, ShelfPlatformId)),
-    tell(has_location(Fridge, Store))))).
+    writeln(StorePlId),
+    once(shopping:assert_frame_properties(Fridge, StorePlId, ShelfPlatformId)),
+    findall( Layer,
+        (triple(Fridge, soma:hasPhysicalComponent, Frame),
+        has_type(Frame, shop:'ShelfFrame'),
+        triple(Frame, soma:hasPhysicalComponent, Layer),
+        has_type(Layer, shop:'ShelfLayer')),
+    Layers).
+    once(shopping:assert_layer_properties(Fridge, Layers, ShelfPlatformId)),
+    tell(has_location(Fridge, Store))).
 
 assert_store(StoreId, StorePlatformId, Store) :-
     create_store_from_platfrom(StoreId, StorePlatformId, Store).
@@ -193,28 +206,30 @@ assert_frame_properties(Fridge, StorePlatformId, ShelfPlatformId) :-
     assert_object_pose_(ShelfBack, ChildLinkBack, [ParentName1, Translation1,Rotation1], D1, W1, H1),
     is_at(ShelfBase, ['base_link', Tr2, R2]),
     post_fridge_shelf(StorePlatformId, [H, W, D], Tr2, R2, ExtRefId, ShelfPosted),
-    get_entity_id(ShelfPosted, ShelfPlatformId).
+    k4r_db_client:get_entity_id(ShelfPosted, ShelfPlatformId).
     % tell(is_at(ShelfBack, [ParentName1, Translation1, Rotation1])).
 
-assert_layer_properties(Fridge, ShelfPlatformId) :-
-    (triple(Fridge, soma:hasPhysicalComponent, Frame),
-    has_type(Frame, shop:'ShelfFrame'),
-    triple(Frame, soma:hasPhysicalComponent, Layer),
-    has_type(Layer, shop:'ShelfLayer'),
+assert_layer_properties(Fridge, [Layer | Rest], ShelfPlatformId) :-
     get_child_link_(Layer, ChildLink),
     get_object_dimension_from_urdf_(ChildLink, D, W, H),
     assert_object_shape_(Layer, D, W, H, [0.5,0.5,0.5]),
     get_object_pose_from_urdf_(ChildLink, T1, R1, ParentName),
     assert_object_pose_(Layer, ChildLink, [ParentName, T1, R1], D, W, H),
     is_at(Layer, [_, [_,_, Z], _]),
-    post_fridge_shelf_layer(ShelfPlatformId, [D, W, H], Z, LayerPosted),
-    get_entity_id(LayerPosted, LayerPlId),
+    triple(Layer, shop:erpShelfLayerId, ExtRefId),
+    post_fridge_shelf_layer(ShelfPlatformId, [D, W, H], ExtRefId, Z, LayerPosted),
+    k4r_db_client:get_entity_id(LayerPosted, LayerPlId),
     %assert_separator_properties(Layer),
-    assert_facing_properties(Layer, LayerPlId),
+    findall(Facing,
+        (triple(Facing, shop:layerOfFacing, Layer),
+        has_type(Facing, shop:'ProductFacing')),
+    Facings),
+    assert_facing_properties(Layer, Facings, LayerPlId),
+    assert_layer_properties(Fridge, Rest, ShelfPlatformId).
     % tell(is_at(Layer, [ParentName, Translation, Rotation])),
-    fail).
 
-assert_layer_properties(_).
+
+assert_layer_properties(_, [], _).
 
 assert_separator_properties(Layer) :-
     triple(Layer, soma:hasPhysicalComponent, Separator),
@@ -228,9 +243,7 @@ assert_separator_properties(Layer) :-
 
 assert_separator_properties(_).
 
-assert_facing_properties(Layer, LayerPlId) :-
-    triple(Facing, shop:layerOfFacing, Layer),
-    has_type(Facing, shop:'ProductFacing'),
+assert_facing_properties(Layer, [Facing | Rest], LayerPlId) :-
     get_child_link_(Facing, ChildLink),
     get_object_dimension_from_urdf_(ChildLink, D, W, H),
     assert_object_shape_(Facing, D, W, H, [0.5,0.5,0.5]),
@@ -239,11 +252,11 @@ assert_facing_properties(Layer, LayerPlId) :-
     triple(Facing, shop:erpFacingId, ExtRefId),
     rdf_split_url(_,ParentFrame,Layer),
     is_at(Facing, [ParentFrame, [LayerRelPos, _, _], _]),
-    get_number_of_items_in_facing(Facing, Count),
-    post_fridge_facing(LayerPlId, LayerRelPos, ExtRefId, Count),
-    fail.
+    %get_number_of_items_in_facing(Facing, Count),
+    post_fridge_facing(LayerPlId, LayerRelPos, ExtRefId, 1),
+    assert_facing_properties(Layer, Rest, LayerPlId).
 
-assert_facing_properties(_, _).
+assert_facing_properties(_, [], _).
 
 get_child_link_(Object, Child) :-
     triple(Object, urdf:hasEndLinkName, Child).
