@@ -15,6 +15,8 @@
 :- use_module(pa4_db_client).
 :- use_module(shopping).
 :- use_module('utils').
+:- use_module(library('semweb/rdf_db'),
+    [ rdf_split_url/3 ]).
 
 :- rdf_db:rdf_register_ns(soma,
     'http://www.ease-crc.org/ont/SOMA.owl#', [keep(true)]).
@@ -120,12 +122,12 @@ assert_layer_platform(ShelfId, Parent) :-
 assert_layer_platform_(Parent, [Layer | Rest]) :-
     atom_number(Layer.externalReferenceId, ExtRefId),
     convert_to_m(Layer.lengthUnitId, Layer.positionZ, Z),
-    convert_to_m(Layer.lengthUnitId, Layer.length, D),
+    convert_to_m(Layer.lengthUnitId, Layer.depth, D),
     convert_to_m(Layer.lengthUnitId, Layer.width, W),
     convert_to_m(Layer.lengthUnitId, Layer.height, H),
     rdf_split_url(_,ParentFrame, Parent),
     tell([ has_type(ShelfLayer, shop:'ShelfLayer'),
-        triple(Parent, soma:hasPhysicalComponent, Layer),
+        triple(Parent, soma:hasPhysicalComponent, ShelfLayer),
         triple(ShelfLayer, shop:erpShelfLayerId, ExtRefId),
         has_type(ObjShape, soma:'Shape'),
         triple(ShelfLayer, soma:'hasShape', ObjShape),
@@ -133,7 +135,7 @@ assert_layer_platform_(Parent, [Layer | Rest]) :-
         holds(ObjShape,dul:hasRegion,ShapeRegion),
         is_at(ShelfLayer, [ParentFrame, [0, 0, Z],[0,0,0,1]]),
         object_dimensions(ShelfLayer, D, W, H)]),
-    assert_facing_platform(ShelfLayer),
+    assert_facing_platform(Layer.id, ShelfLayer),
     assert_layer_platform_(Parent, Rest).
 
 assert_layer_platform_(_, []).
@@ -157,6 +159,8 @@ assert_facing_platform_(Parent, [Facing | Rest]) :-
     assert_item_group_ids(Facing.id, PrFacing),
     assert_facing_platform_(Parent, Rest).
 
+assert_facing_platform_(_, []).
+
 assert_item_group_ids(FacingId, Parent) :-
     get_all_item_groups(FacingId, ItemData),
     assert_item_group_platform_(Parent, ItemData).
@@ -166,17 +170,17 @@ assert_item_group_platform_(Parent, [ItemGrp | Rest]) :-
     (article_number_of_dan(Gtin, AN);
     create_article_number(gtin(Gtin), AN),
     get_product_dimenion_platform(ItemGrp.productUnitId, D, W, H),
-    create_article_type(AN,[D,W,H],_)),
+    create_article_type(AN,[D,W,H], ProductType)),
     tell([has_type(Label, shop:'ShelfLabel'),
     triple(Parent,shop:labelOfFacing,Label),
     triple(Label,shop:articleNumberOfLabel,AN)]),
-    assert_items_platform(ItemGrp.id, Gtin, Parent, [D, W, H]),
+    assert_items_platform(ItemGrp.id, Gtin, Parent, ProductType, [D, W, H]),
     assert_item_group_platform_(Parent, Rest).
 
+assert_item_group_platform_(_, []).
 
-assert_items_platform(ItemGrpId, Gtin, Parent, Dimension) :-
+assert_items_platform(ItemGrpId, Gtin, Parent, ProductType, Dimension) :-
     get_all_items(ItemGrpId, ItemData),
-    get_product_type(Gtin, ProductType),
     assert_items_platform_(Parent, ProductType, Dimension, ItemData).
 
 assert_items_platform_(Facing, ProductType, Dimension, [Item | Rest]) :-

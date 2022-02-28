@@ -11,14 +11,14 @@
         init_fridge/3,
         create_store(+, -, -),
         assert_frame_properties/3,
-        assert_layer_properties/1,
+        assert_layer_properties/3,
         user_login(r, r, r, r),
         pick_object(r, r, r, r, r), %% how do we handle probability 
         user_logout(r, r, r, r),
         put_back_object/7,
         items_bought(r, ?),
-        insert_all_items(+,+),
-        insert_item(+,+,+,+,+,+,-),
+        insert_all_items(+,+,+,+),
+        insert_item(+,+,+,+,+,-),
         get_items_in_fridge/2,
         get_user/2,
         get_facing/2
@@ -44,23 +44,39 @@
 :- rdf_db:rdf_register_ns(urdf, 'http://knowrob.org/kb/urdf.owl#', [keep(true)]).
 :- rdf_db:rdf_register_ns(fridge, 'http://knowrob.org/kb/fridge.owl#', [keep(true)]).
 
-%TODO : Add a label to facing while doing it manually
+
 
 init_fridge(StoreId, Store, Fridge) :-
     % StoreId, Store, Fridge
     ((triple(Store, shop:hasShopNumber, StoreId) -> true,
     print_message(warning, 'Store already exist in Knowrob'));
     (assert_store(StoreId, StorePlatformId, Store),
-    assert_shelf_(StorePlatformId, ShelfPlatformId)
+    assert_shelf_(Store, StorePlatformId, Fridge, ShelfPlatformId),
+    tell(holds(Fridge, dul:hasLocation, Store))
     % writeln('create shelves'),
     )).
 
-assert_shelf_(StorePlId, ShelfPlatformId) :-
+%TODO
+label_of_facing(StoreNum, Facing, [ShelfNo, LayerNo, FacingExtNo], Gtin, ProductType, ItemGroupId) :-
+    get_product_unit_id(Gtin, ProductUnitId),
+    (article_number_of_dan(Gtin, AN);
+    create_article_number(gtin(Gtin), AN),
+    get_product_dimenion_platform(ProductUnitId, D, W, H),
+    create_article_type(AN,[D,W,H], ProductType)),
+    tell([has_type(Label, shop:'ShelfLabel'),
+    triple(Facing,shop:labelOfFacing,Label),
+    triple(Label,shop:articleNumberOfLabel,AN)]),
+    get_facing_id([StoreNum, ShelfNo, LayerNo, FacingExtNo], FacingId),
+    post_item_group([FacingId, ProductUnitId, 0], ItemGroup),
+    k4r_db_client:get_entity_id(ItemGroup, ItemGroupId).
+
+
+assert_shelf_(Store, StorePlId, Fridge, ShelfPlatformId) :-
     (get_shelf_param(ShelfParam),
     get_all_shelf_data(StorePlId, ShelfParam, ShelfData),
-    is_list_empty_(ShelfData) ->
+    \+ is_list_empty_(ShelfData) ->
     tell(has_type(Fridge, shop:'SmartFridge')),
-    assert_shelf_platform(Fridge, ShelfData, ShelfPlatformId));
+    assert_shelf_platform(Fridge, ShelfData, ShelfPlatformId)); 
     (tripledb_load(
     'package://knowrob_k4r/owl/fridge.owl',
     [ namespace(fridge, 
@@ -75,61 +91,54 @@ assert_shelf_(StorePlId, ShelfPlatformId) :-
         has_type(Frame, shop:'ShelfFrame'),
         triple(Frame, soma:hasPhysicalComponent, Layer),
         has_type(Layer, shop:'ShelfLayer')),
-    Layers).
-    once(shopping:assert_layer_properties(Fridge, Layers, ShelfPlatformId)),
-    tell(has_location(Fridge, Store))).
+    Layers),
+    once(shopping:assert_layer_properties(Fridge, Layers, ShelfPlatformId))).
 
 assert_store(StoreId, StorePlatformId, Store) :-
     create_store_from_platfrom(StoreId, StorePlatformId, Store).
 
-insert_all_items(StoreId, ItemList) :-
-    get_store(StoreId, Store),
+insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, ItemList) :-
+    get_store(StoreNum, Store),
     %writeln('insertttt'),
-    forall(member([[ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates], ItemList),
-        (insert_item(Store, StoreId, [ShelfExt, ShelfLayerExt, FacingExt], ItemId, Gtin, Coordinates, _)
+    get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
+    label_of_facing(StoreNum, Facing, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, ProductType, ItemGroupId),
+    forall(member([ItemId,  Coordinates], ItemList),
+        (insert_item(Facing, ProductType, ItemGroupId, ItemId, Coordinates, _)
         %writeln(ItemInstance)
     )).
 
 % ToDO -- If the item id already exists then just update the position
-insert_item(Store, StoreId, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordinates, ItemInstance):- % Coordinates - [x,y] is fine
+insert_item(Facing, Product, ItemGroupId, ExtItemId, Coordinates, ItemInstance):- % Coordinates - [x,y] is fine
     % writeln(['ITemsss', Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordinates]),
     % check if item exists
     ( item_exists(ExtItemId, ItemInstance),
-    update_item_position(Store, ItemInstance, ExtItemId, [ShelfExt, ShelfLayerExt, FacingExt], Coordinates)
+    update_item_position(Facing, ItemInstance, ExtItemId, Coordinates)
     );
     % get facing
     % create an object of the type of Gtin
     % tell(instance_of)
     % associate gtin with the item
     % insert position
-    (  get_facing_id([StoreId, ShelfExt, ShelfLayerExt, FacingExt], PlatformFacingId),
-    get_product_unit_id(Gtin, ProductUnitId),
+    (  
     [X ,Y] = Coordinates,
-    get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
-    once(get_product_class(Gtin, Product)),
-    % tell([
+    % tell([]
     tell(instance_of(ItemInstance, Product)),
     tell(triple(Facing, shop:productInFacing, ItemInstance)),
     % writeln([Facing, ItemInstance]),
     rdf_split_url(_,ParentFrame,Facing),
     tell(is_at(ItemInstance, [ParentFrame, [X,Y,0],[0,0,0,1]])),
     tell(triple(ItemInstance, shop:hasItemId, ExtItemId)),
-
-    (get_item_group_id(PlatformFacingId, ProductUnitId, ItemGrpId);
-    ( post_item_group([PlatformFacingId, ProductUnitId, 1], ItemGroup),
-    k4r_db_client:get_entity_id(ItemGroup, ItemGrpId))),
-    post_item(ItemGrpId, [X, Y, 0], ExtItemId),
+    k4r_db_client:double_m_to_int_mm([X, Y, 0.0], [X_mm, Y_mm, _]),
+    k4r_db_client:post_item([ItemGroupId, X_mm, Y_mm, 0, ExtItemId],_),
     % ]),
     % insert_item_platform(ExtItemId, Gtin, FacingExtId),
     shop:belief_new_object(Product, ItemInstance)).
 
 
-update_item_position(Store, ItemInstance, ExtItemId, [ShelfExt, ShelfLayerExt, FacingExt], [X, Y]) :-
-        item_exists(ExtItemId, ItemInstance),
-        get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
-        tell(triple(Facing, shop:productInFacing, ItemInstance)),
-        tell(is_at(ItemInstance, [Facing, [X,Y,0],[0,0,0,1]])),
-        update_item_position_platform(ExtItemId, [X, Y, 0]).
+update_item_position(Facing, ItemInstance, ExtItemId, [X, Y]) :-
+    tell([triple(Facing, shop:productInFacing, ItemInstance),
+        is_at(ItemInstance, [Facing, [X,Y,0],[0,0,0,1]])]),
+    update_item_position_platform(ExtItemId, [X, Y, 0]).
     % update_item_platform(ExtItemId, Gtin, FacingExtId),
     %insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, [X, Y], ItemInstance).
 
@@ -416,6 +425,8 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
         % TODO : Add item to a facing in platform
         % insert_item_platform(ExtItemId, Gtin, FacingExtId),
         triple(Store, shop:hasShopNumber, StoreId),
+        get_facing_(Store, Position, Facing),
+        insert_item(Facing, Product, ItemGroupId, ExtItemId, Coordinates, ItemInstance),
         insert_item(Store, StoreId, Position, ExtItemId, Gtin, Coordinates, _),
         triple(Item, shop:hasItemId, ExtItemId),
         tripledb_forget(Basket, soma:containsObject, Item),
@@ -464,7 +475,7 @@ items_bought(UserId, Items) :-
     Items).
 
 get_facing_(Store, Position, Facing) :-
-    has_location(Fridge, Store),
+    holds(Fridge, dul:hasLocation, Store),
     [ShelfExt, LayerExt, FacingExt] = Position,
     triple(Fridge, soma:hasPhysicalComponent, Shelf),
     triple(Shelf, shop:erpShelfId, ShelfExt),
@@ -574,4 +585,3 @@ assert_object_shape_(Object, D, W, H, RGBValue):-
   tell(object_color_rgb(Object, RGBValue)), 
   triple(ColorType,dul:hasRegion,Region),
   tell(triple(Region, soma:hasTransparencyValue, 1)), !.
-% items_bought(UserId, TimeStamp, Items) :-

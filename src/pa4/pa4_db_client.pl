@@ -130,8 +130,9 @@ post_fridge_facings_of_layer([]).
 
 post_fridge_facing(LayerPlId, LayerRelPos, ExtRefId, Count) :-
     %NoOfItemDepth is 1,
+    LayerRelPosMM is round(LayerRelPos*1000),
     NoOfItemWidth is 1,
-    post_facing(LayerPlId, [LayerRelPos, Count, NoOfItemWidth, ExtRefId], _).
+    k4r_db_client:post_facing(LayerPlId, [LayerRelPosMM, Count, NoOfItemWidth, ExtRefId], _).
 
 post_items_in_store(StoreNumber) :-
     get_store_id(StoreNumber, StoreId),
@@ -186,6 +187,7 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
     get_product_unit_id(Gtin, ProductUnitId),
     writeln(["PUnitId", ProductUnitId]),
     % TODO : Enable the count
+
     %shop_reasoner:get_number_of_items_in_facing(Facing, NoOfItems),
 
     is_at(Item, [ParentName, [X, Y, Z], _]),
@@ -194,7 +196,7 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
     post_item_group([FacingPlatformId, ProductUnitId, 1], ItemGroup),
     k4r_db_client:get_entity_id(ItemGroup, ItemGroupId),
     triple(Item, shop:hasItemId, ExtItemId),
-    post_item([ItemGroupId, X_mm, Y_mm, Z_mm, ExtItemId], _),
+    post_item([ItemGroupId, X, Y, Z, ExtItemId], _),
     post_items_in_facing(Rest, ParentName, FacingPlatformId).
 
 % TODO : Use this to post the data without havign to loop through all
@@ -308,10 +310,11 @@ get_facing_id([StoreNum, ShelfExt, LayerExt, FacingExt], FacingId):-
     get_filter_("{shelves","externalReferenceId", "eq", ShelfExt, "string", ShelfFilter),
     get_filter_("{shelfLayers","externalReferenceId", "eq", LayerExt, "string", LayerFilter),
     % TODO : Must be changed to externalReferenceId
-    get_filter_("{facings","layerRelativePosition", "eq", FacingExt, "string", FacingFilter),
+    get_filter_("{facings","externalReferenceId", "eq", FacingExt, "string", FacingFilter),
     atomics_to_string([StoreFilter, ShelfFilter, LayerFilter, FacingFilter, "{", id, "}}}}}"], IdQuery),
     get_graphql(IdQuery, IdResponse),
-    member(FacingId, IdResponse.facings).  
+    _{stores:[_{shelves:[_{shelfLayers:[_{facings:[Facings]}]}]}]} = IdResponse,
+    FacingId = Facings.id.
 
 get_store_id(StoreNum, StoreId) :-
     get_filter_("{stores","storeNumber", "eq", StoreNum, "string", StoreFilter),

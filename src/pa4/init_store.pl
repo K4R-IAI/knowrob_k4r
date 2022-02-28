@@ -21,20 +21,14 @@
 create_store_and_init_fridge :-
     % writeln('initttttt'),
     %create_store(45, 'fridgepa42', "Ger", "BW" , "Bre", ["Uni", 45, 452343, ""], [40, 40], Store),
-    init_fridge(45, _, _), % store Pl Id 4958
+    init_fridge(45, _, _). % store Pl Id 4958
     %writeln('insertingg'),
-    insert_all_items(45, 
-        [
-            [[1, 1, 1], 'I4563','4062300025318', [0.5,0.5]], 
-            [[1, 1, 1], 'I4564','4062300025318', [0.0,0.2]],
-            [[1, 1, 1], 'I4567','4062300025318', [0.6,0.7]],
-            [[1, 1, 2], 'I4568','4062300020719', [0.5,0.5]], 
-            [[1, 1, 2], 'I4569','4062300020719', [0.0,0.2]],
-            [[1, 1, 2], 'I4570','4062300020719', [0.6,0.7]],
-            [[1, 1, 3], 'I4571','4062300265998', [0.5,0.5]], 
-            [[1, 1, 3], 'I4572','4062300265998', [0.0,0.2]],
-            [[1, 1, 3], 'I4573','4062300265998', [0.6,0.7]]
-    ]).
+    % insert_all_items(45, [1, 1, 1],'4010355520036', 
+    %     [['I4563', [0.5,0.5]], ['I4564', [0.0,0.2]], ['I4567', [0.6,0.7]]]),
+    % insert_all_items(45, [1, 1, 2],'4008617009771', 
+    %     [['I4568', [0.5,0.5]], ['I4569', [0.0,0.2]], ['I4570', [0.6,0.7]]]),
+    % insert_all_items(45, [1, 1, 3],'4005800431241', 
+    %     [['I4571', [0.5,0.5]], ['I4572', [0.0,0.2]], ['I4573', [0.6,0.7]]]).
 
 test_log_in :-
     get_time(Now), 
@@ -49,7 +43,7 @@ test_pick_up :-
     UserId is 100,
     StoreId is 5,
     ItemId = 'I4563',
-    Gtin = '4062300025318',
+    Gtin = '4010355520036',
     get_time(Now),
     Position = [1, 1, 1],
     % Is position necessary? We do know the position given the id of the item
@@ -83,7 +77,7 @@ test_log_out :-
 test('store init') :-
     gtrace,
     create_store_and_init_fridge,
-    StoreId = "fridge1",
+    StoreId = 45,
     % gtrace,
     get_items_in_fridge(StoreId, Items).
     % writeln(Items).
