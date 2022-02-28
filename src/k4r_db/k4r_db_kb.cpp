@@ -374,7 +374,7 @@ const Json::Value facing_array_to_facing_json(const Json::Value &facing_array)
   return facing_json;
 }
 
-PREDICATE(post_facing, 4)
+PREDICATE(post_facing, 3)
 {
   std::string link_tail = "shelflayers/" + std::string(PL_A1) + "/facings/";
   DataController facing_controller(link_tail.c_str());
