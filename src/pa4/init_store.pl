@@ -61,8 +61,8 @@ test_put_back :-
     Coordinates = [0.25, 0.5],
     put_back_object(UserId, StoreId, ItemId, Gtin, 
         Now, Coordinates, Position),
-    get_facing(ItemId, Facing).
-    % writeln(Facing).
+    get_facing(ItemId, Facing),
+    writeln(Facing).
 
 
 test_log_out :-
@@ -75,7 +75,6 @@ test_log_out :-
 :- begin_tests('init_store').
 
 test('store init') :-
-    gtrace,
     create_store_and_init_fridge,
     StoreId = 45,
     % gtrace,
@@ -86,15 +85,14 @@ test('store init') :-
     
 
 test('events') :-
-    gtrace,
     test_log_in,
-    % writeln('log in done'),
+    writeln('log in done'),
     test_pick_up,
-    % writeln('pick up done'),
+    writeln('pick up done'),
     % gtrace,
     test_put_back,
-    % writeln('put back done'),
+    writeln('put back done'),
     test_log_out.
-    % writeln('log out done').
+    writeln('log out done').
 
 :- end_tests('init_store').

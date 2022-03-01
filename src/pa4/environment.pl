@@ -166,35 +166,39 @@ assert_item_group_ids(FacingId, Parent) :-
     assert_item_group_platform_(Parent, ItemData).
 
 assert_item_group_platform_(Parent, [ItemGrp | Rest]) :-
-    get_gtin(ItemGrp.productUnitId, Gtin),
-    (article_number_of_dan(Gtin, AN);
+    get_gtin(ItemGrp.productUnitId, GtinStr),
+    atom_string(Gtin, GtinStr),
+    (article_number_of_dan(Gtin, AN),
+    get_product_type(Gtin, ProductType),
+    product_dimensions(ProductType, [D, W, H]);
     create_article_number(gtin(Gtin), AN),
     get_product_dimenion_platform(ItemGrp.productUnitId, D, W, H),
     create_article_type(AN,[D,W,H], ProductType)),
     tell([has_type(Label, shop:'ShelfLabel'),
     triple(Parent,shop:labelOfFacing,Label),
     triple(Label,shop:articleNumberOfLabel,AN)]),
-    assert_items_platform(ItemGrp.id, Gtin, Parent, ProductType, [D, W, H]),
+    assert_items_platform(ItemGrp.id, Parent, ProductType, [D, W, H]),
     assert_item_group_platform_(Parent, Rest).
 
 assert_item_group_platform_(_, []).
 
-assert_items_platform(ItemGrpId, Gtin, Parent, ProductType, Dimension) :-
+assert_items_platform(ItemGrpId, Parent, ProductType, Dimension) :-
     get_all_items(ItemGrpId, ItemData),
     assert_items_platform_(Parent, ProductType, Dimension, ItemData).
 
-assert_items_platform_(Facing, ProductType, Dimension, [Item | Rest]) :-
-    tell(has_type(Item, ProductType)),
+assert_items_platform_(Facing, ProductType, [D, W, H], [Item | Rest]) :-
+    tell(has_type(ItemInstance, ProductType)),
     rdf_split_url(_,ParentFrame, Facing),
+    atom_string(Item.externalReferenceId, ExtRef),
     tell([has_type(ProductShape, soma:'Shape'),
         triple(ItemInstance, soma:'hasShape', ProductShape),
         has_type(ShapeRegion, soma:'ShapeRegion'),
         triple(ProductShape,dul:hasRegion,ShapeRegion),
-        object_dimensions(ItemInstance, Dimension),
+        object_dimensions(ItemInstance, D, W, H),
         triple(Facing, shop:productInFacing, ItemInstance),
-        triple(ItemInstance, shop:hasItemId, Item.externalReferenceId),
-        is_at(ItemInstance, [ParentFrame, [Item.positionInFacingX, Item.positionInFacingY, 0], _])]),
-    assert_items_platform_(Facing, ProductType, Dimension, Rest).
+        triple(ItemInstance, shop:hasItemId, ExtRef),
+        is_at(ItemInstance, [ParentFrame, [Item.positionInFacingX, Item.positionInFacingY, 0], [0,0,0,1]])]),
+    assert_items_platform_(Facing, ProductType, [D, W, H], Rest).
 
 assert_items_platform_(_, _, _, []).
     

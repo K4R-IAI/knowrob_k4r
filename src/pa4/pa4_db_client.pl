@@ -25,10 +25,10 @@
             post_items_in_store/1,
             update_item_position_platform/2,
             update_stock/1,
-            delete_item_and_update_itemgroup/1,
+            delete_item_and_update_itemgroup/1
           ]).
 
-:- use_foreign_library('libk4r_db_client.so').
+%:- use_foreign_library('libk4r_db_client.so').
 :- use_module(library('k4r_db/k4r_db_client')).
 :- use_module(library('shop_reasoner')).
 :- use_module(library('semweb/rdf_db'),
