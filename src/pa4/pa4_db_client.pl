@@ -24,7 +24,8 @@
             post_fridge_facing/4,
             post_items_in_store/1,
             update_item_position_platform/2,
-            delete_item_and_update_itemgroup/1
+            update_stock/1,
+            delete_item_and_update_itemgroup/1,
           ]).
 
 :- use_foreign_library('libk4r_db_client.so').
@@ -243,6 +244,11 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
 %   } 
 % }
 
+update_stock(ItemGroupId) :-
+    get_item_group_data(ItemGroupId, Data),
+    Stock is Data.stock + 1,
+    put_item_group([Data.facingId, Data.productUnitId, Stock], _, ItemGroupId).
+
 update_item_position_platform(ExtItemId, [X, Y, 0]) :-
     get_filter_("{items","externalReferenceId", "eq", ExtItemId, "string", ItemFilter),
     get_item_param(Fields),
@@ -306,15 +312,19 @@ get_product_unit_id(Gtin, ProductUnitId) :-
     k4r_db_client:get_product_unit_data_with_filter(GtinFilter, [productUnitId], [ProductUnitId]).
 
 get_facing_id([StoreNum, ShelfExt, LayerExt, FacingExt], FacingId):-
+    get_facing_data_with_ext_ids(StoreNum, ShelfExt, LayerExt, FacingExt, id, Facings),
+    FacingId = Facings.id.
+
+get_facing_data_with_ext_ids(StoreNum, ShelfExt, LayerExt, FacingExt, Key, Facings) :-
     get_filter_("{stores","storeNumber", "eq", StoreNum, "string", StoreFilter),
     get_filter_("{shelves","externalReferenceId", "eq", ShelfExt, "string", ShelfFilter),
     get_filter_("{shelfLayers","externalReferenceId", "eq", LayerExt, "string", LayerFilter),
     % TODO : Must be changed to externalReferenceId
     get_filter_("{facings","externalReferenceId", "eq", FacingExt, "string", FacingFilter),
-    atomics_to_string([StoreFilter, ShelfFilter, LayerFilter, FacingFilter, "{", id, "}}}}}"], IdQuery),
+    atomics_to_string([StoreFilter, ShelfFilter, LayerFilter, FacingFilter, "{", Key, "}}}}}"], IdQuery),
     get_graphql(IdQuery, IdResponse),
-    _{stores:[_{shelves:[_{shelfLayers:[_{facings:[Facings]}]}]}]} = IdResponse,
-    FacingId = Facings.id.
+    _{stores:[_{shelves:[_{shelfLayers:[_{facings:[Facings]}]}]}]} = IdResponse.
+
 
 get_store_id(StoreNum, StoreId) :-
     get_filter_("{stores","storeNumber", "eq", StoreNum, "string", StoreFilter),

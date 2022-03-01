@@ -21,27 +21,27 @@
 create_store_and_init_fridge :-
     % writeln('initttttt'),
     %create_store(45, 'fridgepa42', "Ger", "BW" , "Bre", ["Uni", 45, 452343, ""], [40, 40], Store),
-    init_fridge(45, _, _). % store Pl Id 4958
+    init_fridge(45, _, _), % store Pl Id 4958
     %writeln('insertingg'),
-    % insert_all_items(45, [1, 1, 1],'4010355520036', 
-    %     [['I4563', [0.5,0.5]], ['I4564', [0.0,0.2]], ['I4567', [0.6,0.7]]]),
-    % insert_all_items(45, [1, 1, 2],'4008617009771', 
-    %     [['I4568', [0.5,0.5]], ['I4569', [0.0,0.2]], ['I4570', [0.6,0.7]]]),
-    % insert_all_items(45, [1, 1, 3],'4005800431241', 
-    %     [['I4571', [0.5,0.5]], ['I4572', [0.0,0.2]], ['I4573', [0.6,0.7]]]).
+    insert_all_items(45, [1, 1, 1],'4010355520036',
+        [['I4563', [0.5,0.5]], ['I4564', [0.0,0.2]], ['I4567', [0.6,0.7]]]),
+    insert_all_items(45, [1, 1, 2],'4008617009771',
+        [['I4568', [0.5,0.5]], ['I4569', [0.0,0.2]], ['I4570', [0.6,0.7]]]),
+    insert_all_items(45, [1, 1, 3],'4005800431241',
+        [['I4571', [0.5,0.5]], ['I4572', [0.0,0.2]], ['I4573', [0.6,0.7]]]).
 
 test_log_in :-
     get_time(Now), 
     UserId is 100,
     DeviceId is 101,
-    user_login(UserId, DeviceId, Now, 5),
+    user_login(UserId, DeviceId, Now, 45),
     get_user(UserId, _).
     % writeln(User).
 
 test_pick_up :-
     %writeln("in pick up"),
     UserId is 100,
-    StoreId is 5,
+    StoreId is 45,
     ItemId = 'I4563',
     Gtin = '4010355520036',
     get_time(Now),
@@ -53,12 +53,12 @@ test_pick_up :-
 
 test_put_back :-
     UserId is 100,
-    StoreId is 5,
+    StoreId is 45,
     ItemId = 'I4563',
-    Gtin = '4062300025318',
+    Gtin = '4010355520036',
     get_time(Now),
     Position = [1, 1, 1],
-    Coordinates = [0.5, 0.5],
+    Coordinates = [0.25, 0.5],
     put_back_object(UserId, StoreId, ItemId, Gtin, 
         Now, Coordinates, Position),
     get_facing(ItemId, Facing).
@@ -69,7 +69,7 @@ test_log_out :-
     get_time(Now), 
     UserId is 100,
     DeviceId is 101,
-    user_logout(UserId, DeviceId, Now, 5),
+    user_logout(UserId, DeviceId, Now, 45),
     get_user(UserId, User).
 
 :- begin_tests('init_store').
@@ -79,13 +79,14 @@ test('store init') :-
     create_store_and_init_fridge,
     StoreId = 45,
     % gtrace,
-    get_items_in_fridge(StoreId, Items).
-    % writeln(Items).
+    get_items_in_fridge(StoreId, Items),
+    writeln(Items).
 
     
     
 
 test('events') :-
+    gtrace,
     test_log_in,
     % writeln('log in done'),
     test_pick_up,

@@ -24,6 +24,8 @@
         get_facing/2
     ]).
 
+%TODO : update the stock numbers in item group table
+
 :- use_module(library('semweb/sparql_client')).
 :- use_foreign_library('libkafka_plugin.so').
 :- use_module(library('semweb/rdf_db')).
@@ -130,15 +132,19 @@ insert_item(Facing, Product, ItemGroupId, ExtItemId, Coordinates, ItemInstance):
     tell(triple(ItemInstance, shop:hasItemId, ExtItemId)),
     k4r_db_client:double_m_to_int_mm([X, Y, 0.0], [X_mm, Y_mm, _]),
     k4r_db_client:post_item([ItemGroupId, X_mm, Y_mm, 0, ExtItemId],_),
+    update_stock(ItemGroupId),
     % ]),
     % insert_item_platform(ExtItemId, Gtin, FacingExtId),
     shop:belief_new_object(Product, ItemInstance)).
 
 
 update_item_position(Facing, ItemInstance, ExtItemId, [X, Y]) :-
-    tell([triple(Facing, shop:productInFacing, ItemInstance),
-        is_at(ItemInstance, [Facing, [X,Y,0],[0,0,0,1]])]),
-    update_item_position_platform(ExtItemId, [X, Y, 0]).
+    rdf_split_url(_,ParentFrame,Facing),
+    (\+ is_at(ItemInstance,  [ParentFrame, [X, Y, _], _]) ->
+    (tell([triple(Facing, shop:productInFacing, ItemInstance),
+        is_at(ItemInstance, [ParentFrame, [X,Y,0],[0,0,0,1]])]),
+    update_item_position_platform(ExtItemId, [X, Y, 0]));
+    true).
     % update_item_platform(ExtItemId, Gtin, FacingExtId),
     %insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, [X, Y], ItemInstance).
 
@@ -397,8 +403,8 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
         publish_pick_event(Timestamp, [UserId, StoreId, Gtin]). % Not sure here if object type makes sense
 
 put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Position) :-
+    [ShelfExt, LayerExt, FacingExt] = Position,
     get_store(StoreId, Store),
-    % get_facing_(Store, Position, Facing),
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk), 
@@ -426,10 +432,21 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
         % insert_item_platform(ExtItemId, Gtin, FacingExtId),
         triple(Store, shop:hasShopNumber, StoreId),
         get_facing_(Store, Position, Facing),
-        insert_item(Facing, Product, ItemGroupId, ExtItemId, Coordinates, ItemInstance),
-        insert_item(Store, StoreId, Position, ExtItemId, Gtin, Coordinates, _),
-        triple(Item, shop:hasItemId, ExtItemId),
-        tripledb_forget(Basket, soma:containsObject, Item),
+        get_product_type(Gtin, ProductType),
+        triple(Facing,shop:labelOfFacing,Label),
+        triple(Label,shop:articleNumberOfLabel,AN),
+        get_facing_id([StoreId, ShelfExt, LayerExt, FacingExt], FacingId),
+        get_product_unit_id(Gtin, ProdUnitId),
+        ((subclass_of(ProductType, ANRest),
+        is_restriction(ANRest, value(shop:articleNumberOfProduct, AN)),
+        get_item_group_id(FacingId, ProdUnitId, ItemGroupId)
+        );
+        (post_item_group([FacingId, ProdUnitId, 1], ItemGroup),
+        k4r_db_client:get_entity_id(ItemGroup, ItemGroupId),
+        tell(has_type(Facing, shop:'MisplacedProductFacing')))),
+        insert_item(Facing, ProductType, ItemGroupId, ExtItemId, Coordinates, ItemInstance),
+        tell(triple(Facing, shop:productInFacing, ItemInstance)),
+        tripledb_forget(Basket, soma:containsObject, ItemInstance),
         time_interval_tell(PutAct, Timestamp, Timestamp),
         publish_put_back(Timestamp, [UserId, StoreId, Gtin]). %% what needs to be here?? Gtin or object type or ?
 
