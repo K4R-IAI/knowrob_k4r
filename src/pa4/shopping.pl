@@ -60,7 +60,9 @@ init_fridge(StoreId, Store, Fridge) :-
 
 %TODO
 label_of_facing(StoreNum, Facing, [ShelfNo, LayerNo, FacingExtNo], Gtin, ProductType, ItemGroupId) :-
-    get_product_unit_id(Gtin, ProductUnitId),
+    (triple(Facing,shop:labelOfFacing,Label),
+    has_type(Label, shop:'ShelfLabel'));
+    (get_product_unit_id(Gtin, ProductUnitId),
     (article_number_of_dan(Gtin, AN);
     create_article_number(gtin(Gtin), AN),
     get_product_dimenion_platform(ProductUnitId, D, W, H),
@@ -70,7 +72,7 @@ label_of_facing(StoreNum, Facing, [ShelfNo, LayerNo, FacingExtNo], Gtin, Product
     triple(Label,shop:articleNumberOfLabel,AN)]),
     get_facing_id([StoreNum, ShelfNo, LayerNo, FacingExtNo], FacingId),
     post_item_group([FacingId, ProductUnitId, 0], ItemGroup),
-    k4r_db_client:get_entity_id(ItemGroup, ItemGroupId).
+    k4r_db_client:get_entity_id(ItemGroup, ItemGroupId)).
 
 
 assert_shelf_(Store, StorePlId, Fridge, ShelfPlatformId) :-
