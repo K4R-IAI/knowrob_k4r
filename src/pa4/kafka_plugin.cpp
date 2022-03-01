@@ -27,7 +27,7 @@ const std::string convert_time(const std::string input_time)
 // publish_log_in(time, [CustomerId, StoreId])
 PREDICATE(publish_log_in, 2)
 {
-    std::cout << "Hola holaa" << std::endl;
+    //std::cout << "Hola holaa" << std::endl;
     Json::Value event_data;
 
     event_data["eventType"] = "LOG_IN";
