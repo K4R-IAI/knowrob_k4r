@@ -339,14 +339,14 @@ get_store(StoreNum, StoreParam, Store) :-
     list_to_string(StoreParam, KeyParamStr),
     atomics_to_string([StoreFilter, "{", KeyParamStr,  "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
-    (GraphQLResponse.stores == [] -> Store = GraphQLResponse.stores;
-    Store = GraphQLResponse.stores).
+    member(Store, GraphQLResponse.stores).
 
 get_all_shelf_data(StorePlatformId, ShelfParam, ShelfData) :-
     get_filter_("{shelves", "storeId", "eq", StorePlatformId, "string", ShelfFilter),
     list_to_string(ShelfParam, KeyParamStr),
     atomics_to_string([ShelfFilter, "{", KeyParamStr,  "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
+    writeln("pa4"),
     writeln(GraphQLResponse),
     (GraphQLResponse.shelves == [] ->  ShelfData = GraphQLResponse.shelves;
     ShelfData = GraphQLResponse.shelves).
