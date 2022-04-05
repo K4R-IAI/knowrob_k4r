@@ -21,7 +21,7 @@
 create_store_and_init_fridge :-
     % writeln('initttttt'),
     %create_store(45, 'fridgepa42', "Ger", "BW" , "Bre", ["Uni", 45, 452343, ""], [40, 40], Store),
-    init_fridge(45, _, _). % store Pl Id 4958
+    init_fridge("45", _, _). % store Pl Id 4958
     %writeln('insertingg'),
     /* insert_all_items(45, [1, 1, 1],'4010355520036',
         [['I4563', [0.5,0.5]], ['I4564', [0.0,0.2]], ['I4567', [0.6,0.7]]]),
@@ -42,7 +42,7 @@ test_pick_up :-
     %writeln("in pick up"),
     UserId is 100,
     StoreId is 45,
-    ItemId = 'I4564',
+    ItemId = 'I4574',
     Gtin = '4010355520036',
     get_time(Now),
     Position = [1, 1, 1],
@@ -54,7 +54,7 @@ test_pick_up :-
 test_put_back :-
     UserId is 100,
     StoreId is 45,
-    ItemId = 'I4574',
+    ItemId = 'I4591',
     Gtin = '4010355520036',
     get_time(Now),
     Position = [1, 1, 1],
@@ -75,7 +75,7 @@ test_log_out :-
 :- begin_tests('init_store').
 
 test('store init') :-
-    %gtrace,
+    gtrace,
     create_store_and_init_fridge,
     StoreId = 45,
     get_items_in_fridge(StoreId, Items).
