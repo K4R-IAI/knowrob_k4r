@@ -51,6 +51,7 @@
 init_fridge(StoreId, Store, Fridge) :-
     % StoreId, Store, Fridge
     ((triple(Store, shop:hasShopNumber, StoreId) -> true,
+    triple(Fridge, dul:hasLocation, Store),
     print_message(warning, 'Store already exist in Knowrob'));
     (assert_store(StoreId, StorePlatformId, Store),
     assert_shelf_(Store, StorePlatformId, Fridge, ShelfPlatformId),
@@ -512,23 +513,35 @@ get_store(StoreId, Store) :-
     atom_string(StoreId, IdString),
     triple(Store, shop:hasShopNumber, IdString).
 
+% get_items_in_fridge(StoreId, Items) :-
+%     %%%%
+%     % Get all shelves in the store
+%     % Get all layers in the store
+%     % Get all facings in the layer
+%     % Get all items in the facing
+%     get_store(StoreId, Store),
+%     holds(Fridge, dul:hasLocation, Store),
+%     writeln(['Store', Store]),
+%     get_all_shelves_in_fridge(Fridge, Shelves),
+%     writeln(['Shelf', Shelves]),
+%     get_all_layers_in_shelves(Shelves, Layers),
+%     writeln(['Layer', Layers]),
+%     get_all_facings_in_layers(Layers, Facings),
+%     writeln(['F', Facings]),
+%     get_all_items_in_fridge_facing(Facings, Items),
+%     writeln(Items).
+
 get_items_in_fridge(StoreId, Items) :-
-    %%%%
-    % Get all shelves in the store
-    % Get all layers in the store
-    % Get all facings in the layer
-    % Get all items in the facing
     get_store(StoreId, Store),
     holds(Fridge, dul:hasLocation, Store),
-    %writeln(['Store', Store]),
-    get_all_shelves_in_fridge(Fridge, Shelves),
-    %writeln(['Shelf', Shelves]),
-    get_all_layers_in_shelves(Shelves, Layers),
-    %writeln(['Layer', Layers]),
-    get_all_facings_in_layers(Layers, Facings),
-    %writeln(['F', Facings]),
-    get_all_items_in_fridge_facing(Facings, Items).
-    %writeln(Items).
+    findall(Item,
+        (triple(Fridge, 'http://www.ease-crc.org/ont/SOMA.owl#hasPhysicalComponent', Shelf),
+        has_type(Shelf, shop:'ShelfFrame'),
+        triple(Shelf, 'http://www.ease-crc.org/ont/SOMA.owl#hasPhysicalComponent', Layer),
+        has_type(Layer, shop:'ShelfLayer'),
+        triple(Facing, shop:layerOfFacing, Layer),
+        triple(Facing, shop:productInFacing, Item)),
+    Items).
 
 get_all_shelves_in_fridge(Fridge, Shelves) :-
     findall(Shelf,
