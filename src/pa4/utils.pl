@@ -9,7 +9,8 @@
     string_to_list/2,
     convert_to_m/3,
     is_list_empty_/1,
-    is_string_empty_/1
+    is_string_empty_/1,
+    copy_list_/2
     ]
     ).
 
@@ -30,11 +31,18 @@ is_list_empty_([]).
 is_string_empty_("").
 
 convert_to_m(1, In, Out) :- % 1 is m
-    Out is In.
+    (atom(In) -> atom_number(In, InNum); InNum is In),
+    Out is InNum.
 
 convert_to_m(2, In, Out) :- % 2 is mm
-    Out is In/1000.
+    (atom(In) -> atom_number(In, InNum); InNum is In),
+    Out is InNum/1000.
 
 convert_to_m(3, In, Out) :- % 3 is cm
     writeln(In),
-    Out is In/100.
+    (atom(In) -> atom_number(In, InNum); InNum is In),
+    Out is InNum/100.
+
+copy_list_([], []).
+
+copy_list_([First | Rest], [First | Copy]) :- copy_list_(Rest, Copy).

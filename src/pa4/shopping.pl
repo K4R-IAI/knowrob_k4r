@@ -323,7 +323,8 @@ assert_object_pose_(StaticObject, UrdfObj, UrdfPose, D, W, H) :-
 user_login(UserId, DeviceId, Timestamp, StoreId) :-
     ((triple(_, shop:hasUserId, UserId) -> true,  % when there is no existing error, it throws an instantiation error
     print_message(info, 'User has already registered and has not logged out'));
-    (triple(Store, shop:hasShopNumber, StoreId),
+    ( atom_string(StoreId, IdString),
+    triple(Store, shop:hasShopNumber, IdString),
     has_location(Fridge, Store),
     tell([is_action(ParentAct),
         has_participant(ParentAct, Fridge),
@@ -432,7 +433,7 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
         ]),
         % TODO : Add item to a facing in platform
         % insert_item_platform(ExtItemId, Gtin, FacingExtId),
-        triple(Store, shop:hasShopNumber, StoreId),
+        %triple(Store, shop:hasShopNumber, StoreId),
         get_facing_(Store, Position, Facing),
         get_product_type(Gtin, ProductType),
         triple(Facing,shop:labelOfFacing,Label),
@@ -508,7 +509,8 @@ get_facing(ItemId, Facing) :-
     triple(Facing, shop:productInFacing, Item).
 
 get_store(StoreId, Store) :-
-    triple(Store, shop:hasShopNumber, StoreId).
+    atom_string(StoreId, IdString),
+    triple(Store, shop:hasShopNumber, IdString).
 
 get_items_in_fridge(StoreId, Items) :-
     %%%%

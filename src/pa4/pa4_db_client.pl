@@ -79,9 +79,9 @@ post_fridge_shelf(StorePlatformId, [H, W1, D], [X1, Y1, Z1], [X, Y, Z, W], ExtRe
 post_fridge_shelf_layers(StoreNumber) :-
     get_store_id(StoreNumber, StoreId),
     get_shelves_data(StoreId, [id, externalReferenceId], Data),
-    writeln(Data),
+    %writeln(Data),
     get_unit_id('meter', UnitId),
-    writeln(['Id', UnitId]),
+    %writeln(['Id', UnitId]),
     forall(member([ShelfId, ExtRefId], Data),
         (atom_number(ExtRefId, NumId),
         get_shelf_with_external_id(NumId, Shelf),
@@ -94,9 +94,9 @@ post_shelf_layers_of_shelf_(ShelfId, UnitId, [Layer | Rest]) :-
     % 
     % triple(Shelf, soma:hasPhysicalComponent, Layer),
     % has_type(Layer, shop:'ShelfLayer'),
-    writeln(['layer', Layer]),
+    %writeln(['layer', Layer]),
     object_dimensions(Layer, D, W, H),
-    writeln(['dim',D, W, H]),
+    %writeln(['dim',D, W, H]),
     is_at(Layer, [_, T, _]),
     % writeln(['pose',T, R]),
     [_,_,Z] = T,
@@ -115,7 +115,7 @@ post_fridge_facings(StoreNumber) :-
     get_store_id(StoreNumber, StoreId),
     % This works only because fridge has only one shelf 
     get_shelf_layers_data(StoreId, [id, externalReferenceId], Value),
-    writeln(["shelf", Value]),
+    %writeln(["shelf", Value]),
     post_fridge_facings_of_layer(Value).
 
 post_fridge_facings_of_layer([[LayerId, ExtId] | Rest]) :-
@@ -123,7 +123,7 @@ post_fridge_facings_of_layer([[LayerId, ExtId] | Rest]) :-
     triple(Layer, shop:erpShelfLayerId, NumId),
     % forcing the loop to continue even if there is a failure in posting
     (triple(Facing, shop:layerOfFacing, Layer),
-    writeln(Facing),
+    %writeln(Facing),
     k4r_db_client:post_facings(Layer, LayerId)); true,
     post_fridge_facings_of_layer(Rest).
 
@@ -141,7 +141,7 @@ post_items_in_store(StoreNumber) :-
     get_shelves_data(StoreId, [id, externalReferenceId], Value),
     writeln(["ShelfData",Value]),
     forall(member([ShelfPlId, ShelfExtRefId], Value),
-        ( writeln(["PId", ShelfPlId]),
+        ( %writeln(["PId", ShelfPlId]),
         atom_number(ShelfExtRefId, NumId),
         %get_shelf_with_external_id(NumId, Shelf),
         triple(Shelf, shop:erpShelfId, NumId),
@@ -159,16 +159,16 @@ post_items_in_shelf(Shelf, PlatformShelfId) :-
         (atom_number(LayerDict.externalReferenceId, NumId),
         triple(Layer, shop:erpShelfLayerId, NumId),
         triple(Shelf, soma:hasPhysicalComponent, Layer),
-        writeln([Layer,LayerDict.facings]),
+        %writeln([Layer,LayerDict.facings]),
         post_items_in_layer(LayerDict.facings, Layer)
     )).
 
 post_items_in_layer([], _).
 
 post_items_in_layer([FacingDict | Rest], Layer) :-
-    writeln("post_items_in_layer"),
+    %writeln("post_items_in_layer"),
     %integer(FacingDict.layerRelativePosition),
-    writeln([FacingDict.layerRelativePosition, FacingDict.id]),
+    %writeln([FacingDict.layerRelativePosition, FacingDict.id]),
     %atom_number(FacingDict.layerRelativePosition, FacingRelPos),
     triple(Facing, shop:erpFacingId, FacingDict.layerRelativePosition),
     triple(Facing, shop:layerOfFacing, Layer),
@@ -186,7 +186,7 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
     has_type(Item, Product),
     get_product_gtin(Product, Gtin),
     get_product_unit_id(Gtin, ProductUnitId),
-    writeln(["PUnitId", ProductUnitId]),
+    %writeln(["PUnitId", ProductUnitId]),
     % TODO : Enable the count
 
     %shop_reasoner:get_number_of_items_in_facing(Facing, NoOfItems),
@@ -254,7 +254,7 @@ update_item_position_platform(ExtItemId, [X, Y, 0]) :-
     get_item_param(Fields),
     list_to_string(Fields, FieldsStr),
     atomics_to_string([ItemFilter, "{", FieldsStr, "}}"], GraphQLQuery),
-    writeln(GraphQLQuery),
+    %writeln(GraphQLQuery),
     get_graphql(GraphQLQuery, Response),
     member(ItemData, Response.items),
     put_item([ItemData.itemGroupId, X, Y, ItemData.positionInFacingZ, ExtItemId], _, ItemData.id).
@@ -302,7 +302,7 @@ get_item_group_id(FacingId, ProductUnitId, ItemGrpId) :-
     get_filter_("{itemGroups","productUnitId", "eq", ProductUnitId, "string", ItemGroupFilter),
     atomics_to_string([FacingFilter, ItemGroupFilter, "{", id, "}}}"], IdQuery),
     get_graphql(IdQuery, IdResponse),
-    writeln(IdResponse.facings),
+    %writeln(IdResponse.facings),
     member(ItemGrpList, IdResponse.facings),
     member(ItemGrp, ItemGrpList.itemGroups),
     ItemGrpId = ItemGrp.id.
@@ -339,17 +339,24 @@ get_store(StoreNum, StoreParam, Store) :-
     list_to_string(StoreParam, KeyParamStr),
     atomics_to_string([StoreFilter, "{", KeyParamStr,  "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
+    get_dict(stores,GraphQLResponse,Temp),
     member(Store, GraphQLResponse.stores).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 get_all_shelf_data(StorePlatformId, ShelfParam, ShelfData) :-
     get_filter_("{shelves", "storeId", "eq", StorePlatformId, "string", ShelfFilter),
     list_to_string(ShelfParam, KeyParamStr),
     atomics_to_string([ShelfFilter, "{", KeyParamStr,  "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
-    writeln("pa4"),
-    writeln(GraphQLResponse),
-    (GraphQLResponse.shelves == [] ->  ShelfData = GraphQLResponse.shelves;
-    ShelfData = GraphQLResponse.shelves).
+    % writeln("pa4"),
+    % writeln(GraphQLResponse),
+    get_dict(shelves, GraphQLResponse, Temp),
+    writeln(Temp),
+    findall(ValueList, 
+        (member(T, Temp), 
+        get_value_list(T, ShelfParam, ValueList)),
+    ShelfData).
+    %writeln(ShelfData).
 
 get_all_items(ItemGrpId, ItemData) :-
     get_filter_("{items","itemGroupId", "eq", ItemGrpId, "string", ItemFilter),
@@ -357,7 +364,13 @@ get_all_items(ItemGrpId, ItemData) :-
     list_to_string(Fields, FieldsStr),
     atomics_to_string([ItemFilter, "{", FieldsStr, "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
-    ItemData = GraphQLResponse.items.
+    get_dict(items, GraphQLResponse, Temp),
+    writeln(Temp),
+    findall(ValueList, 
+        (member(T, Temp), 
+        get_value_list(T, Fields, ValueList)),
+    ItemData).
+    %writeln(ItemData).
 
 get_all_item_groups(FacingId, ItemGrps) :-
     get_filter_("{itemGroups","facingId", "eq", FacingId, "string", ItemGroupFilter),
@@ -366,8 +379,13 @@ get_all_item_groups(FacingId, ItemGrps) :-
     atomics_to_string([ItemGroupFilter, "{", FieldsStr, "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
     writeln(GraphQLResponse),
-    ItemGrps = GraphQLResponse.itemGroups,
-    writeln(ItemGrps).
+    get_dict(itemGroups, GraphQLResponse, Temp),
+    writeln(Temp),
+    findall(ValueList, 
+        (member(T, Temp), 
+        get_value_list(T, Fields, ValueList)),
+    ItemGrps).
+    %writeln(ItemGrps).
 
 get_all_facings_platform(LayerId, Data) :-
     get_filter_("{facings","shelfLayerId", "eq", LayerId, "string", FacingFilter),
@@ -375,15 +393,34 @@ get_all_facings_platform(LayerId, Data) :-
     list_to_string(Fields, FieldsStr),
     atomics_to_string([FacingFilter, "{", FieldsStr, "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
-    Data = GraphQLResponse.facings.
+    get_dict(facings, GraphQLResponse, Temp),
+    writeln(Temp),
+    findall(ValueList, 
+        (member(T, Temp), 
+        get_value_list(T, Fields, ValueList)),
+    Data).
+    %writeln(Data).
 
-get_all_layers_platform(ShelfId, Data) :-
+get_all_layers_platform(ShelfId, ValueLists) :-
     get_filter_("{shelfLayers","shelfId", "eq", ShelfId, "string", LayerFilter),
     get_layer_param(Fields),
     list_to_string(Fields, FieldsStr),
     atomics_to_string([LayerFilter, "{", FieldsStr, "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
-    Data = GraphQLResponse.shelfLayers.
+    %writeln(GraphQLResponse),
+    get_dict(shelfLayers, GraphQLResponse, Temp),
+    findall(ValueList, 
+        (member(T, Temp), 
+        get_value_list(T, Fields, ValueList)),
+    ValueLists).
+    %writeln(ValueLists).
+
+get_value_list(TempDict, Keys, ValList) :-
+    findall(Value,
+        (member(Key, Keys),
+        string_to_atom(TempDict.Key, Value)),
+        %put_dict([Key = Value], InitDict, Init)),
+    ValList).
 
 get_gtin(ProductUnitId, Gtin) :-
     get_filter_("{productGtins","productUnitId", "eq", ProductUnitId, "string", GtinFilter),

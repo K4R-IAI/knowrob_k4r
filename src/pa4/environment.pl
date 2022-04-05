@@ -40,7 +40,7 @@ create_store_from_platfrom(StoreNumber, StorePlatformId, Store):-
     get_store(StoreNumber, Param, PlatformStore),
     ((is_list_empty_(PlatformStore) -> 
     print_message(info, 'Store not in platform'));
-    (member(StoreData, PlatformStore),
+    (StoreData = PlatformStore,
     AddressValue = [StoreData.addressStreet, StoreData.addressStreetNumber, StoreData.addressPostcode, StoreData.addressAdditional],
     StorePlatformId = StoreData.id,
     GeoCoo  = [StoreData.latitude, StoreData.longitude],
@@ -86,18 +86,20 @@ assert_shelf_platform(Fridge, ShelfData, Ids) :-
     assert_shelf_platform(Fridge, ShelfData, [], Ids).
 
 assert_shelf_platform(Fridge, [Shelf | Rest], Temp, ShelfIds) :-
-    atom_number(Shelf.externalReferenceId, ExtRefId),
-    append(Temp,  Shelf.id, Temp1),
-    convert_to_m(Shelf.lengthUnitId, Shelf.positionX, X),
-    convert_to_m(Shelf.lengthUnitId, Shelf.positionY, Y),
-    convert_to_m(Shelf.lengthUnitId, Shelf.positionZ, Z),
-    convert_to_m(Shelf.lengthUnitId, Shelf.orientationX, X1),
-    convert_to_m(Shelf.lengthUnitId, Shelf.orientationY, Y1),
-    convert_to_m(Shelf.lengthUnitId, Shelf.orientationZ, Z1),
-    convert_to_m(Shelf.lengthUnitId, Shelf.orientationW, W1),
-    convert_to_m(Shelf.lengthUnitId, Shelf.depth, D),
-    convert_to_m(Shelf.lengthUnitId, Shelf.width, W),
-    convert_to_m(Shelf.lengthUnitId, Shelf.height, H),
+    [PlatformShelfId, PosX, PosY, PosZ, PosX1, PosY1, PosZ1, PosW1, Width, Height, Depth, LengthUnitIdAtom, CadPlanId, ExtRefIdAtom] = Shelf,
+    atom_number(ExtRefIdAtom, ExtRefId),
+    atom_number(LengthUnitIdAtom, LengthUnitId),
+    append(Temp, PlatformShelfId, Temp1),
+    convert_to_m(LengthUnitId, PosX, X),
+    convert_to_m(LengthUnitId, PosY, Y),
+    convert_to_m(LengthUnitId, PosZ, Z),
+    convert_to_m(LengthUnitId, PosX1, X1),
+    convert_to_m(LengthUnitId, PosY1, Y1),
+    convert_to_m(LengthUnitId, PosZ1, Z1),
+    convert_to_m(LengthUnitId, PosW1, W1),
+    convert_to_m(LengthUnitId, Depth, D),
+    convert_to_m(LengthUnitId, Width, W),
+    convert_to_m(LengthUnitId, Height, H),
     tell([ has_type(Frame, shop:'ShelfFrame'),
         triple(Fridge, soma:hasPhysicalComponent, Frame),
         triple(Frame, shop:erpShelfId, ExtRefId),
@@ -109,8 +111,8 @@ assert_shelf_platform(Fridge, [Shelf | Rest], Temp, ShelfIds) :-
         object_dimensions(Frame, D, W, H)]),
     triple(Frame, soma:hasShape, Shape),
     triple(Shape, dul:hasRegion, ShapeRegion),
-    ignore(tell(triple(ShapeRegion, soma:hasFilePath, Shelf.cadPlanId))),
-    ignore(assert_layer_platform(Shelf.id, Frame)),
+    ignore(tell(triple(ShapeRegion, soma:hasFilePath, CadPlanId))),
+    ignore(assert_layer_platform(PlatformShelfId, Frame)),
     assert_shelf_platform(Fridge, Rest, Temp1, ShelfIds).
 
 assert_shelf_platform(_, [], Temp, Temp).
@@ -120,11 +122,13 @@ assert_layer_platform(ShelfId, Parent) :-
     assert_layer_platform_(Parent, LayerData).
 
 assert_layer_platform_(Parent, [Layer | Rest]) :-
-    atom_number(Layer.externalReferenceId, ExtRefId),
-    convert_to_m(Layer.lengthUnitId, Layer.positionZ, Z),
-    convert_to_m(Layer.lengthUnitId, Layer.depth, D),
-    convert_to_m(Layer.lengthUnitId, Layer.width, W),
-    convert_to_m(Layer.lengthUnitId, Layer.height, H),
+    [PlatformLayerId, SheldId, Level, Type, PosZ, Width, Height, Depth, LengthUnitIdAtom, ExtRefIdAtom] = Layer,
+    atom_number(ExtRefIdAtom, ExtRefId),
+    atom_number(LengthUnitIdAtom, LengthUnitId),
+    convert_to_m(LengthUnitId, PosZ, Z),
+    convert_to_m(LengthUnitId, Depth, D),
+    convert_to_m(LengthUnitId, Width, W),
+    convert_to_m(LengthUnitId, Height, H),
     rdf_split_url(_,ParentFrame, Parent),
     tell([ has_type(ShelfLayer, shop:'ShelfLayer'),
         triple(Parent, soma:hasPhysicalComponent, ShelfLayer),
@@ -135,7 +139,7 @@ assert_layer_platform_(Parent, [Layer | Rest]) :-
         holds(ObjShape,dul:hasRegion,ShapeRegion),
         is_at(ShelfLayer, [ParentFrame, [0, 0, Z],[0,0,0,1]]),
         object_dimensions(ShelfLayer, D, W, H)]),
-    assert_facing_platform(Layer.id, ShelfLayer),
+    assert_facing_platform(PlatformLayerId, ShelfLayer),
     assert_layer_platform_(Parent, Rest).
 
 assert_layer_platform_(_, []).
@@ -149,14 +153,15 @@ assert_facing_platform(LayerId, Parent) :-
 assert_facing_platform_(Parent, [Facing | Rest]) :-
     % No shape is asserted -it can be done based on the dimension of the product
     % and the no of item width so 2*Product
-    atom_number(Facing.externalReferenceId, ExtRefId),
-    convert_to_m(2, Facing.layerRelativePosition, X), % is this X or Y
+    [PlatformFacingId, _, LayerRelPositionCM, ItemsDepth, ItemsWidth, ExternalRefIdAtom] = Facing,
+    atom_number(ExternalRefIdAtom, ExtRefId),
+    convert_to_m(2, LayerRelPositionCM, X), % is this X or Y
     rdf_split_url(_,ParentFrame, Parent),
     tell([ has_type(PrFacing, shop:'ProductFacing'),
         triple(PrFacing, shop:layerOfFacing, Parent),
         triple(PrFacing, shop:erpFacingId, ExtRefId),
         is_at(PrFacing, [ParentFrame,[X, 0, 0],[0,0,0,1]])]),
-    assert_item_group_ids(Facing.id, PrFacing),
+    assert_item_group_ids(PlatformFacingId, PrFacing),
     assert_facing_platform_(Parent, Rest).
 
 assert_facing_platform_(_, []).
@@ -166,18 +171,19 @@ assert_item_group_ids(FacingId, Parent) :-
     assert_item_group_platform_(Parent, ItemData).
 
 assert_item_group_platform_(Parent, [ItemGrp | Rest]) :-
-    get_gtin(ItemGrp.productUnitId, GtinStr),
+    [PlatformItemGrpId, ProductUnitId, _, Stock] = ItemGrp,
+    get_gtin(ProductUnitId, GtinStr),
     atom_string(Gtin, GtinStr),
     (article_number_of_dan(Gtin, AN),
     get_product_type(Gtin, ProductType),
     product_dimensions(ProductType, [D, W, H]);
     create_article_number(gtin(Gtin), AN),
-    get_product_dimenion_platform(ItemGrp.productUnitId, D, W, H),
+    get_product_dimenion_platform(ProductUnitId, D, W, H),
     create_article_type(AN,[D,W,H], ProductType)),
     tell([has_type(Label, shop:'ShelfLabel'),
     triple(Parent,shop:labelOfFacing,Label),
     triple(Label,shop:articleNumberOfLabel,AN)]),
-    assert_items_platform(ItemGrp.id, Parent, ProductType, [D, W, H]),
+    assert_items_platform(PlatformItemGrpId, Parent, ProductType, [D, W, H]),
     assert_item_group_platform_(Parent, Rest).
 
 assert_item_group_platform_(_, []).
@@ -187,9 +193,12 @@ assert_items_platform(ItemGrpId, Parent, ProductType, Dimension) :-
     assert_items_platform_(Parent, ProductType, Dimension, ItemData).
 
 assert_items_platform_(Facing, ProductType, [D, W, H], [Item | Rest]) :-
+    [PlatformItemId, _, ExtRefId, PosX, PosY, PosZ] = Item,
+    convert_to_m(2, PosX, X_m),
+    convert_to_m(2, PosY, Y_m),
     tell(has_type(ItemInstance, ProductType)),
     rdf_split_url(_,ParentFrame, Facing),
-    atom_string(Item.externalReferenceId, ExtRef),
+    atom_string(ExtRefId, ExtRef),
     tell([has_type(ProductShape, soma:'Shape'),
         triple(ItemInstance, soma:'hasShape', ProductShape),
         has_type(ShapeRegion, soma:'ShapeRegion'),
@@ -197,7 +206,7 @@ assert_items_platform_(Facing, ProductType, [D, W, H], [Item | Rest]) :-
         object_dimensions(ItemInstance, D, W, H),
         triple(Facing, shop:productInFacing, ItemInstance),
         triple(ItemInstance, shop:hasItemId, ExtRef),
-        is_at(ItemInstance, [ParentFrame, [Item.positionInFacingX, Item.positionInFacingY, 0], [0,0,0,1]])]),
+        is_at(ItemInstance, [ParentFrame, [X_m, Y_m, 0], [0,0,0,1]])]),
     assert_items_platform_(Facing, ProductType, [D, W, H], Rest).
 
 assert_items_platform_(_, _, _, []).
