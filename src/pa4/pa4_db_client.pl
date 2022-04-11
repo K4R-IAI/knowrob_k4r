@@ -73,7 +73,7 @@ post_fridge_shelf(StoreNumber) :-
 post_fridge_shelf(StorePlatformId, [H, W1, D], [X1, Y1, Z1], [X, Y, Z, W], ExtRefId, ShelfPosted) :-
     get_unit_id('meter', UnitId), % UnitId id 1 for meter
     ProductGroupId is 416, % manually added
-    post_shelf(StorePlatformId, ProductGroupId, ["null", D,ExtRefId,H ,W1, X1,Y1,Z1,X, Y,Z, W, UnitId], ShelfPosted).
+    post_shelf(StorePlatformId, ProductGroupId, ["null", D,ExtRefId,H ,W, X, Y, Z, X1, Y1, Z1, W1, UnitId], ShelfPosted).
 
 
 post_fridge_shelf_layers(StoreNumber) :-
