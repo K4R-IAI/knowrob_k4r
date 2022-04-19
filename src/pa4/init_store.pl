@@ -20,8 +20,8 @@
 
 create_store_and_init_fridge :-
     % writeln('initttttt'),
-    %create_store(45, 'fridgepa42', "Ger", "BW" , "Bre", ["Uni", 45, 452343, ""], [40, 40], Store),
-    init_fridge("45", _, _). % store Pl Id 4958
+    create_store(15, 'fridgepa42', "Ger", "BW" , "Bre", ["Uni", 45, 452343, ""], [40, 40], Store),
+    init_fridge("15", _, _). % store Pl Id 4958
     %writeln('insertingg'),
     /* insert_all_items(45, [1, 1, 1],'4010355520036',
         [['I4563', [0.5,0.5]], ['I4564', [0.0,0.2]], ['I4567', [0.6,0.7]]]),
@@ -91,5 +91,10 @@ test('events') :-
     %writeln('put back done'),
     test_log_out.
     %writeln('log out done').
+
+/* test('tf structure') :-
+    gtrace,
+    environment:create_store_(456, 'fridgepa42', "Ger", "BW" , "Bre", ["Uni", 45, 452343, ""], [40, 40], Store),
+    init_fridge(456, Store, Fridge). */
 
 :- end_tests('init_store').

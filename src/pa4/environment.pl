@@ -1,6 +1,5 @@
 /** <module> environment
- * This module creates an environment from user 
-    defined specifications   
+ * This module creates an environment
     @author Kaviya Dhanabalachandran
     @license BSD
 */
