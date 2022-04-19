@@ -22,6 +22,7 @@
             post_fridge_shelf_layer/5,
             post_fridge_shelf_layers/1,
             post_fridge_facing/4,
+            post_fridge_facings/1,
             post_items_in_store/1,
             update_item_position_platform/2,
             update_stock/1,
@@ -84,12 +85,12 @@ post_fridge_shelf_layers(StoreNumber) :-
     %writeln(['Id', UnitId]),
     forall(member([ShelfId, ExtRefId], Data),
         (atom_number(ExtRefId, NumId),
-        get_shelf_with_external_id(NumId, Shelf),
+        triple(Shelf, shop:erpShelfId, NumId),
         get_layers_in_shelf(Shelf, Layers),
-        post_shelf_layers_of_shelf_(ShelfId, UnitId, Layers))
+        post_shelf_layers_of_shelf_(Shelf, ShelfId, UnitId, Layers))
     ).
 
-post_shelf_layers_of_shelf_(ShelfId, UnitId, [Layer | Rest]) :-
+post_shelf_layers_of_shelf_(Shelf, ShelfId, UnitId, [Layer | Rest]) :-
     % get associated shelf ids
     % 
     % triple(Shelf, soma:hasPhysicalComponent, Layer),
@@ -97,15 +98,16 @@ post_shelf_layers_of_shelf_(ShelfId, UnitId, [Layer | Rest]) :-
     %writeln(['layer', Layer]),
     object_dimensions(Layer, D, W, H),
     %writeln(['dim',D, W, H]),
-    is_at(Layer, [_, T, _]),
+    rdf_split_url(_, Frame, Shelf),
+    is_at(Layer, [Frame, T, _]),
     % writeln(['pose',T, R]),
     [_,_,Z] = T,
     triple(Layer, shop:erpShelfLayerId, LayerId),
     post_shelf_layer(ShelfId, [D, LayerId, H, LayerId, Z, "null", W, UnitId], _),
-    post_shelf_layers_of_shelf(ShelfId, UnitId, Rest).
+    post_shelf_layers_of_shelf_(Shelf, ShelfId, UnitId, Rest).
 
 
-post_shelf_layers_of_shelf_(_, _, []).
+post_shelf_layers_of_shelf_(_, _, _, []).
 
 post_fridge_shelf_layer(ShelfPlId, [D, W, H], ExtRefId, Z, LayerPosted) :-
     get_unit_id('meter', UnitId),
@@ -121,10 +123,13 @@ post_fridge_facings(StoreNumber) :-
 post_fridge_facings_of_layer([[LayerId, ExtId] | Rest]) :-
     atom_number(ExtId, NumId),
     triple(Layer, shop:erpShelfLayerId, NumId),
+    rdf_split_url(_, Frame, Layer),
     % forcing the loop to continue even if there is a failure in posting
-    (triple(Facing, shop:layerOfFacing, Layer),
+    forall(triple(Facing, shop:layerOfFacing, Layer),
     %writeln(Facing),
-    k4r_db_client:post_facings(Layer, LayerId)); true,
+        (is_at(Facing, [Frame, [X, _, _], _]),
+        triple(Facing, shop:erpFacingId, ExtRefId),
+        post_fridge_facing(LayerId, X, ExtRefId, 1))),
     post_fridge_facings_of_layer(Rest).
 
 post_fridge_facings_of_layer([]).
