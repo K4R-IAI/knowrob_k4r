@@ -3,3 +3,4 @@
 :- use_module('pa4_db_client').
 :- use_module('environment').
 :- use_module('utils').
+:- use_module('user_defined_environment').
