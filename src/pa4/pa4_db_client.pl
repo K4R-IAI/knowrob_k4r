@@ -187,7 +187,7 @@ post_items_in_layer([FacingDict | Rest], Layer) :-
 post_items_in_facing([], _, _).
 
 post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
-    writeln(["Items", Item]),
+    %writeln(["Items", Item]),
     has_type(Item, Product),
     get_product_gtin(Product, Gtin),
     get_product_unit_id(Gtin, ProductUnitId),
@@ -202,7 +202,7 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
     post_item_group([FacingPlatformId, ProductUnitId, 1], ItemGroup),
     k4r_db_client:get_entity_id(ItemGroup, ItemGroupId),
     triple(Item, shop:hasItemId, ExtItemId),
-    post_item([ItemGroupId, X, Y, Z, ExtItemId], _),
+    post_item([ItemGroupId, X_mm, Y_mm, Z_mm, ExtItemId], _),
     post_items_in_facing(Rest, ParentName, FacingPlatformId).
 
 % TODO : Use this to post the data without havign to loop through all
@@ -344,7 +344,7 @@ get_store(StoreNum, StoreParam, Store) :-
     list_to_string(StoreParam, KeyParamStr),
     atomics_to_string([StoreFilter, "{", KeyParamStr,  "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
-    get_dict(stores,GraphQLResponse,Temp),
+    %get_dict(stores,GraphQLResponse,Temp),
     member(Store, GraphQLResponse.stores).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
