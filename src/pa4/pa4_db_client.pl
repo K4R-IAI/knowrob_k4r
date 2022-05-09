@@ -7,6 +7,7 @@
             get_item_group_id/3,
             get_all_shelf_data/3,
             get_all_items/2,
+            get_item_data/2,
             get_all_item_groups/2,
             get_all_facings_platform/2,
             get_all_layers_platform/2,
@@ -117,7 +118,7 @@ post_fridge_facings(StoreNumber) :-
     get_store_id(StoreNumber, StoreId),
     % This works only because fridge has only one shelf 
     get_shelf_layers_data(StoreId, [id, externalReferenceId], Value),
-    %writeln(["shelf", Value]),
+    writeln(["shelf", Value]),
     post_fridge_facings_of_layer(Value).
 
 post_fridge_facings_of_layer([[LayerId, ExtId] | Rest]) :-
@@ -254,7 +255,7 @@ update_stock(ItemGroupId) :-
     Stock is Data.stock + 1,
     put_item_group([Data.facingId, Data.productUnitId, Stock], _, ItemGroupId).
 
-update_item_position_platform(ExtItemId, [X, Y, 0]) :-
+update_item_position_platform(ExtItemId, [X, Y, Z]) :-
     get_filter_("{items","externalReferenceId", "eq", ExtItemId, "string", ItemFilter),
     get_item_param(Fields),
     list_to_string(Fields, FieldsStr),
@@ -262,7 +263,7 @@ update_item_position_platform(ExtItemId, [X, Y, 0]) :-
     %writeln(GraphQLQuery),
     get_graphql(GraphQLQuery, Response),
     member(ItemData, Response.items),
-    put_item([ItemData.itemGroupId, X, Y, ItemData.positionInFacingZ, ExtItemId], _, ItemData.id).
+    put_item([ItemData.itemGroupId, X, Y, Z, ExtItemId], _, ItemData.id).
 
 delete_item_and_update_itemgroup(ExtItemId) :-
     get_filter_("{items","externalReferenceId", "eq", ExtItemId, "string", ItemFilter),
@@ -444,6 +445,15 @@ get_product_dimenion_platform(ProductUnitId, D, W, H) :-
     convert_to_m(Data.dimensionUnit, Data.length, D),
     convert_to_m(Data.dimensionUnit, Data.width, W),
     convert_to_m(Data.dimensionUnit, Data.height, H).
+
+get_item_data(ExtItemId, ItemData) :-
+    get_filter_("{items","externalReferenceId", "eq", ExtItemId, "string", ItemFilter),
+    get_item_param(Fields),
+    list_to_string(Fields, FieldsStr),
+    atomics_to_string([ItemFilter, "{", FieldsStr, "}}"], GraphQLQuery),
+    %writeln(GraphQLQuery),
+    get_graphql(GraphQLQuery, Response),
+    member(ItemData, Response.items).
 
 get_filter_(FieldName, Param, Op, Value, Type, CompleteFilter) :-
     k4r_db_client:make_filter(Param, Op, Value, Type, Filter),

@@ -22,7 +22,7 @@
 create_store(StoreNumber, StorePlId, Fridge, Store) :-
     create_store_from_platfrom(StoreNumber, StorePlId, Store),
     tell([has_type(Fridge, shop:'SmartFridge'),
-        has_location(Fridge, Store)]).
+        triple(Fridge, dul:hasLocation, Store)]).
 
 /*
 The origin of the mesh of the shelf system will be on the center of the bounding box, 
@@ -65,13 +65,7 @@ assert_file_path(Object, Path) :-
     triple(Object, soma:hasShape,Shape), 
     triple(Shape,dul:hasRegion,ShapeRegion),
     tell(triple(ShapeRegion,soma:hasFilePath, Path)).
-    % Pos = [0,0,0], Rot = [-0.0, -0.0, -0.70710678, 0.70710678],
-
-    % triple(ShapeRegion,'http://knowrob.org/kb/urdf.owl#hasOrigin',Origin),
-    % tripledb_forget(Origin, soma:hasPositionVector, _),
-    % tripledb_forget(Origin, soma:hasOrientationVector, _),
-    % tell(triple(Origin, soma:hasPositionVector, term(Pos))),
-    % tell(triple(Origin, soma:hasOrientationVector, term(Rot))).
+  
     
 assert_object_shape_(Object, D, W, H, RGBValue, Path):- 
     (object_dimensions(Object, D, W, H) -> 
@@ -140,15 +134,15 @@ init_store(StoreNumber) :-
 :- begin_tests(user_defined_environment).
 
 test('create shelf') :-
-    create_store(56, 'fridgepa42', "Ger", "BW" , "Bre", ["Uni", 45, 452343, ""], [40, 40], Store),
+    %create_store(585, 'fridgepa42', "Ger", "BW" , "Bre", ["Uni", 45, 452343, ""], [40, 40], Store),
     gtrace,
-    init_store(56),
+    init_store(585), !,
     writeln('hereee'),
     %shopping:insert_all_items("55", [1, 1, 1],'4010355520036',[[['I4563', [-0.17, 0.02]], ['I4564', [0.0,0.02]], ['I4567', [0.08,0.02]]]).
-    shopping:get_store(56, Store),
+    shopping:get_store(585, Store),
     writeln('insertttt'),
     shopping:get_facing_(Store, [1, 1, 1], _),
-    shopping:insert_all_items(56, [1, 1, 1],'4010355520036',[['I4563', [-0.17, 0.02]], ['I4564', [0.0,0.02]], ['I4567', [0.08, 0.02]]]).
+    shopping:insert_all_fridge_items(585, [1, 1, 1],'4010355520036',[['I4563', [-0.17, 0.02]], ['I4564', [0.0,0.02]], ['I4567', [0.08, 0.02]]]).
     % label_of_facing(55, Facing, [1, 1, 1], '4010355520036', ProductType, ItemGroupId),
     % forall(member([ItemId,  Coordinates], [['I4563', [ 0.05 , 0.02]], ['I4564', [0.05,-0.08]], ['I4567', [0.05, 0.08]]]),
     %     (insert_item(Facing, ProductType, ItemGroupId, ItemId, Coordinates, _),
@@ -157,13 +151,13 @@ test('create shelf') :-
 
 
 
-% test('insert items') :-
-%     gtrace,
+/* test('insert items') :-
+    gtrace,
+    shopping:insert_all_fridge_items("585", [1, 1, 1],'4010355520036',[['I4563', [-0.17, 0.02]], ['I4564', [0.0,0.02]], ['I4567', [0.08,0.0.02]]]). */
 %     writeln('hereee'),
 %     get_store(55, Store),
 %     writeln('insertttt'),
 %     shopping:get_facing_(Store, [1, 1, 1], Facing),
 %     label_of_facing(StoreNum, Facing, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, ProductType, ItemGroupId).
-    %shopping:insert_all_items("55", [1, 1, 1],'4010355520036',[['I4563', [-0.17, 0.02]], ['I4564', [0.0,0.02]], ['I4567', [0.08,0.0.02]]]).
 
 :- end_tests(user_defined_environment).

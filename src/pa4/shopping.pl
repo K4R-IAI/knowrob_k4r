@@ -17,8 +17,9 @@
         user_logout(r, r, r, r),
         put_back_object/7,
         items_bought(r, ?),
-        insert_all_items(+,+,+,+),
+        insert_all_items(+,+,+,+,+),
         insert_item(+,+,+,+,+,+,-),
+        insert_all_fridge_items/4,
         get_items_in_fridge/2,
         get_user/2,
         get_facing/2,
@@ -109,12 +110,15 @@ assert_shelf_(StorePlId, Fridge, ShelfPlatformId) :-
 assert_store(StoreId, StorePlatformId, Store) :-
     create_store_from_platfrom(StoreId, StorePlatformId, Store).
 
-insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, ItemList) :-
+insert_all_fridge_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, ItemList) :-
+    insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, get_facing_top_left_frame_, ItemList).
+
+insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, OtherFrame, ItemList) :-
     writeln('hereee'),
     get_store(StoreNum, Store),
     writeln('insertttt'),
     get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
-    get_facing_top_left_frame_(Facing, Frame),
+    (ground(OtherFrame) -> call(OtherFrame, Facing, Frame); true),
     label_of_facing(StoreNum, Facing, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, ProductType, ItemGroupId),
     forall(member([ItemId,  Coordinates], ItemList),
         (insert_item(Facing, Frame, ProductType, ItemGroupId, ItemId, Coordinates, ItemInstance),
@@ -125,7 +129,9 @@ insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, ItemList)
 insert_item(Facing, FacingTopLeftcorner, Product, ItemGroupId, ExtItemId, Coordinates, ItemInstance):- % Coordinates - [x,y] is fine
     % writeln(['ITemsss', Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordinates]),
     % check if item exists
-    ( item_exists(ExtItemId, ItemInstance),
+    ( (item_exists(ExtItemId, ItemInstance); 
+        (get_item_data(ExtItemId, ItemData),
+        \+ is_list_empty_(Itemdata))) ->
     update_item_position(Facing, ItemInstance, ExtItemId, Coordinates)
     );
     % get facing
@@ -134,22 +140,16 @@ insert_item(Facing, FacingTopLeftcorner, Product, ItemGroupId, ExtItemId, Coordi
     % associate gtin with the item
     % insert position
     (  
-    % tell([]
-    tell(instance_of(ItemInstance, Product)),
+    (ground(FacingTopLeftcorner) -> (tell(instance_of(ItemInstance, Product)),
     transform_item_pos_(FacingTopLeftcorner, Facing, ItemInstance, Coordinates, TransformedPos),
     tell(triple(Facing, shop:productInFacing, ItemInstance)),
-    [[X, Y, Z], _] = TransformedPos,
-    %is_at(FacingTopLeftcorner, Pose),
-    % writeln(Pose),
-    % writeln(Coordinates),
-    % writeln(TransformedPos),
-    % writeln([Facing, ItemInstance]),
+    [[X, Y, Z], _] = TransformedPos);
+    ([X, Y] = Coordinates,
+    Z is 0)),
     tell(triple(ItemInstance, shop:hasItemId, ExtItemId)),
     k4r_db_client:double_m_to_int_mm([X, Y, Z], [X_mm, Y_mm, Z_mm]),
     k4r_db_client:post_item([ItemGroupId, X_mm, Y_mm, Z_mm, ExtItemId],_),
     update_stock(ItemGroupId),
-    % ]),
-    % insert_item_platform(ExtItemId, Gtin, FacingExtId),
     shop:belief_new_object(Product, ItemInstance)).
 
 
@@ -157,8 +157,8 @@ update_item_position(Facing, ItemInstance, ExtItemId, [X, Y]) :-
     rdf_split_url(_,ParentFrame,Facing),
     (\+ is_at(ItemInstance,  [ParentFrame, [X, Y, _], _]) ->
     (tell([triple(Facing, shop:productInFacing, ItemInstance),
-        is_at(ItemInstance, [ParentFrame, [X,Y,0],[0,0,0,1]])]),
-    update_item_position_platform(ExtItemId, [X, Y, 0]));
+        is_at(ItemInstance, [ParentFrame, [X,Y,Z],[0,0,0,1]])]),
+    update_item_position_platform(ExtItemId, [X, Y, Z]));
     true).
     % update_item_platform(ExtItemId, Gtin, FacingExtId),
     %insert_item(Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, [X, Y], ItemInstance).
