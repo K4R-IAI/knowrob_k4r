@@ -73,6 +73,24 @@
     
 
 
+    <!-- http://knowrob.org/kb/knowrob.owl#depthOfObject -->
+
+    <owl:DatatypeProperty rdf:about="http://knowrob.org/kb/knowrob.owl#depthOfObject"/>
+    
+
+
+    <!-- http://knowrob.org/kb/knowrob.owl#heightOfObject -->
+
+    <owl:DatatypeProperty rdf:about="http://knowrob.org/kb/knowrob.owl#heightOfObject"/>
+    
+
+
+    <!-- http://knowrob.org/kb/knowrob.owl#widthOfObject -->
+
+    <owl:DatatypeProperty rdf:about="http://knowrob.org/kb/knowrob.owl#widthOfObject"/>
+    
+
+
     <!-- http://knowrob.org/kb/shop.owl#erpFacingId -->
 
     <owl:DatatypeProperty rdf:about="http://knowrob.org/kb/shop.owl#erpFacingId"/>
@@ -120,9 +138,41 @@
     
 
 
+    <!-- http://knowrob.org/kb/fridge.owl#FridgeFacing -->
+
+    <owl:Class rdf:about="http://knowrob.org/kb/fridge.owl#FridgeFacing">
+        <rdfs:subClassOf rdf:resource="http://knowrob.org/kb/shop.owl#ProductFacingStanding"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://knowrob.org/kb/knowrob.owl#depthOfObject"/>
+                <owl:hasValue rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.35</owl:hasValue>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://knowrob.org/kb/knowrob.owl#heightOfObject"/>
+                <owl:hasValue rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.1</owl:hasValue>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://knowrob.org/kb/knowrob.owl#widthOfObject"/>
+                <owl:hasValue rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.16</owl:hasValue>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
     <!-- http://knowrob.org/kb/shop.owl#ProductFacing -->
 
     <owl:Class rdf:about="http://knowrob.org/kb/shop.owl#ProductFacing"/>
+    
+
+
+    <!-- http://knowrob.org/kb/shop.owl#ProductFacingStanding -->
+
+    <owl:Class rdf:about="http://knowrob.org/kb/shop.owl#ProductFacingStanding"/>
     
 
 
