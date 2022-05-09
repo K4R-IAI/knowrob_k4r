@@ -18,10 +18,11 @@
         put_back_object/7,
         items_bought(r, ?),
         insert_all_items(+,+,+,+),
-        insert_item(+,+,+,+,+,-),
+        insert_item(+,+,+,+,+,+,-),
         get_items_in_fridge/2,
         get_user/2,
-        get_facing/2
+        get_facing/2,
+        get_facing_top_left_frame_/2
     ]).
 
 %TODO : update the stock numbers in item group table
@@ -54,7 +55,7 @@ init_fridge(StoreId, Store, Fridge) :-
     triple(Fridge, dul:hasLocation, Store),
     print_message(warning, 'Store already exist in Knowrob'));
     (assert_store(StoreId, StorePlatformId, Store),
-    assert_shelf_(Store, StorePlatformId, Fridge, ShelfPlatformId),
+    assert_shelf_( StorePlatformId, Fridge, _), % assert_shelf_(StorePlatformId, Fridge, ShelfPlatformId),
     tell(holds(Fridge, dul:hasLocation, Store))
     % writeln('create shelves'),
     )).
@@ -62,10 +63,15 @@ init_fridge(StoreId, Store, Fridge) :-
 %TODO
 label_of_facing(StoreNum, Facing, [ShelfNo, LayerNo, FacingExtNo], Gtin, ProductType, ItemGroupId) :-
     (triple(Facing,shop:labelOfFacing,Label),
-    has_type(Label, shop:'ShelfLabel'));
-    (get_product_unit_id(Gtin, ProductUnitId),
-    (article_number_of_dan(Gtin, AN);
+    has_type(Label, shop:'ShelfLabel'),
+    get_product_unit_id(Gtin, ProductUnitId),
+    shop_reasoner:get_product_type(Gtin, ProductType),
+    get_facing_id([StoreNum, ShelfNo, LayerNo, FacingExtNo], FacingId),
+    get_item_group_id(FacingId, ProductUnitId, ItemGroupId)
+    );
+    ((article_number_of_dan(Gtin, AN);
     create_article_number(gtin(Gtin), AN),
+    get_product_unit_id(Gtin, ProductUnitId),
     get_product_dimenion_platform(ProductUnitId, D, W, H),
     create_article_type(AN,[D,W,H], ProductType)),
     tell([has_type(Label, shop:'ShelfLabel'),
@@ -76,7 +82,8 @@ label_of_facing(StoreNum, Facing, [ShelfNo, LayerNo, FacingExtNo], Gtin, Product
     k4r_db_client:get_entity_id(ItemGroup, ItemGroupId)).
 
 
-assert_shelf_(Store, StorePlId, Fridge, ShelfPlatformId) :-
+
+assert_shelf_(StorePlId, Fridge, ShelfPlatformId) :-
     (get_shelf_param(ShelfParam),
     get_all_shelf_data(StorePlId, ShelfParam, ShelfData),
     \+ is_list_empty_(ShelfData) ->
@@ -89,7 +96,7 @@ assert_shelf_(Store, StorePlId, Fridge, ShelfPlatformId) :-
     ]),
     has_type(Fridge, shop:'SmartFridge'),
     load_fridge_urdf_,
-    writeln(StorePlId),
+    %writeln(StorePlId),
     once(shopping:assert_frame_properties(Fridge, StorePlId, ShelfPlatformId)),
     findall( Layer,
         (triple(Fridge, soma:hasPhysicalComponent, Frame),
@@ -103,17 +110,19 @@ assert_store(StoreId, StorePlatformId, Store) :-
     create_store_from_platfrom(StoreId, StorePlatformId, Store).
 
 insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, ItemList) :-
+    writeln('hereee'),
     get_store(StoreNum, Store),
-    %writeln('insertttt'),
+    writeln('insertttt'),
     get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
+    get_facing_top_left_frame_(Facing, Frame),
     label_of_facing(StoreNum, Facing, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, ProductType, ItemGroupId),
     forall(member([ItemId,  Coordinates], ItemList),
-        (insert_item(Facing, ProductType, ItemGroupId, ItemId, Coordinates, _)
-        %writeln(ItemInstance)
+        (insert_item(Facing, Frame, ProductType, ItemGroupId, ItemId, Coordinates, ItemInstance),
+        writeln(ItemInstance)
     )).
 
 % ToDO -- If the item id already exists then just update the position
-insert_item(Facing, Product, ItemGroupId, ExtItemId, Coordinates, ItemInstance):- % Coordinates - [x,y] is fine
+insert_item(Facing, FacingTopLeftcorner, Product, ItemGroupId, ExtItemId, Coordinates, ItemInstance):- % Coordinates - [x,y] is fine
     % writeln(['ITemsss', Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordinates]),
     % check if item exists
     ( item_exists(ExtItemId, ItemInstance),
@@ -125,16 +134,19 @@ insert_item(Facing, Product, ItemGroupId, ExtItemId, Coordinates, ItemInstance):
     % associate gtin with the item
     % insert position
     (  
-    [X ,Y] = Coordinates,
     % tell([]
     tell(instance_of(ItemInstance, Product)),
+    transform_item_pos_(FacingTopLeftcorner, Facing, ItemInstance, Coordinates, TransformedPos),
     tell(triple(Facing, shop:productInFacing, ItemInstance)),
+    [[X, Y, Z], _] = TransformedPos,
+    %is_at(FacingTopLeftcorner, Pose),
+    % writeln(Pose),
+    % writeln(Coordinates),
+    % writeln(TransformedPos),
     % writeln([Facing, ItemInstance]),
-    rdf_split_url(_,ParentFrame,Facing),
-    tell(is_at(ItemInstance, [ParentFrame, [X,Y,0],[0,0,0,1]])),
     tell(triple(ItemInstance, shop:hasItemId, ExtItemId)),
-    k4r_db_client:double_m_to_int_mm([X, Y, 0.0], [X_mm, Y_mm, _]),
-    k4r_db_client:post_item([ItemGroupId, X_mm, Y_mm, 0, ExtItemId],_),
+    k4r_db_client:double_m_to_int_mm([X, Y, Z], [X_mm, Y_mm, Z_mm]),
+    k4r_db_client:post_item([ItemGroupId, X_mm, Y_mm, Z_mm, ExtItemId],_),
     update_stock(ItemGroupId),
     % ]),
     % insert_item_platform(ExtItemId, Gtin, FacingExtId),
@@ -426,7 +438,6 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
             has_type(Motion, soma:'Placing'),
             is_classified_by(PutAct, Motion),
             %triple(Facing, shop:productInFacing, ExtItemId), 
-            % TODO : find Product type with gtin
             % create an instance of a Product. Use the item instance
             % in the above triple. 
             has_type(Interval, dul:'TimeInterval'),
@@ -448,7 +459,8 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
         (post_item_group([FacingId, ProdUnitId, 1], ItemGroup),
         k4r_db_client:get_entity_id(ItemGroup, ItemGroupId),
         tell(has_type(Facing, shop:'MisplacedProductFacing')))),
-        insert_item(Facing, ProductType, ItemGroupId, ExtItemId, Coordinates, ItemInstance),
+        get_facing_top_left_frame_(Facing, Frame),
+        insert_item(Facing, Frame, ProductType, ItemGroupId, ExtItemId, Coordinates, ItemInstance),
         tell(triple(Facing, shop:productInFacing, ItemInstance)),
         tripledb_forget(Basket, soma:containsObject, ItemInstance),
         time_interval_tell(PutAct, Timestamp, Timestamp),
@@ -510,8 +522,8 @@ get_facing(ItemId, Facing) :-
     triple(Facing, shop:productInFacing, Item).
 
 get_store(StoreId, Store) :-
-    atom_string(StoreId, IdString),
-    triple(Store, shop:hasShopNumber, IdString).
+    %atom_string(StoreId, IdString),
+    triple(Store, shop:hasShopNumber, StoreId).
 
 % get_items_in_fridge(StoreId, Items) :-
 %     %%%%
@@ -606,8 +618,8 @@ assert_object_shape_(Object, D, W, H, RGBValue):-
   tell(holds(Object,soma:hasShape,Shape)),
   tell(object_dimensions(Object, D, W, H)),
   triple(Shape,dul:hasRegion,ShapeRegion)),
-  D1 is D/2, W1 is W/2, H1 is H/2, 
-  Pos = [D1, W1, H1], 
+  D1 is D/2, W1 is W/2, H1 is H/2,
+  Pos = [W1, D1, H1],
   Rot = [0, 0, 0, 1],
   tell(is_individual(Origin)),
   tell(triple(ShapeRegion,'http://knowrob.org/kb/urdf.owl#hasOrigin',Origin)),
@@ -619,3 +631,24 @@ assert_object_shape_(Object, D, W, H, RGBValue):-
   tell(object_color_rgb(Object, RGBValue)), 
   triple(ColorType,dul:hasRegion,Region),
   tell(triple(Region, soma:hasTransparencyValue, 1)), !.
+
+get_facing_top_left_frame_(Facing, Frame) :-
+    object_dimensions(Facing,D, W, H),
+    tell(is_individual(Frame)),
+    rdf_split_url(_, Parent, Facing),
+    %writeln('framesss'),
+    X is 0-(W/2), Y is D/2, Z is 0-(H/2),
+    %writeln([X, Y, Z]),
+    tell(is_at(Frame, [Parent, [X, Y, Z], [0,0,0,1]])).
+
+transform_item_pos_(CurrentParent, DesiredParent, Object, CurrentPos, Transformed) :-
+    rdf_split_url(_, CurrentFrame, CurrentParent),
+    rdf_split_url(_, DesiredFrame, DesiredParent),
+    [X, Y] = CurrentPos,
+    tell(is_at(Object, [CurrentFrame, [X, Y, 0], [0,0,0,1]])),
+    get_time(Now),
+    Stamp2 is Now+5,
+    time_scope(=(Now), =<(Stamp2), QScope),
+    tf_get_pose(Object, [DesiredFrame, T1, R1], QScope, _),
+    tell(is_at(Object, [DesiredFrame, T1, R1])),
+    Transformed = [T1, R1].
