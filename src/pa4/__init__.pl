@@ -4,3 +4,8 @@
 :- use_module('environment').
 :- use_module('utils').
 :- use_module('user_defined_environment').
+
+:- tripledb_load(
+    'package://knowrob_k4r/owl/fridge.owl',
+    [ namespace(fridge,
+      'http://knowrob.org/kb/fridge.owl#')]).

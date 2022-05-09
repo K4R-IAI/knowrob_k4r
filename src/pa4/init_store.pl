@@ -20,7 +20,7 @@
 
 create_store_and_init_fridge :-
     % writeln('initttttt'),
-    create_store(15, 'fridgepa42', "Ger", "BW" , "Bre", ["Uni", 45, 452343, ""], [40, 40], Store),
+    create_store(15, 'fridgepa42', "Ger", "BW" , "Bre", ["Uni", 45, 452343, ""], [40, 40], _),
     init_fridge("15", _, _). % store Pl Id 4958
     %writeln('insertingg'),
     /* insert_all_items(45, [1, 1, 1],'4010355520036',
@@ -45,10 +45,9 @@ test_pick_up :-
     ItemId = 'I4574',
     Gtin = '4010355520036',
     get_time(Now),
-    Position = [1, 1, 1],
     % Is position necessary? We do know the position given the id of the item
     pick_object(UserId, StoreId, ItemId, Gtin, Now),
-    items_bought(UserId, Items).
+    items_bought(UserId, _).
     % writeln(Items).
 
 test_put_back :-
@@ -70,7 +69,7 @@ test_log_out :-
     UserId is 100,
     DeviceId is 101,
     user_logout(UserId, DeviceId, Now, 45),
-    get_user(UserId, User).
+    get_user(UserId, _).
 
 :- begin_tests('init_store').
 
@@ -78,7 +77,7 @@ test('store init') :-
     gtrace,
     create_store_and_init_fridge,
     StoreId = 45,
-    get_items_in_fridge(StoreId, Items).
+    get_items_in_fridge(StoreId, _).
 
 test('events') :-
     gtrace,
