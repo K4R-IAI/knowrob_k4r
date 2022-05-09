@@ -121,7 +121,7 @@ assert_layer_platform(ShelfId, Parent) :-
     assert_layer_platform_(Parent, LayerData).
 
 assert_layer_platform_(Parent, [Layer | Rest]) :-
-    [PlatformLayerId, SheldId, Level, Type, PosZ, Width, Height, Depth, LengthUnitIdAtom, ExtRefIdAtom] = Layer,
+    [PlatformLayerId, _, _, _, PosZ, Width, Height, Depth, LengthUnitIdAtom, ExtRefIdAtom] = Layer,
     atom_number(ExtRefIdAtom, ExtRefId),
     atom_number(LengthUnitIdAtom, LengthUnitId),
     convert_to_m(LengthUnitId, PosZ, Z),
@@ -152,6 +152,9 @@ assert_facing_platform(LayerId, Parent) :-
 assert_facing_platform_(Parent, [Facing | Rest]) :-
     % No shape is asserted -it can be done based on the dimension of the product
     % and the no of item width so 2*Product
+    subclass_of(fridge:'FridgeFacing', R1), has_description(R1, value(knowrob:depthOfObject, D)),
+    subclass_of(fridge:'FridgeFacing', R2), has_description(R2, value(knowrob:widthOfObject, W)),
+    subclass_of(fridge:'FridgeFacing', R3), has_description(R3, value(knowrob:heightOfObject, H)), 
     [PlatformFacingId, _, LayerRelPositionCM, ItemsDepth, ItemsWidth, ExternalRefIdAtom] = Facing,
     atom_number(ExternalRefIdAtom, ExtRefId),
     convert_to_m(2, LayerRelPositionCM, X), % is this X or Y
@@ -159,7 +162,13 @@ assert_facing_platform_(Parent, [Facing | Rest]) :-
     tell([ has_type(PrFacing, shop:'ProductFacing'),
         triple(PrFacing, shop:layerOfFacing, Parent),
         triple(PrFacing, shop:erpFacingId, ExtRefId),
-        is_at(PrFacing, [ParentFrame,[X, 0, 0],[0,0,0,1]])]),
+        is_at(PrFacing, [ParentFrame,[X, 0, 0],[0,0,0,1]]),
+        has_type(ObjShape, soma:'Shape'),
+        triple(PrFacing, soma:'hasShape', ObjShape),
+        has_type(ShapeRegion, soma:'ShapeRegion'),
+        holds(ObjShape,dul:hasRegion,ShapeRegion),
+        object_dimensions(PrFacing, D, W, H)]),
+    writeln(PrFacing),
     assert_item_group_ids(PlatformFacingId, PrFacing),
     assert_facing_platform_(Parent, Rest).
 
@@ -192,9 +201,10 @@ assert_items_platform(ItemGrpId, Parent, ProductType, Dimension) :-
     assert_items_platform_(Parent, ProductType, Dimension, ItemData).
 
 assert_items_platform_(Facing, ProductType, [D, W, H], [Item | Rest]) :-
-    [PlatformItemId, _, ExtRefId, PosX, PosY, PosZ] = Item,
+    [_, _, ExtRefId, PosX, PosY, PosZ] = Item,
     convert_to_m(2, PosX, X_m),
     convert_to_m(2, PosY, Y_m),
+    convert_to_m(2, PosZ, Z_m),
     tell(has_type(ItemInstance, ProductType)),
     rdf_split_url(_,ParentFrame, Facing),
     atom_string(ExtRefId, ExtRef),
@@ -205,7 +215,7 @@ assert_items_platform_(Facing, ProductType, [D, W, H], [Item | Rest]) :-
         object_dimensions(ItemInstance, D, W, H),
         triple(Facing, shop:productInFacing, ItemInstance),
         triple(ItemInstance, shop:hasItemId, ExtRef),
-        is_at(ItemInstance, [ParentFrame, [X_m, Y_m, 0], [0,0,0,1]])]),
+        is_at(ItemInstance, [ParentFrame, [X_m, Y_m, Z_m], [0,0,0,1]])]),
     assert_items_platform_(Facing, ProductType, [D, W, H], Rest).
 
 assert_items_platform_(_, _, _, []).
