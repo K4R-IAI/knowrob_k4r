@@ -8,6 +8,7 @@
             get_all_shelf_data/3,
             get_all_items/2,
             get_item_data/2,
+            get_facing_data/2,
             get_all_item_groups/2,
             get_all_facings_platform/2,
             get_all_layers_platform/2,
@@ -250,6 +251,10 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
 %   } 
 % }
 
+/* update_facing(PdtUniId, StockNumber, FacingId) :-
+    get_facing_data(FacingId, Data),
+    put_facing() */
+
 update_stock(ItemGroupId) :-
     get_item_group_data(ItemGroupId, Data),
     Stock is Data.stock + 1,
@@ -321,16 +326,26 @@ get_facing_id([StoreNum, ShelfExt, LayerExt, FacingExt], FacingId):-
     get_facing_data_with_ext_ids(StoreNum, ShelfExt, LayerExt, FacingExt, id, Facings),
     FacingId = Facings.id.
 
+get_layer_id([StoreNum, ShelfExt, LayerExt], LayerId) :-
+    get_shelf_layer_data_with_ext_ids(StoreNum, ShelfExt, LayerExt, id, Layer),
+    LayerId = Layer.id.
+
 get_facing_data_with_ext_ids(StoreNum, ShelfExt, LayerExt, FacingExt, Key, Facings) :-
     get_filter_("{stores","storeNumber", "eq", StoreNum, "string", StoreFilter),
     get_filter_("{shelves","externalReferenceId", "eq", ShelfExt, "string", ShelfFilter),
     get_filter_("{shelfLayers","externalReferenceId", "eq", LayerExt, "string", LayerFilter),
-    % TODO : Must be changed to externalReferenceId
     get_filter_("{facings","externalReferenceId", "eq", FacingExt, "string", FacingFilter),
     atomics_to_string([StoreFilter, ShelfFilter, LayerFilter, FacingFilter, "{", Key, "}}}}}"], IdQuery),
     get_graphql(IdQuery, IdResponse),
     _{stores:[_{shelves:[_{shelfLayers:[_{facings:[Facings]}]}]}]} = IdResponse.
 
+get_shelf_layer_data_with_ext_ids(StoreNum, ShelfExt, LayerExt, Key, ShelfLayer) :-
+    get_filter_("{stores","storeNumber", "eq", StoreNum, "string", StoreFilter),
+    get_filter_("{shelves","externalReferenceId", "eq", ShelfExt, "string", ShelfFilter),
+    get_filter_("{shelfLayers","externalReferenceId", "eq", LayerExt, "string", LayerFilter),
+    atomics_to_string([StoreFilter, ShelfFilter, LayerFilter, "{", Key, "}}}}"], LayerQuery),
+    get_graphql(LayerQuery, LayerResponse),
+    _{stores:[_{shelves:[_{shelfLayers:[ShelfLayer]}]}]} = LayerResponse.
 
 get_store_id(StoreNum, StoreId) :-
     get_filter_("{stores","storeNumber", "eq", StoreNum, "string", StoreFilter),
@@ -455,6 +470,15 @@ get_item_data(ExtItemId, ItemData) :-
     get_graphql(GraphQLQuery, Response),
     member(ItemData, Response.items).
 
+get_facing_data(Id, FacingData) :-
+    get_filter_("{facings","id", "eq", Id, "string", FacingFilter),
+    get_facing_param(Fields),
+    list_to_string(Fields, FieldsStr),
+    atomics_to_string([FacingFilter, "{", FieldsStr, "}}"], GraphQLQuery),
+    writeln(GraphQLQuery),
+    get_graphql(GraphQLQuery, Response),
+    member(FacingData, Response.items).
+
 get_filter_(FieldName, Param, Op, Value, Type, CompleteFilter) :-
     k4r_db_client:make_filter(Param, Op, Value, Type, Filter),
     string_concat(FieldName, Filter, CompleteFilter).
@@ -484,6 +508,10 @@ get_facing_param(Fields) :-
         layerRelativePosition,
         noOfItemsWidth,
         noOfItemsDepth,
+        noOfItemsHeight,
+        minStock,
+        stock,
+        productUnitId,
         externalReferenceId
     ].
 

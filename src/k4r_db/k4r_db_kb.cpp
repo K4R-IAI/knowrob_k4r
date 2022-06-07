@@ -360,12 +360,16 @@ PREDICATE(post_shelf_layer, 3)
 const Json::Value facing_array_to_facing_json(const Json::Value &facing_array)
 {
   Json::Value facing_json;
-  if (facing_array.size() == 4)
+  if (facing_array.size() == 8)
   {
     facing_json["layerRelativePosition"] = facing_array[0];
     facing_json["noOfItemsDepth"] = facing_array[1];
     facing_json["noOfItemsWidth"] = facing_array[2];
-    facing_json["externalReferenceId"] = facing_array[3];
+    facing_json["noOfItemsHeight"] = facing_array[3];
+    facing_json["minStock"] = facing_array[4];
+    facing_json["stock"] = facing_array[5];
+    facing_json["productUnitId"] = facing_array[6];
+    facing_json["externalReferenceId"] = facing_array[7];
   }
   else
   {
@@ -385,6 +389,26 @@ PREDICATE(post_facing, 3)
   if (facing_controller.post_data(facing.toStyledString().c_str(), out_data))
   {
     PL_A3 = out_data.str().c_str();
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+// put_facing(ShelfLayerId, [layerRelativePosition,noOfItemsDepth, noOfItemsWidth, noOfItemsHeight, minStock, stock,  ProductUnitId, ExtRefId], FacingId)
+PREDICATE(put_facing, 3)
+{
+  std::string link_tail = "shelflayers/" + std::string(PL_A1) + "/facings/";
+  DataController facing_controller(link_tail.c_str());
+
+  std::stringstream out_data;
+  Json::Value facing = facing_array_to_facing_json(PlTerm_to_json(PL_A2));
+  facing["shelfLayerId"] = std::string(PL_A1);
+  if (facing_controller.put_data(facing.toStyledString().c_str(), out_data, std::string(PL_A3)))
+  {
+    PL_A2 = out_data.str().c_str();
     return true;
   }
   else
