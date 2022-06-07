@@ -12,6 +12,7 @@
         create_store(+, -, -),
         assert_frame_properties/3,
         assert_layer_properties/3,
+        assert_label_of_facing/4,
         user_login(r, r, r, r),
         pick_object(r, r, r, r, r), %% how do we handle probability 
         user_logout(r, r, r, r),
@@ -62,25 +63,23 @@ init_fridge(StoreId, Store, Fridge) :-
     )).
 
 %TODO
-label_of_facing(StoreNum, Facing, [ShelfNo, LayerNo, FacingExtNo], Gtin, ProductType, ItemGroupId) :-
+assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType) :-
     (triple(Facing,shop:labelOfFacing,Label),
     has_type(Label, shop:'ShelfLabel'),
-    get_product_unit_id(Gtin, ProductUnitId),
+    triple(Label,shop:articleNumberOfLabel,AN),
     shop_reasoner:get_product_type(Gtin, ProductType),
-    get_facing_id([StoreNum, ShelfNo, LayerNo, FacingExtNo], FacingId),
-    get_item_group_id(FacingId, ProductUnitId, ItemGroupId)
-    );
-    ((article_number_of_dan(Gtin, AN);
-    create_article_number(gtin(Gtin), AN),
-    get_product_unit_id(Gtin, ProductUnitId),
+    subclass_of(Product, R),
+    is_restriction(R, value(shop:articleNumberOfProduct,AN1)),
+    (\+ AN=AN1,
+    tell(has_type(Facing, shop:'MisplacedProductFacing'));
+    true));
+    %article_number_of_dan(Gtin, AN);
+    (create_article_number(gtin(Gtin), AN),
     get_product_dimenion_platform(ProductUnitId, D, W, H),
-    create_article_type(AN,[D,W,H], ProductType)),
+    create_article_type(AN,[D,W,H], ProductType),
     tell([has_type(Label, shop:'ShelfLabel'),
     triple(Facing,shop:labelOfFacing,Label),
-    triple(Label,shop:articleNumberOfLabel,AN)]),
-    get_facing_id([StoreNum, ShelfNo, LayerNo, FacingExtNo], FacingId),
-    post_item_group([FacingId, ProductUnitId, 0], ItemGroup),
-    k4r_db_client:get_entity_id(ItemGroup, ItemGroupId)).
+    triple(Label,shop:articleNumberOfLabel,AN)])).
 
 
 
@@ -91,9 +90,9 @@ assert_shelf_(StorePlId, Fridge, ShelfPlatformId) :-
     tell(has_type(Fridge, shop:'SmartFridge')),
     assert_shelf_platform(Fridge, ShelfData, ShelfPlatformId)); 
     (tripledb_load(
-    'package://knowrob_k4r/owl/fridge.owl',
+        'package://knowrob_k4r/owl/fridge.owl',
     [ namespace(fridge, 
-      'http://knowrob.org/kb/fridge.owl#')
+    'http://knowrob.org/kb/fridge.owl#')
     ]),
     has_type(Fridge, shop:'SmartFridge'),
     load_fridge_urdf_,
@@ -104,53 +103,60 @@ assert_shelf_(StorePlId, Fridge, ShelfPlatformId) :-
         has_type(Frame, shop:'ShelfFrame'),
         triple(Frame, soma:hasPhysicalComponent, Layer),
         has_type(Layer, shop:'ShelfLayer')),
-    Layers),
-    once(shopping:assert_layer_properties(Fridge, Layers, ShelfPlatformId))).
-
+        Layers),
+        once(shopping:assert_layer_properties(Fridge, Layers, ShelfPlatformId))).
+    
 assert_store(StoreId, StorePlatformId, Store) :-
     create_store_from_platfrom(StoreId, StorePlatformId, Store).
 
+% Gtin is provided here is used to know the product type that belongs to the facing
 insert_all_fridge_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, ItemList) :-
     insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, get_facing_top_left_frame_, ItemList).
-
+    
 insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, OtherFrame, ItemList) :-
     writeln('hereee'),
     get_store(StoreNum, Store),
     writeln('insertttt'),
     get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
-    (ground(OtherFrame) -> call(OtherFrame, Facing, Frame); true),
-    label_of_facing(StoreNum, Facing, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, ProductType, ItemGroupId),
+    (ground(OtherFrame) -> call(OtherFrame, Facing, OtherFacingFrame); true),
+    length(ItemList, NoOfItems),
+    get_product_unit_id(Gtin, ProductUnitId),
+    (get_facing_id([StoreNum, ShelfExt, ShelfLayerExt, FacingExt], FacingId),
+    update_stock(FacingId, NoOfItems); 
+    assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType),
+    get_layer_id([StoreNum, ShelfExt, ShelfLayerExt], LayerId),
+    post_facing_individual(LayerId, Facing, NoOfItems, ProductUnitId, FacingId)
+    ),
     forall(member([ItemId,  Coordinates], ItemList),
-        (insert_item(Facing, Frame, ProductType, ItemGroupId, ItemId, Coordinates, ItemInstance),
+        (insert_item(Facing, OtherFacingFrame, ProductType, FacingId, ItemId, Coordinates, ItemInstance),
         writeln(ItemInstance)
     )).
 
 % ToDO -- If the item id already exists then just update the position
-insert_item(Facing, FacingTopLeftcorner, Product, ItemGroupId, ExtItemId, Coordinates, ItemInstance):- % Coordinates - [x,y] is fine
+insert_item(Facing, FacingTopLeftcorner, Product, FacingId, ExtItemId, Coordinates, ItemInstance):- % Coordinates - [x,y] is fine
     % writeln(['ITemsss', Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordinates]),
     % check if item exists
     ( (item_exists(ExtItemId, ItemInstance); 
         (get_item_data(ExtItemId, ItemData),
-        \+ is_list_empty_(Itemdata))) ->
-    update_item_position(Facing, ItemInstance, ExtItemId, Coordinates)
+        \+ is_list_empty_(ItemData))) ->
+        update_item_position(Facing, ItemInstance, ExtItemId, Coordinates)
     );
     % get facing
     % create an object of the type of Gtin
     % tell(instance_of)
     % associate gtin with the item
     % insert position
-    (  
-    (ground(FacingTopLeftcorner) -> (tell(instance_of(ItemInstance, Product)),
-    transform_item_pos_(FacingTopLeftcorner, Facing, ItemInstance, Coordinates, TransformedPos),
-    tell(triple(Facing, shop:productInFacing, ItemInstance)),
+    ((tell(instance_of(ItemInstance, Product)),
+    (ground(FacingTopLeftcorner) -> transform_item_pos_(FacingTopLeftcorner, Facing, ItemInstance, Coordinates, TransformedPos),
     [[X, Y, Z], _] = TransformedPos);
     ([X, Y] = Coordinates,
     Z is 0)),
+    tell(triple(Facing, shop:productInFacing, ItemInstance)),
     tell(triple(ItemInstance, shop:hasItemId, ExtItemId)),
+    shop:belief_new_object(Product, ItemInstance),
     k4r_db_client:double_m_to_int_mm([X, Y, Z], [X_mm, Y_mm, Z_mm]),
-    k4r_db_client:post_item([ItemGroupId, X_mm, Y_mm, Z_mm, ExtItemId],_),
-    update_stock(ItemGroupId),
-    shop:belief_new_object(Product, ItemInstance)).
+    k4r_db_client:post_item([FacingId, X_mm, Y_mm, Z_mm, ExtItemId],_)).
+    % update_stock(ItemGroupId),
 
 
 update_item_position(Facing, ItemInstance, ExtItemId, [X, Y]) :-
@@ -166,6 +172,13 @@ update_item_position(Facing, ItemInstance, ExtItemId, [X, Y]) :-
 
 item_exists(ExtItemId, Item) :-
     triple(Item, shop:hasItemId, ExtItemId).
+
+post_facing_individual(LayerPlId, Facing, Stock, ProductUnitId, FacingId) :-
+    triple(Facing, shop:layerOfFacing, Layer),
+    rdf_split_url(_, Frame, Layer),
+    is_at(Facing, [Frame, [X, _, _], _]),
+    triple(Facing, shop:erpFacingId, ExtRefId),
+    post_fridge_facing(LayerPlId, X, ExtRefId, Stock, ProductUnitId, FacingId).
 
 
 /* get_product_class(Gtin, Product) :-
@@ -418,6 +431,7 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
         time_interval_tell(PickAct, Timestamp, Timestamp),
         publish_pick_event(Timestamp, [UserId, StoreId, Gtin]). % Not sure here if object type makes sense
 
+
 put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Position) :-
     [ShelfExt, LayerExt, FacingExt] = Position,
     get_store(StoreId, Store),
@@ -447,20 +461,17 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
         % insert_item_platform(ExtItemId, Gtin, FacingExtId),
         %triple(Store, shop:hasShopNumber, StoreId),
         get_facing_(Store, Position, Facing),
-        get_product_type(Gtin, ProductType),
-        triple(Facing,shop:labelOfFacing,Label),
-        triple(Label,shop:articleNumberOfLabel,AN),
-        get_facing_id([StoreId, ShelfExt, LayerExt, FacingExt], FacingId),
-        get_product_unit_id(Gtin, ProdUnitId),
-        ((subclass_of(ProductType, ANRest),
-        is_restriction(ANRest, value(shop:articleNumberOfProduct, AN)),
-        get_item_group_id(FacingId, ProdUnitId, ItemGroupId)
-        );
-        (post_item_group([FacingId, ProdUnitId, 1], ItemGroup),
-        k4r_db_client:get_entity_id(ItemGroup, ItemGroupId),
-        tell(has_type(Facing, shop:'MisplacedProductFacing')))),
-        get_facing_top_left_frame_(Facing, Frame),
-        insert_item(Facing, Frame, ProductType, ItemGroupId, ExtItemId, Coordinates, ItemInstance),
+        %get_product_type(Gtin, ProductType),
+        %triple(Facing,shop:labelOfFacing,Label),
+        %triple(Label,shop:articleNumberOfLabel,AN),
+        % get_facing_id([StoreId, ShelfExt, LayerExt, FacingExt], FacingId),
+        % get_product_unit_id(Gtin, ProdUnitId),
+        % ((subclass_of(ProductType, ANRest),
+        % is_restriction(ANRest, value(shop:articleNumberOfProduct, AN))
+        % get_item_group_id(FacingId, ProdUnitId, ItemGroupId)
+        % );
+        %(tell(has_type(Facing, shop:'MisplacedProductFacing')))),
+        insert_all_fridge_items(StoreId, [ShelfExt, LayerExt, FacingExt], Gtin, [[ExtItemId, [Coordinates]]]),
         tell(triple(Facing, shop:productInFacing, ItemInstance)),
         tripledb_forget(Basket, soma:containsObject, ItemInstance),
         time_interval_tell(PutAct, Timestamp, Timestamp),
@@ -508,7 +519,7 @@ items_bought(UserId, Items) :-
     Items).
 
 get_facing_(Store, Position, Facing) :-
-    holds(Fridge, dul:hasLocation, Store),
+    triple(Fridge, dul:hasLocation, Store),
     [ShelfExt, LayerExt, FacingExt] = Position,
     triple(Fridge, soma:hasPhysicalComponent, Shelf),
     triple(Shelf, shop:erpShelfId, ShelfExt),
@@ -633,11 +644,13 @@ assert_object_shape_(Object, D, W, H, RGBValue):-
   tell(triple(Region, soma:hasTransparencyValue, 1)), !.
 
 get_facing_top_left_frame_(Facing, Frame) :-
-    object_dimensions(Facing,D, W, H),
+    object_dimensions(Facing,D, W, _),
     tell(is_individual(Frame)),
     rdf_split_url(_, Parent, Facing),
     %writeln('framesss'),
-    X is 0-(W/2), Y is D/2, Z is 0-(H/2),
+    X is 0-(W/2), Y is D/2,
+    Z is 0,
+    %Z is 0-(H/2), % Not sure as the Facing has Z = 0
     %writeln([X, Y, Z]),
     tell(is_at(Frame, [Parent, [X, Y, Z], [0,0,0,1]])).
 

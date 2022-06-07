@@ -397,8 +397,9 @@ PREDICATE(post_facing, 3)
   }
 }
 
-// put_facing(ShelfLayerId, [layerRelativePosition,noOfItemsDepth, noOfItemsWidth, noOfItemsHeight, minStock, stock,  ProductUnitId, ExtRefId], FacingId)
-PREDICATE(put_facing, 3)
+// put_facing(ShelfLayerId, [layerRelativePosition,noOfItemsDepth, noOfItemsWidth, noOfItemsHeight, 
+// minStock, stock,  ProductUnitId, ExtRefId], FacingId)
+PREDICATE(put_facing, 4)
 {
   std::string link_tail = "shelflayers/" + std::string(PL_A1) + "/facings/";
   DataController facing_controller(link_tail.c_str());
@@ -406,15 +407,16 @@ PREDICATE(put_facing, 3)
   std::stringstream out_data;
   Json::Value facing = facing_array_to_facing_json(PlTerm_to_json(PL_A2));
   facing["shelfLayerId"] = std::string(PL_A1);
-  if (facing_controller.put_data(facing.toStyledString().c_str(), out_data, std::string(PL_A3)))
+  if (facing_controller.put_data(facing.toStyledString().c_str(), out_data, std::string(PL_A4)))
   {
-    PL_A2 = out_data.str().c_str();
+    PL_A3 = out_data.str().c_str();
     return true;
   }
   else
   {
     return false;
   }
+
 }
 
 // ItemGroup
@@ -482,7 +484,7 @@ const Json::Value item_array_to_item_json(const Json::Value &item_array)
   Json::Value item_json;
   if (item_array.size() == 5)
   {
-    item_json["itemGroupId"] = item_array[0];
+    item_json["facingId"] = item_array[0];
     item_json["positionInFacingX"] = item_array[1];
     item_json["positionInFacingY"] = item_array[2];
     item_json["positionInFacingZ"] = item_array[3];

@@ -20,6 +20,7 @@
 :- rdf_db:rdf_register_ns(soma,
     'http://www.ease-crc.org/ont/SOMA.owl#', [keep(true)]).
 :- rdf_db:rdf_register_ns(shop, 'http://knowrob.org/kb/shop.owl#', [keep(true)]).
+:- rdf_db:rdf_register_ns(fridge, 'http://knowrob.org/kb/fridge.owl#', [keep(true)]).
 
 % StoreParam = [ storeName,
     %addressCountry,
@@ -155,7 +156,7 @@ assert_facing_platform_(Parent, [Facing | Rest]) :-
     subclass_of(fridge:'FridgeFacing', R1), has_description(R1, value(knowrob:depthOfObject, D)),
     subclass_of(fridge:'FridgeFacing', R2), has_description(R2, value(knowrob:widthOfObject, W)),
     subclass_of(fridge:'FridgeFacing', R3), has_description(R3, value(knowrob:heightOfObject, H)), 
-    [PlatformFacingId, _, LayerRelPositionCM, ItemsDepth, ItemsWidth, ExternalRefIdAtom] = Facing,
+    [PlatformFacingId, _, LayerRelPositionCM, _, _, _,_, _, PdtUnitId, ExternalRefIdAtom] = Facing,
     atom_number(ExternalRefIdAtom, ExtRefId),
     convert_to_m(2, LayerRelPositionCM, X), % is this X or Y
     rdf_split_url(_,ParentFrame, Parent),
@@ -168,36 +169,39 @@ assert_facing_platform_(Parent, [Facing | Rest]) :-
         has_type(ShapeRegion, soma:'ShapeRegion'),
         holds(ObjShape,dul:hasRegion,ShapeRegion),
         object_dimensions(PrFacing, D, W, H)]),
+    get_gtin(PdtUnitId, Gtin),
+    assert_label_of_facing(PrFacing, PdtUnitId, Gtin, PdtType),
     writeln(PrFacing),
-    assert_item_group_ids(PlatformFacingId, PrFacing),
+    assert_items_platform(PlatformFacingId, PrFacing, PdtType),
     assert_facing_platform_(Parent, Rest).
 
 assert_facing_platform_(_, []).
 
-assert_item_group_ids(FacingId, Parent) :-
-    get_all_item_groups(FacingId, ItemData),
-    assert_item_group_platform_(Parent, ItemData).
+%assert_item_group_ids(FacingId, Parent) :-
+    % get_all_item_groups(FacingId, ItemData),
+    % assert_item_group_platform_(Parent, ItemData).
 
-assert_item_group_platform_(Parent, [ItemGrp | Rest]) :-
-    [PlatformItemGrpId, ProductUnitId, _, Stock] = ItemGrp,
-    get_gtin(ProductUnitId, GtinStr),
-    atom_string(Gtin, GtinStr),
-    (article_number_of_dan(Gtin, AN),
-    get_product_type(Gtin, ProductType),
-    product_dimensions(ProductType, [D, W, H]);
-    create_article_number(gtin(Gtin), AN),
-    get_product_dimenion_platform(ProductUnitId, D, W, H),
-    create_article_type(AN,[D,W,H], ProductType)),
-    tell([has_type(Label, shop:'ShelfLabel'),
-    triple(Parent,shop:labelOfFacing,Label),
-    triple(Label,shop:articleNumberOfLabel,AN)]),
-    assert_items_platform(PlatformItemGrpId, Parent, ProductType, [D, W, H]),
-    assert_item_group_platform_(Parent, Rest).
+% assert_item_group_platform_(Parent, [ItemGrp | Rest]) :-
+%     [PlatformItemGrpId, ProductUnitId, _, Stock] = ItemGrp,
+%     get_gtin(ProductUnitId, GtinStr),
+%     atom_string(Gtin, GtinStr),
+%     (article_number_of_dan(Gtin, AN),
+%     get_product_type(Gtin, ProductType),
+%     product_dimensions(ProductType, [D, W, H]);
+%     create_article_number(gtin(Gtin), AN),
+%     get_product_dimenion_platform(ProductUnitId, D, W, H),
+%     create_article_type(AN,[D,W,H], ProductType)),
+%     tell([has_type(Label, shop:'ShelfLabel'),
+%     triple(Parent,shop:labelOfFacing,Label),
+%     triple(Label,shop:articleNumberOfLabel,AN)]),
+%     assert_items_platform(PlatformItemGrpId, Parent, ProductType, [D, W, H]),
+%     assert_item_group_platform_(Parent, Rest).
 
-assert_item_group_platform_(_, []).
+% assert_item_group_platform_(_, []).
 
-assert_items_platform(ItemGrpId, Parent, ProductType, Dimension) :-
-    get_all_items(ItemGrpId, ItemData),
+assert_items_platform(FacingId, Parent, ProductType) :-
+    product_dimensions(ProductType, Dimension),
+    get_all_items(FacingId, ItemData),
     assert_items_platform_(Parent, ProductType, Dimension, ItemData).
 
 assert_items_platform_(Facing, ProductType, [D, W, H], [Item | Rest]) :-

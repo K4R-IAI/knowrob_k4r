@@ -15,8 +15,10 @@
 :- use_module(environment).
 :- use_module(library('shop_reasoner')).
 
+%% TODO: PRoblem with Ext ref id of facigns if the facings are created at different times
+
 :- rdf_db:rdf_register_ns(shop, 'http://knowrob.org/kb/shop.owl#', [keep(true)]).
-:- rdf_db:rdf_register_ns(fridge, 'http://knowrob.org/kb/fridge.owl#', [keep(true)]).
+% :- rdf_db:rdf_register_ns(fridge, 'http://knowrob.org/kb/fridge.owl#', [keep(true)]).
 
 
 create_store(StoreNumber, StorePlId, Fridge, Store) :-
@@ -30,7 +32,7 @@ but the shelf system will have an additional frame, placed on the lower-left-fro
 */
 create_shelf(Fridge, Parent, Dimensions, Translation, Rotation, RefId, StoreId, Shelf, ShelfPlatformId) :-
     tell(is_physical_object(Shelf)),
-    %tell(triple(Fridge, soma:hasPhysicalComponent, Shelf)),
+    tell(triple(Fridge, soma:hasPhysicalComponent, Shelf)),
     shop:belief_new_object(Shelf, 'http://knowrob.org/kb/shop.owl#ShelfFrame'),
     tell(triple(Shelf, shop:erpShelfId, RefId)),
     [D, W, H] = Dimensions,
@@ -59,7 +61,7 @@ create_facing_in_layer(Parent, Dimensions, X, Facing) :-
     [D, W, H] = Dimensions,
     assert_object_shape_(Facing, D, W, H, [0.0, 1.0, 0.5], _),
     rdf_split_url(_, Frame, Parent),
-    tell(is_at(Facing, [Frame, [X, 0,0.07], [0,0,0,1]])).
+    tell(is_at(Facing, [Frame, [X, 0, 0], [0,0,0,1]])).
 
 assert_file_path(Object, Path) :-
     triple(Object, soma:hasShape,Shape), 
@@ -102,15 +104,31 @@ init_store(StoreNumber) :-
     % rdf_split_url(_, Frame, S),
     % tell(is_at(ShelfLFFrame, [Frame, [-0.45, -0.3, Z], [0.0, 0.0, 0, 1]])),
     create_shelf_layer(S, [0.45, 0.64, 0.2], -0.8, _),
-    create_shelf_layer(S, [0.45, 0.64, 0.2], -0.4, L2),
+    create_shelf_layer(S, [0.45, 0.64, 0.2], -0.4, _),
     %writeln([L1, L2]),
-    create_facing_in_layer(L2, [0.35, 0.16, 0.1], 0.108, _),
-    create_facing_in_layer(L2, [0.35, 0.16, 0.1], -0.108, _),
     marker_plugin:republish,
     shop:assert_layer_id(S),
-    shop:assert_facing_id(L2),
     post_fridge_shelf_layers(StoreNumber)).
     %post_fridge_facings(StoreNumber)).
+
+assert_facings(StoreNum, LayerExtId) :-
+    shopping:get_store(StoreNum, Store),
+    triple(Fridge, dul:hasLocation, Store),
+    triple(Layer, shop:erpShelfLayerId, LayerExtId),
+    triple(Shelf, soma:hasPhysicalComponent, Layer),
+    triple(Fridge, soma:hasPhysicalComponent, Shelf),
+    create_facing_in_layer(Layer, [0.35, 0.16, 0.1], 0.108, _),
+    create_facing_in_layer(Layer, [0.35, 0.16, 0.1], -0.108, _),
+    shop:assert_facing_id(Layer).
+
+assert_facing(StoreNum, LayerExtId, Dimensions, Pos, Facing) :-
+    shopping:get_store(StoreNum, Store),
+    triple(Fridge, dul:hasLocation, Store),
+    triple(Layer, shop:erpShelfLayerId, LayerExtId),
+    triple(Shelf, soma:hasPhysicalComponent, Layer),
+    triple(Fridge, soma:hasPhysicalComponent, Shelf),
+    create_facing_in_layer(Layer, Dimensions, Pos, Facing).
+
 
 /* assert_shelf_facings(ShelfNo, LayerNumber_Gtins) :-
     triple(Shelf, shop:erpShelfId, ShelfNo),
@@ -150,15 +168,17 @@ assert_layer_facings(L, V) :-
 :- begin_tests(user_defined_environment).
 
 test('create shelf') :-
-    %create_store(585, 'fridgepa42', "Ger", "BW" , "Bre", ["Uni", 45, 452343, ""], [40, 40], Store),
+    StoreNum is 300,
+    %create_store(StoreNum, 'fridgepa42', "Ger", "BW" , "Bre", ["Uni", 45, 452343, ""], [40, 40], Store),
     gtrace,
-    init_store(585), !,
+    init_store(StoreNum), !,
+    LayerExtId is 1,
+    %assert_facings(StoreNum, LayerExtId),
     writeln('hereee'),
-    %shopping:insert_all_items("55", [1, 1, 1],'4010355520036',[[['I4563', [-0.17, 0.02]], ['I4564', [0.0,0.02]], ['I4567', [0.08,0.02]]]).
-    shopping:get_store(585, Store),
+    shopping:get_store(StoreNum, Store),
     writeln('insertttt'),
-    shopping:get_facing_(Store, [1, 1, 1], _),
-    shopping:insert_all_fridge_items(585, [1, 1, 1],'4010355520036',[['I4563', [-0.17, 0.02]], ['I4564', [0.0,0.02]], ['I4567', [0.08, 0.02]]]).
+    shopping:get_facing_(Store, [1, 1, 1], _).
+    %shopping:insert_all_fridge_items(StoreNum, [1, 1, 1],'4010355520036',[['I4563', [0.07, -0.05]], ['I4564', [0.07,-0.02]], ['I4567', [0.08, -0.03]]]).
     % label_of_facing(55, Facing, [1, 1, 1], '4010355520036', ProductType, ItemGroupId),
     % forall(member([ItemId,  Coordinates], [['I4563', [ 0.05 , 0.02]], ['I4564', [0.05,-0.08]], ['I4567', [0.05, 0.08]]]),
     %     (insert_item(Facing, ProductType, ItemGroupId, ItemId, Coordinates, _),

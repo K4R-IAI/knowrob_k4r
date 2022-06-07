@@ -1,6 +1,7 @@
 :- module(pa4_db_client,
           [
             get_facing_id/2,
+            get_layer_id/2,
             get_store_id/2,
             get_store/3,
             get_product_unit_id/2,
@@ -23,11 +24,11 @@
             post_fridge_shelf/6,
             post_fridge_shelf_layer/5,
             post_fridge_shelf_layers/1,
-            post_fridge_facing/4,
+            post_fridge_facing/6,
             post_fridge_facings/1,
             post_items_in_store/1,
             update_item_position_platform/2,
-            update_stock/1,
+            update_stock/2,
             delete_item_and_update_itemgroup/1
           ]).
 
@@ -41,7 +42,7 @@
     'http://www.ease-crc.org/ont/SOMA.owl#', [keep(true)]).
 :- rdf_db:rdf_register_ns(shop, 'http://knowrob.org/kb/shop.owl#', [keep(true)]).
 :- rdf_db:rdf_register_ns(urdf, 'http://knowrob.org/kb/urdf.owl#', [keep(true)]).
-:- rdf_db:rdf_register_ns(fridge, 'http://knowrob.org/kb/fridge.owl#', [keep(true)]).
+% :- rdf_db:rdf_register_ns(fridge, 'http://knowrob.org/kb/fridge.owl#', [keep(true)]).
 
 
 %%% Fridge store number is 'fridge_1', name is "FridgePA4"
@@ -136,11 +137,16 @@ post_fridge_facings_of_layer([[LayerId, ExtId] | Rest]) :-
 
 post_fridge_facings_of_layer([]).
 
-post_fridge_facing(LayerPlId, LayerRelPos, ExtRefId, Count) :-
+post_fridge_facing(LayerPlId, LayerRelPos, ExtRefId, Count, PdtUnitId, FacingId) :-
     %NoOfItemDepth is 1,
     LayerRelPosMM is round(LayerRelPos*1000),
     NoOfItemWidth is 1,
-    k4r_db_client:post_facing(LayerPlId, [LayerRelPosMM, Count, NoOfItemWidth, ExtRefId], _).
+    NoOfItemDepth is 1,
+    NoOfItemHeight is 1,
+    MinStock is 0,
+    k4r_db_client:post_facing(LayerPlId, [LayerRelPosMM, NoOfItemWidth , NoOfItemDepth, NoOfItemHeight, 
+        MinStock, Count, PdtUnitId, ExtRefId], Facing),
+    k4r_db_client:get_entity_id(Facing, FacingId).
 
 post_items_in_store(StoreNumber) :-
     get_store_id(StoreNumber, StoreId),
@@ -190,9 +196,9 @@ post_items_in_facing([], _, _).
 
 post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
     %writeln(["Items", Item]),
-    has_type(Item, Product),
-    get_product_gtin(Product, Gtin),
-    get_product_unit_id(Gtin, ProductUnitId),
+    % has_type(Item, Product),
+    % get_product_gtin(Product, Gtin),
+    % get_product_unit_id(Gtin, ProductUnitId),
     %writeln(["PUnitId", ProductUnitId]),
     % TODO : Enable the count
 
@@ -201,10 +207,8 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
     is_at(Item, [ParentName, [X, Y, Z], _]),
     k4r_db_client:double_m_to_int_mm([X, Y, Z], [X_mm, Y_mm, Z_mm]),
 
-    post_item_group([FacingPlatformId, ProductUnitId, 1], ItemGroup),
-    k4r_db_client:get_entity_id(ItemGroup, ItemGroupId),
     triple(Item, shop:hasItemId, ExtItemId),
-    post_item([ItemGroupId, X_mm, Y_mm, Z_mm, ExtItemId], _),
+    post_item([FacingPlatformId, X_mm, Y_mm, Z_mm, ExtItemId], _),
     post_items_in_facing(Rest, ParentName, FacingPlatformId).
 
 % TODO : Use this to post the data without havign to loop through all
@@ -255,10 +259,11 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
     get_facing_data(FacingId, Data),
     put_facing() */
 
-update_stock(ItemGroupId) :-
-    get_item_group_data(ItemGroupId, Data),
-    Stock is Data.stock + 1,
-    put_item_group([Data.facingId, Data.productUnitId, Stock], _, ItemGroupId).
+update_stock(FacingId, Count) :-
+    get_facing_data(FacingId, Data),
+    Stock is Data.stock + Count,
+    k4r_db_client:put_facing(Data.shelfLayerId, [Data.layerRelativePosition, Data.noOfItemsWidth, Data.noOfItemsDepth, 
+        Data.noOfItemsHeight, Data.minStock, Stock, Data.productUnitId, Data.externalReferenceId], _, FacingId).
 
 update_item_position_platform(ExtItemId, [X, Y, Z]) :-
     get_filter_("{items","externalReferenceId", "eq", ExtItemId, "string", ItemFilter),
@@ -275,13 +280,12 @@ delete_item_and_update_itemgroup(ExtItemId) :-
     atomics_to_string([ItemFilter, "{", id, ",", itemGroupId, "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, Response), 
     member(ItemData, Response.items),
-    ItemGroupId = ItemData.itemGroupId,
+    FacingId = ItemData.facingId,
     delete_entity_from_id("items", ItemData.id),
     %writeln('item group'),
-    get_item_group_data(ItemGroupId, Data),
+    Stock is -1,
+    update_stock(FacingId, Stock).
     %writeln(Data),
-    Stock is Data.stock - 1,
-    put_item_group([Data.facingId, Data.productUnitId, Stock], _, ItemGroupId).
 
 get_item_group_data(ItemGroupId, Data) :-
     get_filter_("{itemGroups","id", "eq", ItemGroupId, "string", ItemGroupFilter),
@@ -379,8 +383,8 @@ get_all_shelf_data(StorePlatformId, ShelfParam, ShelfData) :-
     ShelfData).
     %writeln(ShelfData).
 
-get_all_items(ItemGrpId, ItemData) :-
-    get_filter_("{items","itemGroupId", "eq", ItemGrpId, "string", ItemFilter),
+get_all_items(FacingId, ItemData) :-
+    get_filter_("{items","facingId", "eq", FacingId, "string", ItemFilter),
     get_item_param(Fields),
     list_to_string(Fields, FieldsStr),
     atomics_to_string([ItemFilter, "{", FieldsStr, "}}"], GraphQLQuery),
@@ -486,11 +490,11 @@ get_filter_(FieldName, Param, Op, Value, Type, CompleteFilter) :-
 get_item_param(ItemFields) :-
     ItemFields = [
         id,
-        itemGroupId,
-        externalReferenceId,
         positionInFacingX,
         positionInFacingY,
-        positionInFacingZ
+        positionInFacingZ,
+        facingId,
+        externalReferenceId
     ].
 
 get_item_grp_param(Fields) :-

@@ -13,13 +13,13 @@
     % init_fridge('fridge1', S, F),
     % post_fridge_shelf('fridge1').
 
-get_increment([V | R], Temp, B) :-
-    gtrace,
-    X is V*2,
-    Temp1 = [X | Temp],
-    get_increment(R, Temp1, B).
+% get_increment([V | R], Temp, B) :-
+%     gtrace,
+%     X is V*2,
+%     Temp1 = [X | Temp],
+%     get_increment(R, Temp1, B).
 
-get_increment([], Temp, Temp).
+% get_increment([], Temp, Temp).
 
 % test('post fridge layer'):-
     % init_fridge('fridge1', S, F),
@@ -48,7 +48,7 @@ get_increment([], Temp, Temp).
     get_item_group_id("9795", "1388", Id).
 
 test('update item data') :-
-    update_item_position_platform("id1234", [450, 550, 0]). */
+    update_item_position_platform("id1234", [450, 550, 0]).
 
 test('get shelf data') :-
     get_shelf_param(Param),
@@ -78,8 +78,12 @@ test('get gtin') :-
     writeln(Gtin).
 
 test('get dimension') :-
-    gtrace,
+    %gtrace,
     get_product_dimenion_platform("806", D, W, H),
-    writeln([D, W, H]).
+    writeln([D, W, H]). */
+
+test('get facing data') :-
+    get_facing_data(9808, Data),
+    writeln(Data).
 
 :- end_tests('pa4_db_client').
