@@ -30,7 +30,7 @@ but the shelf system will have an additional frame, placed on the lower-left-fro
 */
 create_shelf(Fridge, Parent, Dimensions, Translation, Rotation, RefId, StoreId, Shelf, ShelfPlatformId) :-
     tell(is_physical_object(Shelf)),
-    tell(triple(Fridge, soma:hasPhysicalComponent, Shelf)),
+    %tell(triple(Fridge, soma:hasPhysicalComponent, Shelf)),
     shop:belief_new_object(Shelf, 'http://knowrob.org/kb/shop.owl#ShelfFrame'),
     tell(triple(Shelf, shop:erpShelfId, RefId)),
     [D, W, H] = Dimensions,
@@ -94,23 +94,39 @@ init_store(StoreNumber) :-
     get_all_shelf_data(StorePlId, ShelfParam, ShelfData),
     (\+ is_list_empty_(ShelfData)->assert_shelf_platform(Fridge, ShelfData, _);
     %create_shelf(Fridge, 'map', [0.516, 1.0, 1.6], [4.3622098211, -0.98765496137, 0.8], [0.0, 0.0, -0.708516162752, 0.705694584873], 1, StorePlId, S, ShelfPlId)),
-    create_shelf(Fridge, 'map', [0.64, 0.45, 1.6], [4.3622098211, -0.98765496137, 0.8], [0.0, 0.0, 0, 1], 1, StorePlId, S, _),
+    create_shelf(Fridge, 'map', [0.45, 0.64, 1.6], [4.3622098211, -0.98765496137, 0.8], [0.0, 0.0, 0, 1], 1, StorePlId, S, _),
     %tell(is_individual(ShelfLFFrame)),
     % X is -(0.616/2),
     % Y is  -(1.0/2),
     % Z is -(1.6/2),
     % rdf_split_url(_, Frame, S),
     % tell(is_at(ShelfLFFrame, [Frame, [-0.45, -0.3, Z], [0.0, 0.0, 0, 1]])),
-    create_shelf_layer(S, [0.64, 0.45, 0.2], -0.8, _),
-    create_shelf_layer(S, [0.64, 0.45, 0.2], -0.4, L2),
+    create_shelf_layer(S, [0.45, 0.64, 0.2], -0.8, _),
+    create_shelf_layer(S, [0.45, 0.64, 0.2], -0.4, L2),
     %writeln([L1, L2]),
-    create_facing_in_layer(L2, [0.16, 0.35, 0.1], 0.108, _),
-    create_facing_in_layer(L2, [0.16, 0.35, 0.1], -0.108, _),
+    create_facing_in_layer(L2, [0.35, 0.16, 0.1], 0.108, _),
+    create_facing_in_layer(L2, [0.35, 0.16, 0.1], -0.108, _),
     marker_plugin:republish,
     shop:assert_layer_id(S),
     shop:assert_facing_id(L2),
-    post_fridge_shelf_layers(StoreNumber),
-    post_fridge_facings(StoreNumber)).
+    post_fridge_shelf_layers(StoreNumber)).
+    %post_fridge_facings(StoreNumber)).
+
+/* assert_shelf_facings(ShelfNo, LayerNumber_Gtins) :-
+    triple(Shelf, shop:erpShelfId, ShelfNo),
+    dict_pairs(LayerNumber_Gtins,_,Pairs).
+    forall(member(L_G, Pairs),
+        (K-V = L_G,
+        triple(Layer, shop:erpShelfLayerId, K),
+        assert_layer_facings(L, V)
+    )).
+
+assert_layer_facings(L, V) :-
+    Dimensions = [0.35, 0.16, 0.1],
+    forall(member([Gtin, Pos], V),
+    ( 
+        create_facing_in_layer(L, Dimensions, Pos, Gtin)
+        )). */
 
 
 % label_of_facing(StoreNum, Facing, [ShelfNo, LayerNo, FacingExtNo], Gtin, ProductType, ItemGroupId) :-
