@@ -455,13 +455,9 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
             is_performed_by(PutAct, User),
             has_type(Motion, soma:'Placing'),
             is_classified_by(PutAct, Motion),
-            %triple(Facing, shop:productInFacing, ExtItemId),
-            % create an instance of a Product. Use the item instance
-            % in the above triple.
             has_type(Interval, dul:'TimeInterval'),
             has_time_interval(PutAct, Interval)
         ]),
-        writeln('done'),
         % TODO : Add item to a facing in platform
         % insert_item_platform(ExtItemId, Gtin, FacingExtId),
         %triple(Store, shop:hasShopNumber, StoreId),

@@ -121,15 +121,23 @@ assert_facings(StoreNum, LayerExtId) :-
     create_facing_in_layer(Layer, [0.35, 0.16, 0.1], -0.108, _),
     shop:assert_facing_id(Layer).
 
-% Add gtin and immediately push it
-assert_facing(StoreNum, LayerExtId, Dimensions, Pos, Facing) :-
+assert_facing(StoreNum, ShelfExt, LayerExtId, [Dimensions, Pos, Gtin], Facing) :-
     shopping:get_store(StoreNum, Store),
     triple(Fridge, dul:hasLocation, Store),
+    triple(Shelf, shop:erpShelfId, ShelfExt),
     triple(Layer, shop:erpShelfLayerId, LayerExtId),
     triple(Shelf, soma:hasPhysicalComponent, Layer),
     triple(Fridge, soma:hasPhysicalComponent, Shelf),
-    create_facing_in_layer(Layer, Dimensions, Pos, Facing).
-
+    findall([Facing, PdtId],
+        (member([Dim, X, GtinNum], [Dimensions, Pos, Gtin]),
+        create_facing_in_layer(Layer, Dim, X, Facing),
+        get_product_unit_id(GtinNum, PdtId)),
+        FacingList),
+    shop:assert_facing_id(Layer),
+    get_layer_id([StoreNum, ShelfExt, LayerExtId], LayerId),
+    forall(member([F, PId], FacingList),
+        ( post_facing_individual(LayerId, F, 0, PId, FacingId)
+    )).
 
 /* assert_shelf_facings(ShelfNo, LayerNumber_Gtins) :-
     triple(Shelf, shop:erpShelfId, ShelfNo),
@@ -147,24 +155,6 @@ assert_layer_facings(L, V) :-
         create_facing_in_layer(L, Dimensions, Pos, Gtin)
         )). */
 
-
-% label_of_facing(StoreNum, Facing, [ShelfNo, LayerNo, FacingExtNo], Gtin, ProductType, ItemGroupId) :-
-%     get_product_unit_id(Gtin, ProductUnitId),
-%     get_facing_id([StoreNum, ShelfNo, LayerNo, FacingExtNo], FacingId),
-%     (triple(Facing,shop:labelOfFacing,Label),
-%     has_type(Label, shop:'ShelfLabel'),
-%     shop_reasoner:get_product_type(Gtin, ProductType),
-%     get_item_group_id(FacingId, ProductUnitId, ItemGroupId)
-%     );
-%     ((article_number_of_dan(Gtin, AN);
-%     create_article_number(gtin(Gtin), AN),
-%     get_product_dimenion_platform(ProductUnitId, D, W, H),
-%     create_article_type(AN,[D,W,H], ProductType)),
-%     tell([has_type(Label, shop:'ShelfLabel'),
-%     triple(Facing,shop:labelOfFacing,Label),
-%     triple(Label,shop:articleNumberOfLabel,AN)]),
-%     post_item_group([FacingId, ProductUnitId, 0], ItemGroup),
-%     k4r_db_client:get_entity_id(ItemGroup, ItemGroupId)).
 
 :- begin_tests(user_defined_environment).
 
