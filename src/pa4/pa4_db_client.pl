@@ -262,8 +262,8 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
 update_stock(FacingId, Count) :-
     get_facing_data(FacingId, Data),
     Stock is Data.stock + Count,
-    k4r_db_client:put_facing(Data.shelfLayerId, [Data.layerRelativePosition, Data.noOfItemsWidth, Data.noOfItemsDepth, 
-        Data.noOfItemsHeight, Data.minStock, Stock, Data.productUnitId, Data.externalReferenceId], _, FacingId).
+    k4r_db_client:put_facing(Data.shelfLayerId, [Data.layerRelativePosition, Data.noOfItemsDepth, Data.noOfItemsWidth,
+        Data.noOfItemsHeight, Data.minStock, Stock, Data.productUnitId, Data.externalReferenceId], _, Data.id).
 
 update_item_position_platform(ExtItemId, [X, Y, Z]) :-
     get_filter_("{items","externalReferenceId", "eq", ExtItemId, "string", ItemFilter),
@@ -273,18 +273,16 @@ update_item_position_platform(ExtItemId, [X, Y, Z]) :-
     %writeln(GraphQLQuery),
     get_graphql(GraphQLQuery, Response),
     member(ItemData, Response.items),
-    put_item([ItemData.itemGroupId, X, Y, Z, ExtItemId], _, ItemData.id).
+    put_item([ItemData.facingId, X, Y, Z, ExtItemId], _, ItemData.id).
 
 delete_item_and_update_itemgroup(ExtItemId) :-
     get_filter_("{items","externalReferenceId", "eq", ExtItemId, "string", ItemFilter),
-    atomics_to_string([ItemFilter, "{", id, ",", itemGroupId, "}}"], GraphQLQuery),
+    atomics_to_string([ItemFilter, "{", id, ",", facingId, "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, Response), 
     member(ItemData, Response.items),
-    FacingId = ItemData.facingId,
-    delete_entity_from_id("items", ItemData.id),
-    %writeln('item group'),
-    Stock is -1,
-    update_stock(FacingId, Stock).
+    update_stock(ItemData.facingId, -1),
+    delete_entity_from_id("items", ItemData.id).
+   
     %writeln(Data),
 
 get_item_group_data(ItemGroupId, Data) :-
@@ -481,7 +479,7 @@ get_facing_data(Id, FacingData) :-
     atomics_to_string([FacingFilter, "{", FieldsStr, "}}"], GraphQLQuery),
     writeln(GraphQLQuery),
     get_graphql(GraphQLQuery, Response),
-    member(FacingData, Response.items).
+    member(FacingData, Response.facings).
 
 get_filter_(FieldName, Param, Op, Value, Type, CompleteFilter) :-
     k4r_db_client:make_filter(Param, Op, Value, Type, Filter),

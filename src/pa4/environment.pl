@@ -205,7 +205,7 @@ assert_items_platform(FacingId, Parent, ProductType) :-
     assert_items_platform_(Parent, ProductType, Dimension, ItemData).
 
 assert_items_platform_(Facing, ProductType, [D, W, H], [Item | Rest]) :-
-    [_, _, ExtRefId, PosX, PosY, PosZ] = Item,
+    [_, PosX, PosY, PosZ, _, ExtRefId] = Item,
     convert_to_m(2, PosX, X_m),
     convert_to_m(2, PosY, Y_m),
     convert_to_m(2, PosZ, Z_m),

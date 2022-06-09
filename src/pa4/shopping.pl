@@ -1,9 +1,12 @@
 /** <module> shopping
- * 
+ *
 
 @author Kaviya Dhanabalachandran
 @license BSD
 */
+
+% TODO: remove gtin from pickafter the update in item table
+
 
 
 :- module( shopping,
@@ -68,7 +71,7 @@ assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType) :-
     has_type(Label, shop:'ShelfLabel'),
     triple(Label,shop:articleNumberOfLabel,AN),
     shop_reasoner:get_product_type(Gtin, ProductType),
-    subclass_of(Product, R),
+    subclass_of(ProductType, R),
     is_restriction(R, value(shop:articleNumberOfProduct,AN1)),
     (\+ AN=AN1,
     tell(has_type(Facing, shop:'MisplacedProductFacing'));
@@ -122,11 +125,11 @@ insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, OtherFram
     length(ItemList, NoOfItems),
     get_product_unit_id(Gtin, ProductUnitId),
     (get_facing_id([StoreNum, ShelfExt, ShelfLayerExt, FacingExt], FacingId),
-    update_stock(FacingId, NoOfItems); 
-    assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType),
+    update_stock(FacingId, NoOfItems);
     get_layer_id([StoreNum, ShelfExt, ShelfLayerExt], LayerId),
     post_facing_individual(LayerId, Facing, NoOfItems, ProductUnitId, FacingId)
     ),
+    assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType),
     forall(member([ItemId,  Coordinates], ItemList),
         (insert_item(Facing, OtherFacingFrame, ProductType, FacingId, ItemId, Coordinates, ItemInstance),
         writeln(ItemInstance)
@@ -178,12 +181,13 @@ post_facing_individual(LayerPlId, Facing, Stock, ProductUnitId, FacingId) :-
     rdf_split_url(_, Frame, Layer),
     is_at(Facing, [Frame, [X, _, _], _]),
     triple(Facing, shop:erpFacingId, ExtRefId),
-    post_fridge_facing(LayerPlId, X, ExtRefId, Stock, ProductUnitId, FacingId).
+    ExtId is integer(ExtRefId),
+    post_fridge_facing(LayerPlId, X, ExtId, Stock, ProductUnitId, FacingId).
 
 
 /* get_product_class(Gtin, Product) :-
     triple(ArticleNumber, shop:gtin, Gtin),
-    has_type(Desc, owl:'Restriction'), 
+    has_type(Desc, owl:'Restriction'),
     has_description(Desc,value(shop:articleNumberOfProduct,ArticleNumber)),
     subclass_of(Product, Desc). */
     % transitive(subclass_of(Product, shop:'Product')).
@@ -349,8 +353,8 @@ assert_object_pose_(StaticObject, UrdfObj, UrdfPose, D, W, H) :-
 user_login(UserId, DeviceId, Timestamp, StoreId) :-
     ((triple(_, shop:hasUserId, UserId) -> true,  % when there is no existing error, it throws an instantiation error
     print_message(info, 'User has already registered and has not logged out'));
-    ( atom_string(StoreId, IdString),
-    triple(Store, shop:hasShopNumber, IdString),
+    ( %atom_string(StoreId, IdString),
+    triple(Store, shop:hasShopNumber, StoreId),
     has_location(Fridge, Store),
     tell([is_action(ParentAct),
         has_participant(ParentAct, Fridge),
@@ -371,7 +375,7 @@ user_login(UserId, DeviceId, Timestamp, StoreId) :-
         executes_task(ParentAct, Task)]), !,
     tell(
        [ is_action(LoggingInAction),
-        has_subevent(ParentAct, LoggingInAction), 
+        has_subevent(ParentAct, LoggingInAction),
         has_type(Device, shop:'MobileDevice'),
         has_participant(LoggingInAction, Device),
         triple(Device, shop:hasDeviceId, DeviceId),
@@ -402,7 +406,7 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
     triple(User, shop:hasUserId, UserId),
     % writeln(["All good 4"]),
     is_performed_by(ShoppingAct, User),
-    executes_task(ShoppingAct, Tsk), 
+    executes_task(ShoppingAct, Tsk),
     % writeln(["All good 5"]),
     instance_of(Tsk, shop:'Shopping'),
     has_participant(ShoppingAct, Basket),
@@ -412,7 +416,7 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
     %is_at(Item, [ParentFrame, [X, Y, _], _]),
     % writeln(["All good 6"]),
     tell(
-        [  
+        [
             is_action(PickAct),
             has_subevent(ShoppingAct, PickAct),
             has_type(Task1, shop:'PickProduct'),
@@ -425,9 +429,9 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
         ]),
         % writeln(["All good 1"]),
         % Initialise the store and associate product types with facing
-        tripledb_forget(Facing, shop:productInFacing, Item),
         % TODO: delete item in platform
         delete_item_and_update_itemgroup(ItemId),
+        tripledb_forget(Facing, shop:productInFacing, Item),
         time_interval_tell(PickAct, Timestamp, Timestamp),
         publish_pick_event(Timestamp, [UserId, StoreId, Gtin]). % Not sure here if object type makes sense
 
@@ -437,12 +441,12 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
     get_store(StoreId, Store),
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
-    executes_task(ShoppingAct, Tsk), 
+    executes_task(ShoppingAct, Tsk),
     instance_of(Tsk, shop:'Shopping'),
     has_participant(ShoppingAct, Basket),
     instance_of(Basket, shop:'ShopperBasket'),
     tell(
-        [    
+        [
             is_action(PutAct),
             has_subevent(ShoppingAct, PutAct),
             has_type(Tsk, shop:'PuttingProductOnAShelf'),
@@ -451,16 +455,17 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
             is_performed_by(PutAct, User),
             has_type(Motion, soma:'Placing'),
             is_classified_by(PutAct, Motion),
-            %triple(Facing, shop:productInFacing, ExtItemId), 
+            %triple(Facing, shop:productInFacing, ExtItemId),
             % create an instance of a Product. Use the item instance
-            % in the above triple. 
+            % in the above triple.
             has_type(Interval, dul:'TimeInterval'),
             has_time_interval(PutAct, Interval)
         ]),
+        writeln('done'),
         % TODO : Add item to a facing in platform
         % insert_item_platform(ExtItemId, Gtin, FacingExtId),
         %triple(Store, shop:hasShopNumber, StoreId),
-        get_facing_(Store, Position, Facing),
+        %get_facing_(Store, Position, Facing),
         %get_product_type(Gtin, ProductType),
         %triple(Facing,shop:labelOfFacing,Label),
         %triple(Label,shop:articleNumberOfLabel,AN),
@@ -471,6 +476,7 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
         % get_item_group_id(FacingId, ProdUnitId, ItemGroupId)
         % );
         %(tell(has_type(Facing, shop:'MisplacedProductFacing')))),
+        writeln('done1'),
         insert_all_fridge_items(StoreId, [ShelfExt, LayerExt, FacingExt], Gtin, [[ExtItemId, [Coordinates]]]),
         tell(triple(Facing, shop:productInFacing, ItemInstance)),
         tripledb_forget(Basket, soma:containsObject, ItemInstance),
@@ -478,10 +484,10 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
         publish_put_back(Timestamp, [UserId, StoreId, Gtin]). %% what needs to be here?? Gtin or object type or ?
 
 user_logout(UserId, DeviceId, Timestamp, StoreId) :-
-    %% Device might be another participant in the login and logout action  
+    %% Device might be another participant in the login and logout action
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
-    executes_task(ShoppingAct, Tsk), 
+    executes_task(ShoppingAct, Tsk),
     instance_of(Tsk, shop:'Shopping'),
 
     has_subevent(ShoppingAct, LoginAct),
@@ -489,7 +495,7 @@ user_logout(UserId, DeviceId, Timestamp, StoreId) :-
     instance_of(LoginTsk, shop:'LoggingIn'),
     time_interval_data(LoginAct, Start, _),
     tell(
-        [  
+        [
             is_action(LogoutAct),
             has_subevent(ShoppingAct, LogoutAct),
             instance_of(Tsk1,shop:'LoggingOut'),
@@ -510,7 +516,7 @@ user_logout(UserId, DeviceId, Timestamp, StoreId) :-
 items_bought(UserId, Items) :-
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
-    executes_task(ShoppingAct, Tsk), 
+    executes_task(ShoppingAct, Tsk),
     instance_of(Tsk, shop:'Shopping'),
     has_participant(ShoppingAct, Basket),
     instance_of(Basket, shop:'ShopperBasket'),
@@ -590,7 +596,7 @@ get_all_facings_in_layers([L | Rest], Temp, FacingList) :-
     (Temp1 = Temp)),
     get_all_facings_in_layers(Rest, Temp1, FacingList).
 
-get_all_facings_in_layers(L, F) :- 
+get_all_facings_in_layers(L, F) :-
     get_all_facings_in_layers(L, T, F).
 
 get_all_items_in_fridge_facing([], Temp, Temp).
@@ -621,8 +627,8 @@ get_user(UserId, User) :-
     print_message(warning, 'User has logged out').
 
 
-assert_object_shape_(Object, D, W, H, RGBValue):- 
-  (object_dimensions(Object, D, W, H) -> 
+assert_object_shape_(Object, D, W, H, RGBValue):-
+  (object_dimensions(Object, D, W, H) ->
     (triple(Object,soma:hasShape,Shape),
   triple(Shape,dul:hasRegion,ShapeRegion));
   tell(has_type(Shape, soma:'Shape')),
@@ -639,7 +645,7 @@ assert_object_shape_(Object, D, W, H, RGBValue):-
 
   tell(has_type(ColorType, soma:'Color')),
   tell(holds(Object,soma:hasColor,ColorType)),
-  tell(object_color_rgb(Object, RGBValue)), 
+  tell(object_color_rgb(Object, RGBValue)),
   triple(ColorType,dul:hasRegion,Region),
   tell(triple(Region, soma:hasTransparencyValue, 1)), !.
 
