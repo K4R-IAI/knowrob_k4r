@@ -401,7 +401,7 @@ PREDICATE(post_facing, 3)
 // minStock, stock,  ProductUnitId, ExtRefId], FacingId)
 PREDICATE(put_facing, 4)
 {
-  std::string link_tail = "shelflayers/" + std::string(PL_A1) + "/facings/";
+  std::string link_tail = "facings/";
   DataController facing_controller(link_tail.c_str());
 
   std::stringstream out_data;
