@@ -121,6 +121,7 @@ assert_facings(StoreNum, LayerExtId) :-
     create_facing_in_layer(Layer, [0.35, 0.16, 0.1], -0.108, _),
     shop:assert_facing_id(Layer).
 
+% Add gtin and immediately push it
 assert_facing(StoreNum, LayerExtId, Dimensions, Pos, Facing) :-
     shopping:get_store(StoreNum, Store),
     triple(Fridge, dul:hasLocation, Store),
@@ -189,7 +190,7 @@ test('create shelf') :-
 
 /* test('insert items') :-
     gtrace,
-    shopping:insert_all_fridge_items("585", [1, 1, 1],'4010355520036',[['I4563', [-0.17, 0.02]], ['I4564', [0.0,0.02]], ['I4567', [0.08,0.0.02]]]). */
+    shopping:insert_all_fridge_items("585", [1, 1, 1],'4010355520036',[['I4563', [-0.17, 0.02]], ['I4564', [0.0,0.02]], ['I4567', [0.08,0.02]]]). */
 %     writeln('hereee'),
 %     get_store(55, Store),
 %     writeln('insertttt'),
