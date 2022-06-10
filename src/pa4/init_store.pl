@@ -50,11 +50,11 @@ test_pick_up(StoreNum, ItemId) :-
 
 test_put_back(StoreNum) :-
     UserId is 100,
-    ItemId = 'I4599',
+    ItemId = 'I4567',
     Gtin = '4010355520036',
     get_time(Now),
     Position = [1, 1, 1],
-    Coordinates = [0.025, -0.05],
+    Coordinates = [0.0205, -0.05],
     put_back_object(UserId, StoreNum, ItemId, Gtin, 
         Now, Coordinates, Position),
     get_facing(ItemId, Facing),
@@ -71,28 +71,28 @@ test_log_out(StoreNum) :-
 :- begin_tests('init_store').
 
 test('store init') :-
-    gtrace,
+    %gtrace,
     StoreNum = 300,
     init_store(StoreNum),
-    % shopping:insert_all_fridge_items(StoreNum, [1, 1, 1],'4010355520036',[['I4563', [0.07, -0.05]], 
-    %     ['I4564', [0.07,-0.02]], ['I4567', [0.08, -0.03]]]),
+    %shopping:insert_all_fridge_items(StoreNum, [1, 1, 1],'4010355520036',[['I4564', [0.07, -0.05]]]),
+    %shopping:insert_all_fridge_items(StoreNum, [1, 1, 2],'4004980506206',[['I24563', [0.07, -0.05]], ['I24564', [0.07,-0.02]], ['I24567', [0.08, -0.03]]]),
+    %shopping:insert_all_fridge_items(StoreNum, [1, 1, 3],'4011800521226',[['I34563', [0.07, -0.05]], ['I34564', [0.07,-0.02]], ['I34567', [0.08, -0.03]]]),
     get_items_in_fridge(StoreNum, Items),
     writeln(Items).
 
 test('events') :-
     StoreNum is 300,
     ItemId = 'I4567',
-    
     test_log_in(StoreNum),
-    writeln('log in done'),
-    gtrace,
-    %test_pick_up(StoreNum, ItemId),
+    %writeln('log in done'),
+    %gtrace,
+    test_pick_up(StoreNum, ItemId),
     %writeln('pick up done'),
     % gtrace,
     test_put_back(StoreNum),
-    writeln('put back done'),
-    test_log_out(StoreNum),
-    writeln('log out done').
+    %writeln('put back done'),
+    test_log_out(StoreNum).
+    %writeln('log out done').
 
 /* test('tf structure') :-
     gtrace,
