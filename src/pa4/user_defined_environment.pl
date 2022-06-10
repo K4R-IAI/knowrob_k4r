@@ -121,7 +121,7 @@ assert_facings(StoreNum, LayerExtId) :-
     create_facing_in_layer(Layer, [0.35, 0.16, 0.1], -0.108, _),
     shop:assert_facing_id(Layer).
 
-assert_facing(StoreNum, ShelfExt, LayerExtId, [Dimensions, Pos, Gtin], Facing) :-
+assert_facing(StoreNum, ShelfExt, LayerExtId, Dimensions_Pos_Gtin) :-
     shopping:get_store(StoreNum, Store),
     triple(Fridge, dul:hasLocation, Store),
     triple(Shelf, shop:erpShelfId, ShelfExt),
@@ -129,7 +129,7 @@ assert_facing(StoreNum, ShelfExt, LayerExtId, [Dimensions, Pos, Gtin], Facing) :
     triple(Shelf, soma:hasPhysicalComponent, Layer),
     triple(Fridge, soma:hasPhysicalComponent, Shelf),
     findall([Facing, PdtId],
-        (member([Dim, X, GtinNum], [Dimensions, Pos, Gtin]),
+        (member([Dim, X, GtinNum], Dimensions_Pos_Gtin),
         create_facing_in_layer(Layer, Dim, X, Facing),
         get_product_unit_id(GtinNum, PdtId)),
         FacingList),
@@ -168,8 +168,10 @@ test('create shelf') :-
     writeln('hereee'),
     shopping:get_store(StoreNum, Store),
     writeln('insertttt'),
-    shopping:get_facing_(Store, [1, 1, 1], _).
-    %shopping:insert_all_fridge_items(StoreNum, [1, 1, 1],'4010355520036',[['I4563', [0.07, -0.05]], ['I4564', [0.07,-0.02]], ['I4567', [0.08, -0.03]]]).
+    shopping:get_facing_(Store, [1, 1, 1], _),
+    Dimensions = [0.35, 0.16, 0.1],
+    %assert_facing(StoreNum, 1, 1, [[Dimensions, 0, '4004980506206'], [Dimensions, 0.108, '4011800521226']]).
+    shopping:insert_all_fridge_items(StoreNum, [1, 1, 2],'4004980506206',[['I4563', [0.07, -0.05]], ['I4564', [0.07,-0.02]], ['I4567', [0.08, -0.03]]]).
     % label_of_facing(55, Facing, [1, 1, 1], '4010355520036', ProductType, ItemGroupId),
     % forall(member([ItemId,  Coordinates], [['I4563', [ 0.05 , 0.02]], ['I4564', [0.05,-0.08]], ['I4567', [0.05, 0.08]]]),
     %     (insert_item(Facing, ProductType, ItemGroupId, ItemId, Coordinates, _),
