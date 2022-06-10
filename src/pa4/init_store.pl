@@ -57,8 +57,8 @@ test_put_back(StoreNum) :-
     Coordinates = [0.0205, -0.05],
     put_back_object(UserId, StoreNum, ItemId, Gtin, 
         Now, Coordinates, Position),
-    get_facing(ItemId, Facing),
-    writeln(Facing).
+    get_facing(ItemId, Facing).
+    %writeln(Facing).
 
 
 test_log_out(StoreNum) :-
@@ -77,8 +77,8 @@ test('store init') :-
     %shopping:insert_all_fridge_items(StoreNum, [1, 1, 1],'4010355520036',[['I4564', [0.07, -0.05]]]),
     %shopping:insert_all_fridge_items(StoreNum, [1, 1, 2],'4004980506206',[['I24563', [0.07, -0.05]], ['I24564', [0.07,-0.02]], ['I24567', [0.08, -0.03]]]),
     %shopping:insert_all_fridge_items(StoreNum, [1, 1, 3],'4011800521226',[['I34563', [0.07, -0.05]], ['I34564', [0.07,-0.02]], ['I34567', [0.08, -0.03]]]),
-    get_items_in_fridge(StoreNum, Items),
-    writeln(Items).
+    get_items_in_fridge(StoreNum, Items).
+    %writeln(Items).
 
 test('events') :-
     StoreNum is 300,

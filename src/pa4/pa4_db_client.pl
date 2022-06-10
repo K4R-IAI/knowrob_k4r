@@ -120,7 +120,7 @@ post_fridge_facings(StoreNumber) :-
     get_store_id(StoreNumber, StoreId),
     % This works only because fridge has only one shelf 
     get_shelf_layers_data(StoreId, [id, externalReferenceId], Value),
-    writeln(["shelf", Value]),
+    %writeln(["shelf", Value]),
     post_fridge_facings_of_layer(Value).
 
 post_fridge_facings_of_layer([[LayerId, ExtId] | Rest]) :-
@@ -152,7 +152,7 @@ post_items_in_store(StoreNumber) :-
     get_store_id(StoreNumber, StoreId),
     % Check if the shelf is in the store
     get_shelves_data(StoreId, [id, externalReferenceId], Value),
-    writeln(["ShelfData",Value]),
+    %writeln(["ShelfData",Value]),
     forall(member([ShelfPlId, ShelfExtRefId], Value),
         ( %writeln(["PId", ShelfPlId]),
         atom_number(ShelfExtRefId, NumId),
@@ -166,7 +166,7 @@ post_items_in_shelf(Shelf, _) :-
     print_message(info, 'Shelf has no layers').
 
 post_items_in_shelf(Shelf, PlatformShelfId) :-
-    writeln("post_items_in_shelf"),
+    %writeln("post_items_in_shelf"),
     get_layer_and_facing_data(PlatformShelfId, _{shelfLayers: [externalReferenceId], facings: [id, layerRelativePosition]}, LayersDict),
     forall(member(LayerDict, LayersDict.shelfLayers),
         (atom_number(LayerDict.externalReferenceId, NumId),
@@ -185,7 +185,7 @@ post_items_in_layer([FacingDict | Rest], Layer) :-
     %atom_number(FacingDict.layerRelativePosition, FacingRelPos),
     triple(Facing, shop:erpFacingId, FacingDict.layerRelativePosition),
     triple(Facing, shop:layerOfFacing, Layer),
-    writeln(Facing),
+    %writeln(Facing),
     rdf_split_url(_,FacingFrame,Facing),
     shopping:get_all_items_in_facing(Facing, Items),
     post_items_in_facing(Items, FacingFrame, FacingDict.id),
@@ -211,53 +211,6 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
     post_item([FacingPlatformId, X_mm, Y_mm, Z_mm, ExtItemId], _),
     post_items_in_facing(Rest, ParentName, FacingPlatformId).
 
-% TODO : Use this to post the data without havign to loop through all
-/* delete_item_platform(StoreNum, LayerId, ShelfId, FacingExtId, Gtin, [X, Y]) :-
-    get_product_unit_id(Gtin, ProductGroupId),
-
-    get_filter_("{stores","storeNumber", "eq", StoreNum, "string", StoreFilter),
-    get_filter_("{shelves","externalReferenceId", "eq", ShelfId, "string", ShelfFilter),
-    get_filter_("{shelfLayers","externalReferenceId", "eq", LayerId, "string", LayerFilter),
-    % TODO : Must be changed to externalReferenceId
-    get_filter_("{facings","layerRelativePosition", "eq", FacingExtId, "string", FacingFilter),
-    get_filter_("{itemGroups","productUnitId", "eq", ProductUnitId, "string", ItemGroupFilter),
-
-    atomics_to_string([StoreFilter, ShelfFilter, LayerFilter, FacingFilter, ItemGroupFilter, "{", id, ",", stock,"}}}}}}"], IdQuery),
-    get_graphql(IdQuery, IdResponse),
-    member(ItemGroupId, IdResponse.facings.itemGroups),
-    writeln(ItemGroupId),
-
-    get_filter_("{items","itemGroupId", "eq", ItemGroupId.id, "string", ItemFilter),
-    atomics_to_string([ItemFilter, "{", id, positionInFacingX, positionInFacingY, "}}}}}}"], ItemQuery).  */
-
-    % Queries
-/*     {
-        stores(filter: {id: {operator: "eq", value: "1034", type: "string"}}) {
-           shelves(filter: {id: {operator: "eq", value: "1908", type: "string"}}){
-             shelfLayers(filter: {id: {operator: "eq", value: "2700", type: "string"}})
-             {
-               facings(filter: {layerRelativePosition: {operator: "eq", value: "1", type: "string"}}) {
-                 itemGroups(filter: {productUnitId: {operator: "eq", value: "1388", type: "string"}}) {
-                   id         
-                }
-               }
-             }
-           }
-         }
-       } */
-% Get the position of the item
-% {
-%   items(filter: {itemGroupId: {operator: "eq", value: "1536", type: "string"}}){
-%     id
-%     positionInFacingX
-%     positionInFacingY
-%     positionInFacingZ
-%   } 
-% }
-
-/* update_facing(PdtUniId, StockNumber, FacingId) :-
-    get_facing_data(FacingId, Data),
-    put_facing() */
 
 update_stock(FacingId, Count) :-
     get_facing_data(FacingId, Data),
@@ -300,10 +253,10 @@ get_layer_and_facing_data(PlatformShelfId, KeyList, LayersDict) :- % test{shelfL
     string_concat("{shelves", Filter, ShelfFilter),
     string_concat("{shelfLayers{", LayerKeys, LayerFilter),
     string_concat(" facings{", FacingKeys, FacingFilter),
-    writeln([LayerFilter, FacingFilter]),
+    %writeln([LayerFilter, FacingFilter]),
     atomics_to_string([ShelfFilter, LayerFilter, FacingFilter,"}}}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
-    writeln(GraphQLResponse.shelves),
+    %writeln(GraphQLResponse.shelves),
     member(LayersDict, GraphQLResponse.shelves).
     % forall(member(Layer, LayersDict.shelfLayers),
     % (writeln(Layer.externalReferenceId),
@@ -354,8 +307,8 @@ get_store_id(StoreNum, StoreId) :-
     atomics_to_string([StoreFilter, "{", id, "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
     member(StoreDict, GraphQLResponse.stores),
-    StoreId = StoreDict.id,
-    writeln(['id', StoreId]).
+    StoreId = StoreDict.id.
+    %writeln(['id', StoreId]).
 
 get_store(StoreNum, StoreParam, Store) :-
     get_filter_("{stores", "storeNumber", "eq", StoreNum, "string", StoreFilter),
@@ -374,7 +327,7 @@ get_all_shelf_data(StorePlatformId, ShelfParam, ShelfData) :-
     % writeln("pa4"),
     % writeln(GraphQLResponse),
     get_dict(shelves, GraphQLResponse, Temp),
-    writeln(Temp),
+    %writeln(Temp),
     findall(ValueList, 
         (member(T, Temp), 
         get_value_list(T, ShelfParam, ValueList)),
@@ -388,7 +341,7 @@ get_all_items(FacingId, ItemData) :-
     atomics_to_string([ItemFilter, "{", FieldsStr, "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
     get_dict(items, GraphQLResponse, Temp),
-    writeln(Temp),
+    %writeln(Temp),
     findall(ValueList, 
         (member(T, Temp), 
         get_value_list(T, Fields, ValueList)),
@@ -401,9 +354,9 @@ get_all_item_groups(FacingId, ItemGrps) :-
     list_to_string(Fields, FieldsStr),
     atomics_to_string([ItemGroupFilter, "{", FieldsStr, "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
-    writeln(GraphQLResponse),
+    %writeln(GraphQLResponse),
     get_dict(itemGroups, GraphQLResponse, Temp),
-    writeln(Temp),
+    %writeln(Temp),
     findall(ValueList, 
         (member(T, Temp), 
         get_value_list(T, Fields, ValueList)),
@@ -417,7 +370,7 @@ get_all_facings_platform(LayerId, Data) :-
     atomics_to_string([FacingFilter, "{", FieldsStr, "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, GraphQLResponse),
     get_dict(facings, GraphQLResponse, Temp),
-    writeln(Temp),
+    %writeln(Temp),
     findall(ValueList, 
         (member(T, Temp), 
         get_value_list(T, Fields, ValueList)),
@@ -477,7 +430,7 @@ get_facing_data(Id, FacingData) :-
     get_facing_param(Fields),
     list_to_string(Fields, FieldsStr),
     atomics_to_string([FacingFilter, "{", FieldsStr, "}}"], GraphQLQuery),
-    writeln(GraphQLQuery),
+    %writeln(GraphQLQuery),
     get_graphql(GraphQLQuery, Response),
     member(FacingData, Response.facings).
 

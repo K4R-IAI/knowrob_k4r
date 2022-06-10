@@ -119,9 +119,9 @@ insert_all_fridge_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, It
     insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, get_facing_top_left_frame_, ItemList).
     
 insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, OtherFrame, ItemList) :-
-    writeln('hereee'),
+    %writeln('hereee'),
     get_store(StoreNum, Store),
-    writeln('insertttt'),
+    %writeln('insertttt'),
     get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
     (ground(OtherFrame) -> call(OtherFrame, Facing, OtherFacingFrame); true),
     length(ItemList, NoOfItems),
@@ -133,8 +133,8 @@ insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, OtherFram
     ),
     assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType),
     forall(member([ItemId,  Coordinates], ItemList),
-        (insert_item(Facing, OtherFacingFrame, ProductType, FacingId, ItemId, Coordinates, ItemInstance),
-        writeln(ItemInstance)
+        (insert_item(Facing, OtherFacingFrame, ProductType, FacingId, ItemId, Coordinates, ItemInstance)
+        %writeln(ItemInstance)
     )).
 
 % ToDO -- If the item id already exists then just update the position

@@ -165,9 +165,9 @@ test('create shelf') :-
     init_store(StoreNum), !,
     LayerExtId is 1,
     %assert_facings(StoreNum, LayerExtId),
-    writeln('hereee'),
+    %writeln('hereee'),
     shopping:get_store(StoreNum, Store),
-    writeln('insertttt'),
+    %writeln('insertttt'),
     shopping:get_facing_(Store, [1, 1, 1], _),
     Dimensions = [0.35, 0.16, 0.1],
     %assert_facing(StoreNum, 1, 1, [[Dimensions, 0, '4004980506206'], [Dimensions, 0.108, '4011800521226']]).
