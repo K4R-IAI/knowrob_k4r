@@ -392,19 +392,8 @@ user_login(UserId, DeviceId, Timestamp, StoreId) :-
 
 
 pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
-    % Pose and object type are not used
-    % With the gtin
-    %get_store(StoreId, Store),
-    % writeln(["All good 2"]),
+    number_string(GtinNum, Gtin),
     get_item_position(ItemId, Facing),
-    % writeln(["All good 3"]),
-/*     triple(Facing, shop:erpFacingId, FacingExtId),
-    triple(Facing, shop:layerOfFacing, Layer),
-    triple(Layer, shop:erpShelfLayerId, LayerId),
-    triple(Shelf, soma:hasPhysicalComponent, Layer),
-    triple(Shelf, shop:erpShelfId, ShelfId), */
-    % get_facing_(Store, Position, Facing),
-    % [_, _, FacingExtId] = Position,
     triple(User, shop:hasUserId, UserId),
     % writeln(["All good 4"]),
     is_performed_by(ShoppingAct, User),
@@ -414,9 +403,6 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
     has_participant(ShoppingAct, Basket),
     instance_of(Basket, shop:'ShopperBasket'),
     item_exists(ItemId, Item),
-    %rdf_split_url(_,ParentFrame,Facing),
-    %is_at(Item, [ParentFrame, [X, Y, _], _]),
-    % writeln(["All good 6"]),
     tell(
         [
             is_action(PickAct),
@@ -435,7 +421,7 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
         delete_item_and_update_itemgroup(ItemId),
         tripledb_forget(Facing, shop:productInFacing, Item),
         time_interval_tell(PickAct, Timestamp, Timestamp),
-        publish_pick_event(Timestamp, [UserId, StoreId, Gtin]). % Not sure here if object type makes sense
+        publish_pick_event(Timestamp, [UserId, StoreId, GtinNum]). % Not sure here if object type makes sense
 
 
 put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Position) :-
