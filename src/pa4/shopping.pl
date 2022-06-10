@@ -27,7 +27,8 @@
         get_items_in_fridge/2,
         get_user/2,
         get_facing/2,
-        get_facing_top_left_frame_/2
+        get_facing_top_left_frame_/2,
+        post_facing_individual/5
     ]).
 
 %TODO : update the stock numbers in item group table
@@ -77,7 +78,8 @@ assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType) :-
     tell(has_type(Facing, shop:'MisplacedProductFacing'));
     true));
     %article_number_of_dan(Gtin, AN);
-    (create_article_number(gtin(Gtin), AN),
+    (number_string(GtinNum, Gtin),
+    create_article_number(gtin(GtinNum), AN),
     get_product_dimenion_platform(ProductUnitId, D, W, H),
     create_article_type(AN,[D,W,H], ProductType),
     tell([has_type(Label, shop:'ShelfLabel'),
@@ -472,9 +474,7 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
         % get_item_group_id(FacingId, ProdUnitId, ItemGroupId)
         % );
         %(tell(has_type(Facing, shop:'MisplacedProductFacing')))),
-        writeln('done1'),
-        insert_all_fridge_items(StoreId, [ShelfExt, LayerExt, FacingExt], Gtin, [[ExtItemId, [Coordinates]]]),
-        tell(triple(Facing, shop:productInFacing, ItemInstance)),
+        insert_all_fridge_items(StoreId, [ShelfExt, LayerExt, FacingExt], Gtin, [[ExtItemId, Coordinates]]),
         tripledb_forget(Basket, soma:containsObject, ItemInstance),
         time_interval_tell(PutAct, Timestamp, Timestamp),
         publish_put_back(Timestamp, [UserId, StoreId, Gtin]). %% what needs to be here?? Gtin or object type or ?
