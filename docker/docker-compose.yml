@@ -13,7 +13,7 @@ services:
       - KNOWROB_MONGODB_PKG_URI=${KNOWROB_MONGODB_PKG_URI}
     
   knowrob:
-    image: kaviya23/knowrob_pa4:v0.1
+    image: iaik4r/knowrob:v1.0.6
     container_name: ${KNOWROB}
     depends_on:
       - 'mongo'
@@ -21,8 +21,7 @@ services:
       - KNOWROB_VERSION=${KNOWROB_VERSION}
       - KNOWROB_PORT=${KNOWROB_PORT}
       - KNOWROB_MONGODB_URI=${KNOWROB_MONGODB_URI}
-      - DT_URL=${DT_URL}
-      - GRAPHQL_URL=${GRAPHQL_URL}
+      - SANDBOX=${SANDBOX}
     ports:
       - "${KNOWROB_PORT}:${KNOWROB_PORT}"
     entrypoint: /entrypoint.bash
