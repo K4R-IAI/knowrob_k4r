@@ -7,7 +7,8 @@
 
 :- module( user_defined_environment,
     [ create_shelf/9,
-    init_store/1]
+    init_store/1,
+    assert_facing/4]
     ).
 
 :- use_module(library('semweb/rdf_db')).
