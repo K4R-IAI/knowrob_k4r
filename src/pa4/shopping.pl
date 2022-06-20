@@ -15,15 +15,15 @@
         create_store(+, -, -),
         assert_frame_properties/3,
         assert_layer_properties/3,
-        assert_label_of_facing/4,
+        assert_label_of_facing/6,
         user_login(r, r, r, r),
         pick_object(r, r, r, r, r), %% how do we handle probability 
         user_logout(r, r, r, r),
         put_back_object/7,
         items_bought(r, ?),
-        insert_all_items(+,+,+,+,+),
+        insert_all_items(+,+,+,+,+,+),
         insert_item(+,+,+,+,+,+,-),
-        insert_all_fridge_items/4,
+        insert_all_fridge_items/5,
         get_items_in_fridge/2,
         get_user/2,
         get_facing/2,
@@ -67,25 +67,35 @@ init_fridge(StoreId, Store, Fridge) :-
     )).
 
 %TODO
-assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType) :-
+assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType, PutFlag, FacingUpdate) :-
     (triple(Facing,shop:labelOfFacing,Label),
     has_type(Label, shop:'ShelfLabel'),
     triple(Label,shop:articleNumberOfLabel,AN),
-    shop_reasoner:get_product_type(Gtin, ProductType),
+    (shop_reasoner:get_product_type(Gtin, ProductType),
     subclass_of(ProductType, R),
-    is_restriction(R, value(shop:articleNumberOfProduct,AN1)),
-    (\+ AN=AN1,
+    is_restriction(R, value(shop:articleNumberOfProduct,AN1));
+    create_new_product_type(ProductUnitId,Gtin, ProductType, AN1)),
+    % Facing is classifed as misplaced facing when a user puts a different item
+    (\+ AN=AN1, PutFlag is 1,
     tell(has_type(Facing, shop:'MisplacedProductFacing'));
+     % When the article numbers dont match, update the label if it is not put action
+    (\+ AN=AN1, PutFlag is 0,
+        tripledb_forget(Label,shop:articleNumberOfLabel,AN),
+        tell(triple(Label,shop:articleNumberOfLabel,AN1)),
+        FacingUpdate = "update");
     true));
     %article_number_of_dan(Gtin, AN);
-    (number_string(GtinNum, Gtin),
-    create_article_number(gtin(GtinNum), AN),
-    get_product_dimenion_platform(ProductUnitId, D, W, H),
-    create_article_type(AN,[D,W,H], ProductType),
+    (
+    create_new_product_type(ProductUnitId, Gtin, ProductType, AN),
     tell([has_type(Label, shop:'ShelfLabel'),
     triple(Facing,shop:labelOfFacing,Label),
     triple(Label,shop:articleNumberOfLabel,AN)])).
 
+create_new_product_type(ProductUnitId, GtinNum, ProductType, AN) :-
+    number_string(GtinNum, Gtin),
+    create_article_number(gtin(Gtin), AN),
+    get_product_dimenion_platform(ProductUnitId, D, W, H),
+    create_article_type(AN,[D,W,H], ProductType).
 
 
 assert_shelf_(StorePlId, Fridge, ShelfPlatformId) :-
@@ -115,13 +125,12 @@ assert_store(StoreId, StorePlatformId, Store) :-
     create_store_from_platfrom(StoreId, StorePlatformId, Store).
 
 % Gtin is provided here is used to know the product type that belongs to the facing
-insert_all_fridge_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, ItemList) :-
-    insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, get_facing_top_left_frame_, ItemList).
+insert_all_fridge_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, ItemList, PutFlag) :-
+    \+ground(PutFlag) -> PutFlag is 0; true,
+    insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, get_facing_top_left_frame_, ItemList, PutFlag).
     
-insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, OtherFrame, ItemList) :-
-    %writeln('hereee'),
+insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, OtherFrame, ItemList, PutFlag) :-
     get_store(StoreNum, Store),
-    %writeln('insertttt'),
     get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
     (ground(OtherFrame) -> call(OtherFrame, Facing, OtherFacingFrame); true),
     length(ItemList, NoOfItems),
@@ -131,7 +140,8 @@ insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, OtherFram
     get_layer_id([StoreNum, ShelfExt, ShelfLayerExt], LayerId),
     post_facing_individual(LayerId, Facing, NoOfItems, ProductUnitId, FacingId)
     ),
-    assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType),
+    assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType, PutFlag, Fupdate),
+    %(ground(Fupdate) -> update_pdtUnitId(FacingId, ProductUnitId); true),
     forall(member([ItemId,  Coordinates], ItemList),
         (insert_item(Facing, OtherFacingFrame, ProductType, FacingId, ItemId, Coordinates, ItemInstance)
         %writeln(ItemInstance)
@@ -391,14 +401,12 @@ user_login(UserId, DeviceId, Timestamp, StoreId) :-
         publish_log_in(Timestamp, [UserId, StoreId]))).
 
 
-pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
+pick_object(UserId, StoreId, ItemId, GtinNum, Timestamp) :-
     number_string(GtinNum, Gtin),
     get_item_position(ItemId, Facing),
     triple(User, shop:hasUserId, UserId),
-    % writeln(["All good 4"]),
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk),
-    % writeln(["All good 5"]),
     instance_of(Tsk, shop:'Shopping'),
     has_participant(ShoppingAct, Basket),
     instance_of(Basket, shop:'ShopperBasket'),
@@ -418,7 +426,7 @@ pick_object(UserId, StoreId, ItemId, Gtin, Timestamp) :-
         % writeln(["All good 1"]),
         % Initialise the store and associate product types with facing
         % TODO: delete item in platform
-        delete_item_and_update_itemgroup(ItemId),
+        delete_item_and_update_facing(ItemId),
         tripledb_forget(Facing, shop:productInFacing, Item),
         time_interval_tell(PickAct, Timestamp, Timestamp),
         publish_pick_event(Timestamp, [UserId, StoreId, GtinNum]). % Not sure here if object type makes sense
@@ -446,21 +454,8 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
             has_type(Interval, dul:'TimeInterval'),
             has_time_interval(PutAct, Interval)
         ]),
-        % TODO : Add item to a facing in platform
-        % insert_item_platform(ExtItemId, Gtin, FacingExtId),
-        %triple(Store, shop:hasShopNumber, StoreId),
-        %get_facing_(Store, Position, Facing),
-        %get_product_type(Gtin, ProductType),
-        %triple(Facing,shop:labelOfFacing,Label),
-        %triple(Label,shop:articleNumberOfLabel,AN),
-        % get_facing_id([StoreId, ShelfExt, LayerExt, FacingExt], FacingId),
-        % get_product_unit_id(Gtin, ProdUnitId),
-        % ((subclass_of(ProductType, ANRest),
-        % is_restriction(ANRest, value(shop:articleNumberOfProduct, AN))
-        % get_item_group_id(FacingId, ProdUnitId, ItemGroupId)
-        % );
-        %(tell(has_type(Facing, shop:'MisplacedProductFacing')))),
-        insert_all_fridge_items(StoreId, [ShelfExt, LayerExt, FacingExt], Gtin, [[ExtItemId, Coordinates]]),
+        PutFlag = 1,
+        insert_all_fridge_items(StoreId, [ShelfExt, LayerExt, FacingExt], Gtin, [[ExtItemId, Coordinates]], PutFlag),
         tripledb_forget(Basket, soma:containsObject, ItemInstance),
         time_interval_tell(PutAct, Timestamp, Timestamp),
         publish_put_back(Timestamp, [UserId, StoreId, Gtin]). %% what needs to be here?? Gtin or object type or ?

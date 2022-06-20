@@ -170,7 +170,9 @@ assert_facing_platform_(Parent, [Facing | Rest]) :-
         holds(ObjShape,dul:hasRegion,ShapeRegion),
         object_dimensions(PrFacing, D, W, H)]),
     get_gtin(PdtUnitId, Gtin),
-    assert_label_of_facing(PrFacing, PdtUnitId, Gtin, PdtType),
+    PutFlag is 0,
+    number_string(GtinNum, Gtin),
+    assert_label_of_facing(PrFacing, PdtUnitId, GtinNum, PdtType, PutFlag, _),
     writeln(PrFacing),
     assert_items_platform(PlatformFacingId, PrFacing, PdtType),
     assert_facing_platform_(Parent, Rest).

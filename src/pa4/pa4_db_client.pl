@@ -29,7 +29,7 @@
             post_items_in_store/1,
             update_item_position_platform/2,
             update_stock/2,
-            delete_item_and_update_itemgroup/1
+            delete_item_and_update_facing/1
           ]).
 
 %:- use_foreign_library('libk4r_db_client.so').
@@ -228,7 +228,7 @@ update_item_position_platform(ExtItemId, [X, Y, Z]) :-
     member(ItemData, Response.items),
     put_item([ItemData.facingId, X, Y, Z, ExtItemId], _, ItemData.id).
 
-delete_item_and_update_itemgroup(ExtItemId) :-
+delete_item_and_update_facing(ExtItemId) :-
     get_filter_("{items","externalReferenceId", "eq", ExtItemId, "string", ItemFilter),
     atomics_to_string([ItemFilter, "{", id, ",", facingId, "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, Response), 
