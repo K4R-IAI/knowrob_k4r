@@ -89,7 +89,8 @@ assert_shelf_platform(Fridge, [Shelf | Rest], Temp, ShelfIds) :-
     [PlatformShelfId, PosX, PosY, PosZ, PosX1, PosY1, PosZ1, PosW1, Width, Height, Depth, LengthUnitIdAtom, CadPlanId, ExtRefIdAtom] = Shelf,
     atom_number(ExtRefIdAtom, ExtRefId),
     atom_number(LengthUnitIdAtom, LengthUnitId),
-    append(Temp, PlatformShelfId, Temp1),
+    triple(Fridge, dul:hasLocation, Store),
+    append(Temp, [PlatformShelfId], Temp1),
     convert_to_m(LengthUnitId, PosX, X),
     convert_to_m(LengthUnitId, PosY, Y),
     convert_to_m(LengthUnitId, PosZ, Z),
@@ -102,6 +103,7 @@ assert_shelf_platform(Fridge, [Shelf | Rest], Temp, ShelfIds) :-
     convert_to_m(LengthUnitId, Height, H),
     tell([ has_type(Frame, shop:'ShelfFrame'),
         triple(Fridge, soma:hasPhysicalComponent, Frame),
+        triple(Frame, dul:hasLocation, Store),
         triple(Frame, shop:erpShelfId, ExtRefId),
         is_at(Frame, ['map', [X, Y, Z],[X1, Y1, Z1, W1]]),
         has_type(ObjShape, soma:'Shape'),
@@ -179,28 +181,6 @@ assert_facing_platform_(Parent, [Facing | Rest]) :-
 
 assert_facing_platform_(_, []).
 
-%assert_item_group_ids(FacingId, Parent) :-
-    % get_all_item_groups(FacingId, ItemData),
-    % assert_item_group_platform_(Parent, ItemData).
-
-% assert_item_group_platform_(Parent, [ItemGrp | Rest]) :-
-%     [PlatformItemGrpId, ProductUnitId, _, Stock] = ItemGrp,
-%     get_gtin(ProductUnitId, GtinStr),
-%     atom_string(Gtin, GtinStr),
-%     (article_number_of_dan(Gtin, AN),
-%     get_product_type(Gtin, ProductType),
-%     product_dimensions(ProductType, [D, W, H]);
-%     create_article_number(gtin(Gtin), AN),
-%     get_product_dimenion_platform(ProductUnitId, D, W, H),
-%     create_article_type(AN,[D,W,H], ProductType)),
-%     tell([has_type(Label, shop:'ShelfLabel'),
-%     triple(Parent,shop:labelOfFacing,Label),
-%     triple(Label,shop:articleNumberOfLabel,AN)]),
-%     assert_items_platform(PlatformItemGrpId, Parent, ProductType, [D, W, H]),
-%     assert_item_group_platform_(Parent, Rest).
-
-% assert_item_group_platform_(_, []).
-
 assert_items_platform(FacingId, Parent, ProductType) :-
     product_dimensions(ProductType, Dimension),
     get_all_items(FacingId, ItemData),
@@ -225,4 +205,3 @@ assert_items_platform_(Facing, ProductType, [D, W, H], [Item | Rest]) :-
     assert_items_platform_(Facing, ProductType, [D, W, H], Rest).
 
 assert_items_platform_(_, _, _, []).
-    

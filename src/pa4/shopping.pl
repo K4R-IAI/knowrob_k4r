@@ -141,7 +141,7 @@ insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, OtherFram
     post_facing_individual(LayerId, Facing, NoOfItems, ProductUnitId, FacingId)
     ),
     assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType, PutFlag, Fupdate),
-    %(ground(Fupdate) -> update_pdtUnitId(FacingId, ProductUnitId); true),
+    (ground(Fupdate) -> update_pdtUnitId(FacingId, ProductUnitId); true),
     forall(member([ItemId,  Coordinates], ItemList),
         (insert_item(Facing, OtherFacingFrame, ProductType, FacingId, ItemId, Coordinates, ItemInstance)
         %writeln(ItemInstance)
