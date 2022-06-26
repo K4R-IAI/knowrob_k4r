@@ -76,8 +76,10 @@ assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType, PutFlag, Facing
     is_restriction(R, value(shop:articleNumberOfProduct,AN1));
     create_new_product_type(ProductUnitId,Gtin, ProductType, AN1)),
     % Facing is classifed as misplaced facing when a user puts a different item
-    (\+ AN=AN1, PutFlag is 1,
-    tell(has_type(Facing, shop:'MisplacedProductFacing'));
+    ((\+ AN=AN1,
+        PutFlag is 1,
+        tell(has_type(Facing, shop:'MisplacedProductFacing')),
+        writeln('Misplaced'));
      % When the article numbers dont match, update the label if it is not put action
     (\+ AN=AN1, PutFlag is 0,
         tripledb_forget(Label,shop:articleNumberOfLabel,AN),
@@ -91,8 +93,7 @@ assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType, PutFlag, Facing
     triple(Facing,shop:labelOfFacing,Label),
     triple(Label,shop:articleNumberOfLabel,AN)])).
 
-create_new_product_type(ProductUnitId, GtinNum, ProductType, AN) :-
-    number_string(GtinNum, Gtin),
+create_new_product_type(ProductUnitId, Gtin, ProductType, AN) :-
     create_article_number(gtin(Gtin), AN),
     get_product_dimenion_platform(ProductUnitId, D, W, H),
     create_article_type(AN,[D,W,H], ProductType).
