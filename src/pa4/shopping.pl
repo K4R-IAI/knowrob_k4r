@@ -399,7 +399,7 @@ user_login(UserId, DeviceId, Timestamp, StoreId) :-
         has_time_interval(LoggingInAction, Interval)]),
         time_interval_tell(LoggingInAction, Timestamp, Timestamp),
         %writeln([Timestamp,UserId, StoreId]),
-        publish_log_in(Timestamp, [UserId, StoreId]))).
+        once(publish_log_in(Timestamp, [UserId, StoreId])))).
 
 
 pick_object(UserId, StoreId, ItemId, GtinNum, Timestamp) :-
@@ -427,10 +427,10 @@ pick_object(UserId, StoreId, ItemId, GtinNum, Timestamp) :-
         % writeln(["All good 1"]),
         % Initialise the store and associate product types with facing
         % TODO: delete item in platform
-        delete_item_and_update_facing(ItemId),
+        once(delete_item_and_update_facing(ItemId)), !,
         tripledb_forget(Facing, shop:productInFacing, Item),
         time_interval_tell(PickAct, Timestamp, Timestamp),
-        publish_pick_event(Timestamp, [UserId, StoreId, GtinNum]). % Not sure here if object type makes sense
+        once(publish_pick_event(Timestamp, [UserId, StoreId, GtinNum])). % Not sure here if object type makes sense
 
 
 put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Position) :-
@@ -459,7 +459,7 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
         insert_all_fridge_items(StoreId, [ShelfExt, LayerExt, FacingExt], Gtin, [[ExtItemId, Coordinates]], PutFlag),
         tripledb_forget(Basket, soma:containsObject, ItemInstance),
         time_interval_tell(PutAct, Timestamp, Timestamp),
-        publish_put_back(Timestamp, [UserId, StoreId, Gtin]). %% what needs to be here?? Gtin or object type or ?
+        once(publish_put_back(Timestamp, [UserId, StoreId, Gtin])). %% what needs to be here?? Gtin or object type or ?
 
 user_logout(UserId, DeviceId, Timestamp, StoreId) :-
     %% Device might be another participant in the login and logout action
@@ -487,7 +487,7 @@ user_logout(UserId, DeviceId, Timestamp, StoreId) :-
     time_interval_tell(ShoppingAct, Start, Timestamp),
     tripledb_forget(_, shop:hasUserId, UserId),
     triple(_, shop:hasDeviceId, DeviceId),
-    publish_log_out(Timestamp, [UserId, StoreId]).
+    once(publish_log_out(Timestamp, [UserId, StoreId])).
     %tripledb_forget(UserId, _, _).
     % Delete all the data of the user id after publishing log out
 
