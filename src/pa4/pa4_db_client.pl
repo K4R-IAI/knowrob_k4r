@@ -8,7 +8,7 @@
             get_item_group_id/3,
             get_all_shelf_data/3,
             get_all_items/2,
-            get_item_data/2,
+            %get_item_data/3,
             get_facing_data/2,
             get_all_item_groups/2,
             get_all_facings_platform/2,
@@ -24,11 +24,14 @@
             post_fridge_shelf/6,
             post_fridge_shelf_layer/5,
             post_fridge_shelf_layers/1,
-            post_fridge_facing/6,
+            post_fridge_facing/7,
             post_fridge_facings/1,
             post_items_in_store/1,
             update_item_position_platform/2,
-            update_stock/2,
+            update_stock/3,
+            update_pdtUnitId/2,
+            update_misplaced_facing/1,
+            update_misplaced_and_product_unit_id/2,
             delete_item_and_update_facing/1
           ]).
 
@@ -137,7 +140,7 @@ post_fridge_facings_of_layer([[LayerId, ExtId] | Rest]) :-
 
 post_fridge_facings_of_layer([]).
 
-post_fridge_facing(LayerPlId, LayerRelPos, ExtRefId, Count, PdtUnitId, FacingId) :-
+post_fridge_facing(LayerPlId, LayerRelPos, ExtRefId, Count, PdtUnitId, Misplaced, FacingId) :-
     %NoOfItemDepth is 1,
     LayerRelPosMM is round(LayerRelPos*1000),
     NoOfItemWidth is 1,
@@ -145,7 +148,7 @@ post_fridge_facing(LayerPlId, LayerRelPos, ExtRefId, Count, PdtUnitId, FacingId)
     NoOfItemHeight is 1,
     MinStock is 0,
     k4r_db_client:post_facing(LayerPlId, [LayerRelPosMM, NoOfItemWidth , NoOfItemDepth, NoOfItemHeight, 
-        MinStock, Count, PdtUnitId, ExtRefId], Facing),
+        MinStock, Count, Misplaced, PdtUnitId, ExtRefId], Facing),
     k4r_db_client:get_entity_id(Facing, FacingId).
 
 post_items_in_store(StoreNumber) :-
@@ -212,11 +215,24 @@ post_items_in_facing([Item | Rest], ParentName, FacingPlatformId) :-
     post_items_in_facing(Rest, ParentName, FacingPlatformId).
 
 
-update_stock(FacingId, Count) :-
+update_stock(FacingId, PdtUnitId, Count) :-
     get_facing_data(FacingId, Data),
-    Stock is Data.stock + Count,
+    atom_string(IdAtom, Data.productUnitId),
+    atom_number(IdAtom, FacingPdtId),
+    atom_string(IdAtom1, PdtUnitId),
+    atom_number(IdAtom1, PdtUnitIdNum),
+    Stock is Data.stock+Count,
+    (Data.misplacedStock = null -> Misplaced = 0;
+        Misplaced = Data.misplacedStock),
+    (Count > 0, \+ FacingPdtId = PdtUnitIdNum -> CurrentMisplaced is Misplaced+1;
+     Count < 0, \+ FacingPdtId = PdtUnitIdNum -> CurrentMisplaced is Misplaced-1;
+     CurrentMisplaced is Misplaced),
+    atom_number(Data.externalReferenceId, ExtRefId),
+    (CurrentMisplaced is 0 -> triple(Facing, shop:erpFacingId, ExtRefId),
+                                tripledb_forget(Facing, rdf:type, shop:'MisplacedProductFacing');
+                            true),
     k4r_db_client:put_facing(Data.shelfLayerId, [Data.layerRelativePosition, Data.noOfItemsDepth, Data.noOfItemsWidth,
-        Data.noOfItemsHeight, Data.minStock, Stock, Data.productUnitId, Data.externalReferenceId], _, Data.id).
+        Data.noOfItemsHeight, Data.minStock, Stock, CurrentMisplaced, Data.productUnitId, Data.externalReferenceId], _, Data.id).
 
 update_item_position_platform(ExtItemId, [X, Y, Z]) :-
     get_filter_("{items","externalReferenceId", "eq", ExtItemId, "string", ItemFilter),
@@ -226,14 +242,32 @@ update_item_position_platform(ExtItemId, [X, Y, Z]) :-
     %writeln(GraphQLQuery),
     get_graphql(GraphQLQuery, Response),
     member(ItemData, Response.items),
-    put_item([ItemData.facingId, X, Y, Z, ExtItemId], _, ItemData.id).
+    put_item([ItemData.facingId, X, Y, Z, ExtItemId, ItemData.productUnitId], _, ItemData.id).
+
+update_pdtUnitId(FacingId, ProductUnitId) :-
+    get_facing_data(FacingId, Data),
+    k4r_db_client:put_facing(Data.shelfLayerId, [Data.layerRelativePosition, Data.noOfItemsDepth, Data.noOfItemsWidth,
+        Data.noOfItemsHeight, Data.minStock, Data.stock,  Data.misplacedStock, ProductUnitId, Data.externalReferenceId], _, Data.id).
+
+update_misplaced_facing(FacingId) :-
+    get_facing_data(FacingId, Data),
+    (Data.misplacedStock = null -> MisplacedStock is 1;
+    MisplacedStock = Data.misplacedStock+1),
+    k4r_db_client:put_facing(Data.shelfLayerId, [Data.layerRelativePosition, Data.noOfItemsDepth, Data.noOfItemsWidth,
+        Data.noOfItemsHeight, Data.minStock, Data.stock, MisplacedStock, Data.productUnitId, Data.externalReferenceId], _, Data.id).
+
+update_misplaced_and_product_unit_id(FacingId, ProductUnitId) :-
+    get_facing_data(FacingId, Data),
+    MisplacedStock = Data.misplacedStock+1,
+    k4r_db_client:put_facing(Data.shelfLayerId, [Data.layerRelativePosition, Data.noOfItemsDepth, Data.noOfItemsWidth,
+        Data.noOfItemsHeight, Data.minStock, Data.stock, MisplacedStock, ProductUnitId, Data.externalReferenceId], _, Data.id).
 
 delete_item_and_update_facing(ExtItemId) :-
     get_filter_("{items","externalReferenceId", "eq", ExtItemId, "string", ItemFilter),
-    atomics_to_string([ItemFilter, "{", id, ",", facingId, "}}"], GraphQLQuery),
+    atomics_to_string([ItemFilter, "{", id, ",", facingId, ",", productUnitId, "}}"], GraphQLQuery),
     get_graphql(GraphQLQuery, Response), 
     member(ItemData, Response.items),
-    update_stock(ItemData.facingId, -1),
+    update_stock(ItemData.facingId, ItemData.productUnitId, -1),
     delete_entity_from_id("items", ItemData.id).
    
     %writeln(Data),
@@ -416,14 +450,21 @@ get_product_dimenion_platform(ProductUnitId, D, W, H) :-
     convert_to_m(Data.dimensionUnit, Data.width, W),
     convert_to_m(Data.dimensionUnit, Data.height, H).
 
-get_item_data(ExtItemId, ItemData) :-
-    get_filter_("{items","externalReferenceId", "eq", ExtItemId, "string", ItemFilter),
-    get_item_param(Fields),
-    list_to_string(Fields, FieldsStr),
-    atomics_to_string([ItemFilter, "{", FieldsStr, "}}"], GraphQLQuery),
-    %writeln(GraphQLQuery),
-    get_graphql(GraphQLQuery, Response),
-    member(ItemData, Response.items).
+% get_item_data(ExtItemId, FacingId, FinalItems) :-
+%     get_filter_("{items","externalReferenceId", "eq", ExtItemId, "string", ItemFilter),
+%     get_item_param(Fields),
+%     list_to_string(Fields, FieldsStr),
+%     atomics_to_string([ItemFilter, "{", FieldsStr, "}}"], GraphQLQuery),
+%     %writeln(GraphQLQuery),
+%     atom_string(F1Atom, FacingId),
+%     atom_number(F1Atom, F1Num),
+%     get_graphql(GraphQLQuery, Response),
+%     writeln(Response),
+%     member(ItemDict, Response.items),
+%     atom_string(IdAtom, ItemDict.facingId),
+%     writeln(IdAtom),
+%     atom_number(IdAtom, F1Num),
+%     FinalItems = ItemDict, !.
 
 get_facing_data(Id, FacingData) :-
     get_filter_("{facings","id", "eq", Id, "string", FacingFilter),
@@ -445,7 +486,8 @@ get_item_param(ItemFields) :-
         positionInFacingY,
         positionInFacingZ,
         facingId,
-        externalReferenceId
+        externalReferenceId,
+        productUnitId
     ].
 
 get_item_grp_param(Fields) :-
@@ -466,6 +508,7 @@ get_facing_param(Fields) :-
         noOfItemsHeight,
         minStock,
         stock,
+        misplacedStock,
         productUnitId,
         externalReferenceId
     ].

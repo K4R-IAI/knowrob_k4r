@@ -360,7 +360,7 @@ PREDICATE(post_shelf_layer, 3)
 const Json::Value facing_array_to_facing_json(const Json::Value &facing_array)
 {
   Json::Value facing_json;
-  if (facing_array.size() == 8)
+  if (facing_array.size() == 9)
   {
     facing_json["layerRelativePosition"] = facing_array[0];
     facing_json["noOfItemsDepth"] = facing_array[1];
@@ -368,8 +368,9 @@ const Json::Value facing_array_to_facing_json(const Json::Value &facing_array)
     facing_json["noOfItemsHeight"] = facing_array[3];
     facing_json["minStock"] = facing_array[4];
     facing_json["stock"] = facing_array[5];
-    facing_json["productUnitId"] = facing_array[6];
-    facing_json["externalReferenceId"] = facing_array[7];
+    facing_json["misplacedStock"] = facing_array[6];
+    facing_json["productUnitId"] = facing_array[7];
+    facing_json["externalReferenceId"] = facing_array[8];
   }
   else
   {
@@ -482,13 +483,14 @@ PREDICATE(put_item_group, 3)
 const Json::Value item_array_to_item_json(const Json::Value &item_array)
 {
   Json::Value item_json;
-  if (item_array.size() == 5)
+  if (item_array.size() == 6)
   {
     item_json["facingId"] = item_array[0];
     item_json["positionInFacingX"] = item_array[1];
     item_json["positionInFacingY"] = item_array[2];
     item_json["positionInFacingZ"] = item_array[3];
     item_json["externalReferenceId"] = item_array[4];
+    item_json["productUnitId"] = item_array[5];
   }
   else
   {

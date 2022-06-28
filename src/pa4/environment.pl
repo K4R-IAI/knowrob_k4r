@@ -162,7 +162,7 @@ assert_facing_platform_(Parent, [Facing | Rest]) :-
     subclass_of(fridge:'FridgeFacing', R1), has_description(R1, value(knowrob:depthOfObject, D)),
     subclass_of(fridge:'FridgeFacing', R2), has_description(R2, value(knowrob:widthOfObject, W)),
     subclass_of(fridge:'FridgeFacing', R3), has_description(R3, value(knowrob:heightOfObject, H)), 
-    [PlatformFacingId, _, LayerRelPositionCM, _, _, _,_, _, PdtUnitId, ExternalRefIdAtom] = Facing,
+    [PlatformFacingId, _, LayerRelPositionCM, _, _, _,_, _, Misplaced, PdtUnitId, ExternalRefIdAtom] = Facing,
     atom_number(ExternalRefIdAtom, ExtRefId),
     convert_to_m(2, LayerRelPositionCM, X), % is this X or Y
     rdf_split_url(_,ParentFrame, Parent),
@@ -175,6 +175,10 @@ assert_facing_platform_(Parent, [Facing | Rest]) :-
         has_type(ShapeRegion, soma:'ShapeRegion'),
         holds(ObjShape,dul:hasRegion,ShapeRegion),
         object_dimensions(PrFacing, D, W, H)]),
+    (ground(Misplaced), Misplaced = null -> MisplacedUpdated is 0;
+                        atom_number(Misplaced, MisplacedUpdated)),
+    (MisplacedUpdated > 0 -> tell(has_type(PrFacing, shop:'MisplacedProductFacing'));
+                        true),
     get_time(Now),
     time_scope(=(Now), =<('Infinity'), FScope),
     tf_set_pose(PrFacing,  [ParentFrame, [X, 0, 0],[0,0,0,1]], FScope),
@@ -191,14 +195,20 @@ assert_facing_platform_(_, []).
 assert_items_platform(FacingId, Parent, ProductType) :-
     product_dimensions(ProductType, Dimension),
     get_all_items(FacingId, ItemData),
-    assert_items_platform_(Parent, ProductType, Dimension, ItemData).
+    assert_items_platform_(Parent, Dimension, ProductType, ItemData).
 
-assert_items_platform_(Facing, ProductType, [D, W, H], [Item | Rest]) :-
-    [_, PosX, PosY, PosZ, _, ExtRefId] = Item,
+assert_items_platform_(Facing, [D, W, H], ProductType, [Item | Rest]) :-
+    [_, PosX, PosY, PosZ, _, ExtRefId, PdtUnitId] = Item,
     convert_to_m(2, PosX, X_m),
     convert_to_m(2, PosY, Y_m),
     convert_to_m(2, PosZ, Z_m),
-    tell(has_type(ItemInstance, ProductType)),
+    (has_type(Facing, shop:'MisplacedProductFacing') ->
+    (get_gtin(PdtUnitId, Gtin),
+    number_string(GtinNum, Gtin),
+    get_product_class(GtinNum, ItemProductType),
+    tell(has_type(ItemInstance, ItemProductType)));
+    (tell(has_type(ItemInstance, ProductType)))
+    ),
     rdf_split_url(_,ParentFrame, Facing),
     atom_string(ExtRefId, ExtRef),
     tell([has_type(ProductShape, soma:'Shape'),
@@ -211,6 +221,6 @@ assert_items_platform_(Facing, ProductType, [D, W, H], [Item | Rest]) :-
     get_time(Now),
     time_scope(=(Now), =<('Infinity'), FScope),
     tf_set_pose(ItemInstance,  [ParentFrame,  [X_m, Y_m, Z_m],[0,0,0,1]], FScope),
-    assert_items_platform_(Facing, ProductType, [D, W, H], Rest).
+    assert_items_platform_(Facing, [D, W, H], ProductType, Rest).
 
 assert_items_platform_(_, _, _, []).

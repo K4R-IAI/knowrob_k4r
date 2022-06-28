@@ -22,19 +22,20 @@
         put_back_object/7,
         items_bought(r, ?),
         insert_all_items(+,+,+,+,+,+),
-        insert_item(+,+,+,+,+,+,-),
+        insert_item(+,+,+,+,+,+, +,-),
         insert_all_fridge_items/5,
         get_items_in_fridge/2,
         get_user/2,
         get_facing/2,
         get_facing_top_left_frame_/2,
-        post_facing_individual/5
+        get_product_class/2,
+        post_facing_individual/4
     ]).
 
 %TODO : update the stock numbers in item group table
 
 :- use_module(library('semweb/sparql_client')).
-:- use_foreign_library('libkafka_plugin.so').
+%:- use_foreign_library('libkafka_plugin.so').
 :- use_module(library('semweb/rdf_db')).
 :- use_module(library('model/SOMA/ACT')).
 :- use_module(library('lang/terms/is_a')).
@@ -134,44 +135,51 @@ insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, OtherFram
     get_store(StoreNum, Store),
     get_facing_(Store, [ShelfExt, ShelfLayerExt, FacingExt], Facing),
     (ground(OtherFrame) -> call(OtherFrame, Facing, OtherFacingFrame); true),
-    length(ItemList, NoOfItems),
     get_product_unit_id(Gtin, ProductUnitId),
-    (get_facing_id([StoreNum, ShelfExt, ShelfLayerExt, FacingExt], FacingId),
-    update_stock(FacingId, NoOfItems);
+    (get_facing_id([StoreNum, ShelfExt, ShelfLayerExt, FacingExt], FacingId);
     get_layer_id([StoreNum, ShelfExt, ShelfLayerExt], LayerId),
-    post_facing_individual(LayerId, Facing, NoOfItems, ProductUnitId, FacingId)
+    post_facing_individual(LayerId, Facing, ProductUnitId, FacingId)
     ),
+    %writeln('before label'),
     assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType, PutFlag, Fupdate),
-    (ground(Fupdate) -> update_pdtUnitId(FacingId, ProductUnitId); true),
+    %writeln('after label'),
+    % update both misplaced and productunitid else one of them
     forall(member([ItemId,  Coordinates], ItemList),
-        (insert_item(Facing, OtherFacingFrame, ProductType, FacingId, ItemId, Coordinates, ItemInstance)
-        %writeln(ItemInstance)
-    )).
+        (insert_item(Facing, OtherFacingFrame, ProductType, FacingId, ItemId, Coordinates, ProductUnitId, ItemInstance)
+        %writeln(['new item', ItemInstance])
+        )),
+    % ((has_type(Facing,  shop:'MisplacedProductFacing'), ground(Fupdate) ->
+    %     update_misplaced_and_product_unit_id(FacingId, ProductUnitId));
+    % ((has_type(Facing,  shop:'MisplacedProductFacing') ->
+    %     update_misplaced_facing(FacingId); true),
+    (ground(Fupdate) ->
+        update_pdtUnitId(FacingId, ProductUnitId);
+        true).
+    %length(ItemList, NoOfItems).
+    %update_stock(FacingId, ProductUnitId, NoOfItems).
+
 
 % ToDO -- If the item id already exists then just update the position
-insert_item(Facing, FacingTopLeftcorner, Product, FacingId, ExtItemId, Coordinates, ItemInstance):- % Coordinates - [x,y] is fine
-    % writeln(['ITemsss', Store, [ShelfExt, ShelfLayerExt, FacingExt], ExtItemId, Gtin, Coordinates]),
+insert_item(Facing, FacingTopLeftcorner, Product, FacingId, ExtItemId, Coordinates,ProductUnitId, ItemInstance):- % Coordinates - [x,y] is fine
+    %writeln(['Itemsss', Facing, FacingTopLeftcorner, Product, FacingId, ExtItemId, Coordinates, ProductUnitId]),
     % check if item exists
-    ( (item_exists(ExtItemId, ItemInstance); 
-        (get_item_data(ExtItemId, ItemData),
-        \+ is_list_empty_(ItemData))) ->
-        update_item_position(Facing, ItemInstance, ExtItemId, Coordinates)
+    (item_exists(ExtItemId, ItemInstance)
+        %get_item_data(ExtItemId, FacingId, ItemData),
+        %update_item_position(Facing, ItemInstance, ExtItemId, [X, Y])
     );
-    % get facing
-    % create an object of the type of Gtin
-    % tell(instance_of)
-    % associate gtin with the item
-    % insert position
-    ((tell(instance_of(ItemInstance, Product)),
-    (ground(FacingTopLeftcorner) -> transform_item_pos_(FacingTopLeftcorner, Facing, ItemInstance, Coordinates, TransformedPos),
+    (tell(instance_of(ItemInstance, Product)),
+    ((ground(FacingTopLeftcorner) -> transform_item_pos_(FacingTopLeftcorner, Facing, ItemInstance, Coordinates, TransformedPos),
     [[X, Y, Z], _] = TransformedPos);
     ([X, Y] = Coordinates,
     Z is 0)),
     tell(triple(Facing, shop:productInFacing, ItemInstance)),
     tell(triple(ItemInstance, shop:hasItemId, ExtItemId)),
+    %writeln(['got pose 5']),
     shop:belief_new_object(Product, ItemInstance),
+    %writeln(['got pose 6']),
     k4r_db_client:double_m_to_int_mm([X, Y, Z], [X_mm, Y_mm, Z_mm]),
-    k4r_db_client:post_item([FacingId, X_mm, Y_mm, Z_mm, ExtItemId],_)).
+    k4r_db_client:post_item([FacingId, X_mm, Y_mm, Z_mm, ExtItemId, ProductUnitId],_)),
+    update_stock(FacingId, ProductUnitId, 1).
     % update_stock(ItemGroupId),
 
 
@@ -189,13 +197,14 @@ update_item_position(Facing, ItemInstance, ExtItemId, [X, Y]) :-
 item_exists(ExtItemId, Item) :-
     triple(Item, shop:hasItemId, ExtItemId).
 
-post_facing_individual(LayerPlId, Facing, Stock, ProductUnitId, FacingId) :-
+post_facing_individual(LayerPlId, Facing, ProductUnitId, FacingId) :-
     triple(Facing, shop:layerOfFacing, Layer),
     rdf_split_url(_, Frame, Layer),
     is_at(Facing, [Frame, [X, _, _], _]),
     triple(Facing, shop:erpFacingId, ExtRefId),
     ExtId is integer(ExtRefId),
-    post_fridge_facing(LayerPlId, X, ExtId, Stock, ProductUnitId, FacingId).
+    (has_type(Facing, shop:'MisplacedProductFacing') -> Misplaced is 1; Misplaced is 0),
+    post_fridge_facing(LayerPlId, X, ExtId, 0, ProductUnitId, Misplaced, FacingId).
 
 
 /* get_product_class(Gtin, Product) :-
@@ -429,8 +438,9 @@ pick_object(UserId, StoreId, ItemId, GtinNum, Timestamp) :-
         % TODO: delete item in platform
         once(delete_item_and_update_facing(ItemId)), !,
         tripledb_forget(Facing, shop:productInFacing, Item),
+        tripledb_forget(_, _, ItemId),
         time_interval_tell(PickAct, Timestamp, Timestamp),
-        once(publish_pick_event(Timestamp, [UserId, StoreId, GtinNum])). % Not sure here if object type makes sense
+        once(publish_pick_event(Timestamp, [UserId, StoreId, Gtin])). % Not sure here if object type makes sense
 
 
 put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Position) :-
@@ -456,7 +466,16 @@ put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Positi
             has_time_interval(PutAct, Interval)
         ]),
         PutFlag = 1,
-        insert_all_fridge_items(StoreId, [ShelfExt, LayerExt, FacingExt], Gtin, [[ExtItemId, Coordinates]], PutFlag),
+        %writeln('Before inserting'),
+        once(insert_all_fridge_items(StoreId, [ShelfExt, LayerExt, FacingExt], Gtin, [[ExtItemId, Coordinates]], PutFlag)), !,
+        %writeln('Item inserted'),
+        %chck for an item instance in the basket with the gtin and forget that instance
+        findall(Item,
+            (triple(Basket, soma:containsObject, Item),
+            has_type(Item, ProductType),
+            get_product_type(Gtin, ProductType)),
+        Items),
+        member(ItemInstance, Items),
         tripledb_forget(Basket, soma:containsObject, ItemInstance),
         time_interval_tell(PutAct, Timestamp, Timestamp),
         once(publish_put_back(Timestamp, [UserId, StoreId, Gtin])). %% what needs to be here?? Gtin or object type or ?
@@ -486,6 +505,7 @@ user_logout(UserId, DeviceId, Timestamp, StoreId) :-
     time_interval_tell(LogoutAct, Timestamp, Timestamp),
     time_interval_tell(ShoppingAct, Start, Timestamp),
     tripledb_forget(_, shop:hasUserId, UserId),
+    tripledb_forget(ShoppingAct, _, _),
     triple(_, shop:hasDeviceId, DeviceId),
     once(publish_log_out(Timestamp, [UserId, StoreId])).
     %tripledb_forget(UserId, _, _).
