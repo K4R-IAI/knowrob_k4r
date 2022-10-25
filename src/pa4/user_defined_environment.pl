@@ -137,7 +137,7 @@ assert_facing(StoreNum, ShelfExt, LayerExtId, Dimensions_Pos_Gtin) :-
     shop:assert_facing_id(Layer),
     get_layer_id([StoreNum, ShelfExt, LayerExtId], LayerId),
     forall(member([F, PId], FacingList),
-        ( post_facing_individual(LayerId, F, 0, PId, FacingId)
+        ( post_facing_individual(LayerId, F, PId, FacingId)
     )).
 
 /* assert_shelf_facings(ShelfNo, LayerNumber_Gtins) :-
