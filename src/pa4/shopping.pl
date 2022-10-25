@@ -35,7 +35,7 @@
 %TODO : update the stock numbers in item group table
 
 :- use_module(library('semweb/sparql_client')).
-%:- use_foreign_library('libkafka_plugin.so').
+:- use_foreign_library('libkafka_plugin.so').
 :- use_module(library('semweb/rdf_db')).
 :- use_module(library('model/SOMA/ACT')).
 :- use_module(library('lang/terms/is_a')).
@@ -79,8 +79,9 @@ assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType, PutFlag, Facing
     % Facing is classifed as misplaced facing when a user puts a different item
     ((\+ AN=AN1,
         PutFlag is 1,
-        tell(has_type(Facing, shop:'MisplacedProductFacing')),
-        writeln('Misplaced'));
+        tell(has_type(Facing, shop:'MisplacedProductFacing'))
+        %writeln('Misplaced')
+        );
      % When the article numbers dont match, update the label if it is not put action
     (\+ AN=AN1, PutFlag is 0,
         tripledb_forget(Label,shop:articleNumberOfLabel,AN),
@@ -88,11 +89,16 @@ assert_label_of_facing(Facing, ProductUnitId, Gtin, ProductType, PutFlag, Facing
         FacingUpdate = "update");
     true));
     %article_number_of_dan(Gtin, AN);
-    (
-    create_new_product_type(ProductUnitId, Gtin, ProductType, AN),
+    (((shop_reasoner:get_product_type(Gtin, ProductType),
+    get_article_number(ProductType, AN));
+    create_new_product_type(ProductUnitId, Gtin, ProductType, AN)),
     tell([has_type(Label, shop:'ShelfLabel'),
     triple(Facing,shop:labelOfFacing,Label),
     triple(Label,shop:articleNumberOfLabel,AN)])).
+
+get_article_number(ProductType, AN):-
+    subclass_of(ProductType, R),
+    is_restriction(R, value(shop:articleNumberOfProduct,AN)).
 
 create_new_product_type(ProductUnitId, Gtin, ProductType, AN) :-
     create_article_number(gtin(Gtin), AN),
@@ -128,7 +134,7 @@ assert_store(StoreId, StorePlatformId, Store) :-
 
 % Gtin is provided here is used to know the product type that belongs to the facing
 insert_all_fridge_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, ItemList, PutFlag) :-
-    \+ground(PutFlag) -> PutFlag is 0; true,
+    (\+ground(PutFlag) -> PutFlag is 0; true),
     insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, get_facing_top_left_frame_, ItemList, PutFlag).
     
 insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, OtherFrame, ItemList, PutFlag) :-
@@ -216,15 +222,6 @@ post_facing_individual(LayerPlId, Facing, ProductUnitId, FacingId) :-
 
 get_product_class(Gtin, Product) :-
     get_product_type(Gtin, Product).
-
-% get_product_class(EAN, Product) :-
-%     atomic_list_concat([ 'PREFIX product_cat: <http://purl.org/goodrelations/v1#>', 
-%         'select ?ProductInstance where {?ProductInstance product_cat:hasEAN_UCC-13 "', 
-%         EAN,'"}'], Query), 
-%     sparql_query(Query, Row, 
-%         [ endpoint('https://api.krr.triply.cc/datasets/mkumpel/NonFoodKG/services/NonFoodKG/sparql/'), 
-%         variable_names([ProductInstance])] ),
-%     row(Product) = Row.
 
 get_product_class(Gtin, Product) :-
     get_product_unit_id(Gtin, ProductUnitId),
