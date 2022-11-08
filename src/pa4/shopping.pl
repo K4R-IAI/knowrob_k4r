@@ -29,13 +29,14 @@
         get_facing/2,
         get_facing_top_left_frame_/2,
         get_product_class/2,
-        post_facing_individual/4
+        post_facing_individual/4,
+        drop_store_in_mongo/1
     ]).
 
 %TODO : update the stock numbers in item group table
 
 :- use_module(library('semweb/sparql_client')).
-:- use_foreign_library('libkafka_plugin.so').
+% :- use_foreign_library('libkafka_plugin.so').
 :- use_module(library('semweb/rdf_db')).
 :- use_module(library('model/SOMA/ACT')).
 :- use_module(library('lang/terms/is_a')).
@@ -151,7 +152,7 @@ insert_all_items(StoreNum, [ShelfExt, ShelfLayerExt, FacingExt], Gtin, OtherFram
     %writeln('after label'),
     % update both misplaced and productunitid else one of them
     forall(member([ItemId,  Coordinates], ItemList),
-        (insert_item(Facing, OtherFacingFrame, ProductType, FacingId, ItemId, Coordinates, ProductUnitId, ItemInstance)
+        (insert_item(Facing, OtherFacingFrame, ProductType, FacingId, ItemId, Coordinates,ProductUnitId, _)
         %writeln(['new item', ItemInstance])
         )),
     % ((has_type(Facing,  shop:'MisplacedProductFacing'), ground(Fupdate) ->
@@ -442,7 +443,7 @@ pick_object(UserId, StoreId, ItemId, GtinNum, Timestamp) :-
 
 put_back_object(UserId, StoreId, ExtItemId, Gtin, Timestamp, Coordinates, Position) :-
     [ShelfExt, LayerExt, FacingExt] = Position,
-    get_store(StoreId, Store),
+    %get_store(StoreId, Store),
     triple(User, shop:hasUserId, UserId),
     is_performed_by(ShoppingAct, User),
     executes_task(ShoppingAct, Tsk),
@@ -507,6 +508,59 @@ user_logout(UserId, DeviceId, Timestamp, StoreId) :-
     once(publish_log_out(Timestamp, [UserId, StoreId])).
     %tripledb_forget(UserId, _, _).
     % Delete all the data of the user id after publishing log out
+
+drop_store_in_mongo(Storenumber) :-
+    get_store(Storenumber, Store),
+    triple(Fridge, dul:hasLocation, Store),
+    findall(Shelf,
+        (triple(Fridge, soma:hasPhysicalComponent, Shelf),
+        has_type(Shelf, shop:'ShelfFrame')),
+    Shelves),
+    delete_shelves(Shelves),
+    tripledb_forget(Fridge, _, _),
+    tripledb_forget(Store, _, _).
+
+delete_shelves([]).
+
+delete_shelves([Shelf | Rest]) :-
+    findall(ShelfLayer,
+        (triple(Shelf, soma:hasPhysicalComponent, ShelfLayer)),
+    ShelfLayers ),
+    delete_layers(ShelfLayers),
+    tripledb_forget(Shelf, _, _),
+    tripledb_forget(_, _ , Shelf),
+    delete_shelves(Rest).
+
+delete_layers([]).
+
+delete_layers([ShelfLayer | Rest]) :-
+    findall(Facing,
+        (triple(Facing, shop:layerOfFacing, ShelfLayer)),
+    Facings),
+    delete_facings(Facings),
+    tripledb_forget(ShelfLayer, _, _),
+    tripledb_forget(_, _ , ShelfLayer),
+    delete_layers(Rest).
+
+delete_facings([]).
+
+delete_facings([Facing | Rest]) :-
+    findall(Item,
+        (triple(Facing, shop:productInFacing, Item)),
+    Items),
+    delete_items(Items),
+    tripledb_forget(Facing, shop:labelOfFacing, Label),
+    tripledb_forget(Label, _, _),
+    tripledb_forget(Facing, _, _),
+    tripledb_forget(_, _ , Facing),
+    delete_facings(Rest).
+
+delete_items([]).
+
+delete_items([Item | Rest]) :-
+    tripledb_forget(Item, _, _),
+    tripledb_forget(_, _, Item),
+    delete_items(Rest).
 
 items_bought(UserId, Items) :-
     triple(User, shop:hasUserId, UserId),
