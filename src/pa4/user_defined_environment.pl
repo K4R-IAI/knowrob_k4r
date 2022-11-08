@@ -107,7 +107,7 @@ init_store(StoreNumber) :-
     create_shelf_layer(S, [0.45, 0.64, 0.2], -0.8, _),
     create_shelf_layer(S, [0.45, 0.64, 0.2], -0.4, _),
     %writeln([L1, L2]),
-    marker_plugin:republish,
+    %marker_plugin:republish,
     shop:assert_layer_id(S),
     post_fridge_shelf_layers(StoreNumber)).
     %post_fridge_facings(StoreNumber)).
