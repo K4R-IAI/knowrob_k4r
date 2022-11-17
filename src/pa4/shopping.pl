@@ -36,7 +36,7 @@
 %TODO : update the stock numbers in item group table
 
 :- use_module(library('semweb/sparql_client')).
-% :- use_foreign_library('libkafka_plugin.so').
+:- use_foreign_library('libkafka_plugin.so').
 :- use_module(library('semweb/rdf_db')).
 :- use_module(library('model/SOMA/ACT')).
 :- use_module(library('lang/terms/is_a')).
