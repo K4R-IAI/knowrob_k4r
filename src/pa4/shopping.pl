@@ -30,7 +30,8 @@
         get_facing_top_left_frame_/2,
         get_product_class/2,
         post_facing_individual/4,
-        drop_store_in_mongo/1
+        drop_store_in_mongo/1,
+        restart_triple_db/1
     ]).
 
 %TODO : update the stock numbers in item group table
@@ -561,6 +562,18 @@ delete_items([Item | Rest]) :-
     tripledb_forget(Item, _, _),
     tripledb_forget(_, _, Item),
     delete_items(Rest).
+
+restart_triple_db(DB):-
+    mng_client:mng_drop(DB, triples),
+    tripledb_init,
+    tripledb_load('http://www.w3.org/2002/07/owl.rdf',[namespace(owl,'http://www.w3.org/2002/07/owl#')]),
+    tripledb_load('http://www.ontologydesignpatterns.org/ont/dul/IOLite.owl',[ namespace(io)]),
+    tripledb_load('http://knowrob.org/kb/knowrob.owl',[ namespace(knowrob)]),
+    tripledb_load('package://knowrob_stocktaking/owl/shop.owl',[ namespace(shop, 'http://knowrob.org/kb/shop.owl#')]),
+    tripledb_load('package://knowrob_stocktaking/owl/dm-market.owl',[ namespace(dmshop, 'http://knowrob.org/kb/dm-market.owl#')]),
+    tripledb_load('package://knowrob_stocktaking/owl/product-catalog.owl'),
+    tripledb_load('package://knowrob_stocktaking/owl/product-taxonomy.owl'),
+    tripledb_load('package://knowrob_k4r/owl/fridge.owl',[ namespace(fridge,'http://knowrob.org/kb/fridge.owl#')]).
 
 items_bought(UserId, Items) :-
     triple(User, shop:hasUserId, UserId),
