@@ -14,13 +14,13 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(PkgConfig)
 
-pkg_check_modules(RDKAFKA REQUIRED rdkafka)
-include_directories(${RDKAFKA_INCLUDE_DIRS})
-link_directories(${RDKAFKA_LIBRARY_DIRS})
+# pkg_check_modules(RDKAFKA REQUIRED rdkafka)
+# include_directories(${RDKAFKA_INCLUDE_DIRS})
+# link_directories(${RDKAFKA_LIBRARY_DIRS})
 
-pkg_check_modules(RDKAFKAPP REQUIRED rdkafka++)
-include_directories(${RDKAFKAPP_INCLUDE_DIRS})
-link_directories(${RDKAFKAPP_LIBRARY_DIRS})
+# pkg_check_modules(RDKAFKAPP REQUIRED rdkafka++)
+# include_directories(${RDKAFKAPP_INCLUDE_DIRS})
+# link_directories(${RDKAFKAPP_LIBRARY_DIRS})
 
 pkg_check_modules(SWIPL REQUIRED swipl)
 link_directories(${SWIPL_LIBRARY_DIRS})
@@ -37,7 +37,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
 	CATKIN_DEPENDS rosprolog roscpp roslib
-  DEPENDS RDKAFKAPP RDKAFKA JSONCPP
+  DEPENDS JSONCPP #RDKAFKAPP RDKAFKA
 )
 
 set(CMAKE_CXX_FLAGS "-std=c++0x -pthread ${CMAKE_CXX_FLAGS}")
@@ -64,21 +64,21 @@ add_dependencies(k4r_db_client
 ##### Pa4 #####
 ###############
 
-set(HEADER include/knowrob_k4r/kafka_event_producer.h)
+# set(HEADER include/knowrob_k4r/kafka_event_producer.h)
 
-add_library(kafka_plugin SHARED
-            src/pa4/kafka_event_producer.cpp
-            src/pa4/kafka_plugin.cpp
-            ${HEADER}
-            )
+# add_library(kafka_plugin SHARED
+#             src/pa4/kafka_event_producer.cpp
+#             src/pa4/kafka_plugin.cpp
+#             ${HEADER}
+#             )
 
-target_link_libraries(kafka_plugin 
-                      ${SWIPL_LIBRARIES}
-                      ${JSONCPP_LIBRARIES}
-                      ${RDKAFKAPP_LIBRARIES}  
-                      ${RDKAFKA_LIBRARIES}
-                      ${catkin_LIBRARIES})
+# target_link_libraries(kafka_plugin 
+#                       ${SWIPL_LIBRARIES}
+#                       ${JSONCPP_LIBRARIES}
+#                       ${RDKAFKAPP_LIBRARIES}  
+#                       ${RDKAFKA_LIBRARIES}
+#                       ${catkin_LIBRARIES})
 
-add_dependencies(kafka_plugin
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-  ${catkin_EXPORTED_TARGETS})
+# add_dependencies(kafka_plugin
+#   ${${PROJECT_NAME}_EXPORTED_TARGETS}
+#   ${catkin_EXPORTED_TARGETS})

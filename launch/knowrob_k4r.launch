@@ -12,5 +12,5 @@
     <arg name="initial_goal" default="true" />
   </include>
 
-  <node pkg="rosprolog" type="rosprolog_rest.py" name="rosprolog_rest"/>
+  <!-- <node pkg="rosprolog" type="rosprolog_rest.py" name="rosprolog_rest"/> -->
 </launch>
