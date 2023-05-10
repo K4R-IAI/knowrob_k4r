@@ -1,0 +1,1 @@
+:- use_module('k4r_db_client').

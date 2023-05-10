@@ -1,0 +1,234 @@
+<?xml version="1.0"?>
+<robot name="dm_shelf_macros" xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <!--<xacro:macro name="divider_link" params="parent name *origin">
+    <link name="${name}_link">
+      <visual>
+        <geometry>
+          <box size="0.004 0.65 0.05"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.004 0.65 0.05"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint type="fixed" name="${name}_joint">
+      <xacro:insert_block name="origin"/>
+      <parent link="${parent}"/>
+      <child link="${name}_link"/>
+    </joint>
+  </xacro:macro>
+
+<xacro:macro name="shelf_divider" params="parent name dist1 dist2 dist3 dist4 dist5 dist6 dist7 dist8 dist9">
+    <divider_link parent="${parent}" name="${name}_divider_1">
+      <origin xyz="-0.495 0 0.024"/>
+    </divider_link>
+
+    <divider_link parent="${parent}" name="${name}_divider_2">
+      <origin xyz="${-0.495 + dist1} 0 0.024"/>
+    </divider_link>
+
+    <divider_link parent="${parent}" name="${name}_divider_3">
+      <origin xyz="${-0.495 + dist1 + dist2} 0 0.024"/>
+    </divider_link>
+
+    <divider_link parent="${parent}" name="${name}_divider_4">
+      <origin xyz="${-0.495 + dist1 + dist2 + dist3} 0 0.024"/>
+    </divider_link>
+
+    <divider_link parent="${parent}" name="${name}_divider_5">
+      <origin xyz="${-0.495 + dist1 + dist2 + dist3 + dist4} 0 0.024"/>
+    </divider_link>
+
+    <divider_link parent="${parent}" name="${name}_divider_6">
+      <origin xyz="${-0.495 + dist1 + dist2 + dist3 + dist4 + dist5} 0 0.024"/>
+    </divider_link>
+
+    <divider_link parent="${parent}" name="${name}_divider_7">
+      <origin xyz="${-0.495 + dist1 + dist2 + dist3 + dist4 + dist5 + dist6} 0 0.024"/>
+    </divider_link>
+
+    <divider_link parent="${parent}" name="${name}_divider_8">
+      <origin xyz="${-0.495 + dist1 + dist2 + dist3 + dist4 + dist5 + dist6 + dist7} 0 0.024"/>
+    </divider_link>
+
+    <divider_link parent="${parent}" name="${name}_divider_9">
+      <origin xyz="${-0.495 + dist1 + dist2 + dist3 + dist4 + dist5 + dist6 + dist7 + dist8} 0 0.024"/>
+    </divider_link>
+
+    <divider_link parent="${parent}" name="${name}_divider_10">
+      <origin xyz="${-0.495 + dist1 + dist2 + dist3 + dist4 + dist5 + dist6 + dist7 + dist8 + dist9} 0 0.024"/>
+    </divider_link>
+  </xacro:macro>-->
+
+
+  <xacro:macro name="shelf_1_level" params="name parent *origin">
+    <link name="${name}_link">
+      <visual>
+        <material name="White">
+          <color rgba="1 0 1 1"/>
+        </material>
+        <geometry>
+          <box size="0.480 0.35 0.043"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.480 0.35 0.043"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="${name}_left_support_link">
+      <visual>
+        <material name="White">
+          <color rgba="1 0 1 1"/>
+        </material>
+        <geometry>
+          <box size="0.004 0.35 0.12"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.004 0.35 0.12"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="${name}_right_support_link">
+      <visual>
+        <material name="White">
+          <color rgba="1 0 1 1"/>
+        </material>
+        <geometry>
+          <box size="0.004 0.35 0.12"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.004 0.35 0.12"/>
+        </geometry>
+      </collision>
+    </link>
+
+
+    <joint type="fixed" name="${name}_joint">
+      <xacro:insert_block name="origin"/>
+      <parent link="${parent}"/>
+      <child link="${name}_link"/>
+    </joint>
+
+    <joint type="fixed" name="${name}_right_support_joint">
+      <origin xyz="0.24 0 -0.06"/>
+      <parent link="${name}_link"/>
+      <child link="${name}_right_support_link"/>
+    </joint>
+
+    <joint type="fixed" name="${name}_left_support_joint">
+      <origin xyz="-0.24 0 -0.06"/>
+      <parent link="${name}_link"/>
+      <child link="${name}_left_support_link"/>
+    </joint>
+
+
+    <!--<shelf_divider parent="${name}_link" name="${name}" dist1="${dist1}" dist2="${dist2}" dist3="${dist3}" dist4="${dist4}" dist5="${dist5}" dist6="${dist6}" dist7="${dist7}" dist8="${dist8}" dist9="${dist9}" />-->
+  </xacro:macro>
+
+
+
+
+
+  <xacro:macro name="shelf_1" params="*origin parent name">
+    <link name="${name}_base">
+      <visual>
+        <material name="White">
+          <color rgba="0.5 0.5 0.5 0.8"/>
+        </material>
+        <geometry>
+          <box size="0.6 0.4 0.15"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.6 0.4 0.15"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint type="fixed" name="${name}_joint">
+      <xacro:insert_block name="origin"/>
+      <parent link="${parent}"/>
+      <child link="${name}_base"/>
+    </joint>
+
+    <link name="${name}_back">
+      <visual>
+        <material name="White">
+          <color rgba="0.5 0.5 0.5 0.8"/>
+        </material>
+        <geometry>
+          <box size="0.6 0.12 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.6 0.12 1"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint type="fixed" name="${name}_base_back_joint">
+      <origin xyz="0 0.2 0.55"/>
+      <parent link="${name}_base"/>
+      <child link="${name}_back"/>
+    </joint>
+
+    <link name="${name}_level_0_link">
+      <visual>
+        <material name="White">
+          <color rgba="0.5 0.5 0.5 0.8"/>
+        </material>
+        <geometry>
+          <box size="0.48 0.35 0.043"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.48 0.35 0.043"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint type="fixed" name="${name}_level_0_joint">
+      <origin xyz="0 -0.06 0.10665"/>
+      <parent link="${name}_base"/>
+      <child link="${name}_level_0_link"/>
+    </joint>
+
+
+
+     <shelf_1_level name="${name}_level_1" parent="${name}_base" >
+      <origin xyz="0 0 0.50965" />
+    </shelf_1_level>
+
+   <!--<shelf_1_level name="${name}_level_2" parent="${name}_base" dist1="0.177" dist2="0.208" dist3="0.147" dist4="0.20" dist5="0.124" dist6="0.14" dist7="0" dist8="0" dist9="0" >
+      <origin xyz="0 0 0.84465" />
+    </shelf_1_level>
+
+    <shelf_1_level name="${name}_level_3" parent="${name}_base" dist1="0" dist2="0" dist3="0" dist4="0" dist5="0" dist6="0" dist7="0" dist8="0" dist9="0" >
+      <origin xyz="0 0 1.22265" />
+    </shelf_1_level>
+
+    <shelf_1_level name="${name}_level_4" parent="${name}_base" dist1="0" dist2="0" dist3="0" dist4="0" dist5="0" dist6="0" dist7="0" dist8="0" dist9="0" >
+      <origin xyz="0 0 1.53565" />
+    </shelf_1_level>
+
+    <shelf_1_level name="${name}_level_5" parent="${name}_base" dist1="0" dist2="0" dist3="0" dist4="0" dist5="0" dist6="0" dist7="0" dist8="0" dist9="0" >
+      <origin xyz="0 0 1.86865" />
+    </shelf_1_level> -->
+  </xacro:macro>
+
+</robot>

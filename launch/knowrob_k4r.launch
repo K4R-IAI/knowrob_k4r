@@ -2,13 +2,10 @@
   <!-- Configure settings file. -->
   <arg name="knowrob_settings" default="$(find knowrob)/settings/default.pl" />
   <env name="KNOWROB_SETTINGS" value="$(arg knowrob_settings)" />
-  <param name="mongodb_uri" value="$(optenv KNOWROB_MONGODB_URI mongodb://localhost:27017/?appname=knowrob)" />
+  <param name="dt_url" value="$(optenv DT_URL https://dt-api.sandbox.knowledge4retail.org/k4r/api/v0/)"/>
+  <param name="graphql_url" value="$(optenv GRAPHQL_URL https://dt-api.sandbox.knowledge4retail.org/k4r/graphql)"/>
 
-    <!-- rosbridge for websocket visualization -->
-  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
-    <arg name="authenticate" value="true"/>
-    <arg name="websocket_external_port" value="80" />
-  </include>
+  <param name="mongodb_uri" value="$(optenv KNOWROB_MONGODB_URI mongodb://localhost:27017)" />
   
   <include file="$(find rosprolog)/launch/rosprolog.launch">
     <arg name="initial_package" default="knowrob_k4r" />

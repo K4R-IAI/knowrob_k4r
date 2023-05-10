@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="fridge">
+  <link name="base_link"/>
+  <link name="shelf_1_base">
+    <visual>
+      <material name="White">                                                                                                                                                                                                                                                                                                                                                                               
+        <color rgba="0.5 0.5 0.5 0.8"/>
+      </material>
+      <geometry>
+        <box size="0.6 0.4 0.15"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.6 0.4 0.15"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="shelf_1_joint" type="fixed">
+    <origin rpy="0 0 -1.5756" xyz="0.0 -0.2415761 0.08515"/>
+    <parent link="base_link"/>
+    <child link="shelf_1_base"/>
+  </joint>
+  <link name="shelf_1_back">
+    <visual>
+      <material name="White">
+        <color rgba="0.5 0.5 0.5 0.8"/>
+      </material>
+      <geometry>
+        <box size="0.6 0.12 1"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.6 0.12 1"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="shelf_1_base_back_joint" type="fixed">
+    <origin xyz="0 0.2 0.55"/>
+    <parent link="shelf_1_base"/>
+    <child link="shelf_1_back"/>
+  </joint>
+  <link name="shelf_1_level_0_link">
+    <visual>
+      <material name="White">
+        <color rgba="0.5 0.5 0.5 0.8"/>
+      </material>
+      <geometry>
+        <box size="0.48 0.35 0.043"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.48 0.35 0.043"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="shelf_1_level_0_joint" type="fixed">
+    <origin xyz="0 0.00 0.10665"/>
+    <parent link="shelf_1_base"/>
+    <child link="shelf_1_level_0_link"/>
+  </joint>
+  <link name="shelf_1_level_1_link">
+    <visual>
+      <material name="White">
+        <color rgba="1 0 1 1"/>
+      </material>
+      <geometry>
+        <box size="0.480 0.35 0.043"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.480 0.35 0.043"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="shelf_1_level_1_separator_1_link">
+    <visual>
+      <material name="White">
+        <color rgba="1 0 1 1"/>
+      </material>
+      <geometry>
+        <box size="0.008 0.35 0.08"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.008 0.35 0.08"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="shelf_1_level_1_separator_2_link">
+    <visual>
+      <material name="White">
+        <color rgba="1 0 1 1"/>
+      </material>
+      <geometry>
+        <box size="0.008 0.35 0.08"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.008 0.35 0.08"/>
+      </geometry>
+    </collision>
+  </link>
+    <link name="shelf_1_level_1_separator_3_link">
+    <visual>
+      <material name="White">
+        <color rgba="1 0 1 1"/>
+      </material>
+      <geometry>
+        <box size="0.008 0.35 0.08"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.008 0.35 0.08"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="shelf_1_level_1_separator_4_link">
+    <visual>
+      <material name="White">
+        <color rgba="1 0 1 1"/>
+      </material>
+      <geometry>
+        <box size="0.008 0.35 0.08"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.008 0.35 0.08"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="shelf_1_level_1_facing_1_link">
+    <visual>
+      <material name="White">
+        <color rgba="1 0 1 1"/>
+      </material>
+      <geometry>
+        <box size="0.12 0.35 0.08"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.12 0.35 0.08"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="shelf_1_level_1_facing_2_link">
+    <visual>
+      <material name="White">
+        <color rgba="1 0 1 1"/>
+      </material>
+      <geometry>
+        <box size="0.12 0.35 0.08"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.12 0.35 0.08"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="shelf_1_level_1_facing_3_link">
+    <visual>
+      <material name="White">
+        <color rgba="1 0 1 1"/>
+      </material>
+      <geometry>
+        <box size="0.12 0.35 0.08"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.12 0.35 0.08"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="shelf_1_level_1_joint" type="fixed">
+    <origin xyz="0 0 0.50965"/>
+    <parent link="shelf_1_base"/>
+    <child link="shelf_1_level_1_link"/>
+  </joint>
+  <joint name="shelf_1_level_1_separator_1_joint" type="fixed">
+    <origin xyz="-0.24 0 0.06"/>
+    <parent link="shelf_1_level_1_link"/>
+    <child link="shelf_1_level_1_separator_1_link"/>
+  </joint>
+  <joint name="shelf_1_level_1_separator_2_joint" type="fixed">
+    <origin xyz="-0.08 0 0.06"/>
+    <parent link="shelf_1_level_1_link"/>
+    <child link="shelf_1_level_1_separator_2_link"/>
+  </joint>
+  <joint name="shelf_1_level_1_separator_3_joint" type="fixed">
+    <origin xyz="0.08 0 0.06"/>
+    <parent link="shelf_1_level_1_link"/>
+    <child link="shelf_1_level_1_separator_3_link"/>
+  </joint>
+  <joint name="shelf_1_level_1_separator_4_joint" type="fixed">
+    <origin xyz="0.24 0 0.06"/>
+    <parent link="shelf_1_level_1_link"/>
+    <child link="shelf_1_level_1_separator_4_link"/>
+  </joint>
+  <joint name="shelf_1_level_1_facing_1_joint" type="fixed">
+    <origin xyz="-0.16 0 0.06"/>
+    <parent link="shelf_1_level_1_link"/>
+    <child link="shelf_1_level_1_facing_1_link"/>
+  </joint>
+  <joint name="shelf_1_level_1_facing_2_joint" type="fixed">
+    <origin xyz="0.0 0 0.06"/>
+    <parent link="shelf_1_level_1_link"/>
+    <child link="shelf_1_level_1_facing_2_link"/>
+  </joint>
+  <joint name="shelf_1_level_1_facing_3_joint" type="fixed">
+    <origin xyz="0.16 0 0.06"/>
+    <parent link="shelf_1_level_1_link"/>
+    <child link="shelf_1_level_1_facing_3_link"/>
+  </joint>
+</robot>
+

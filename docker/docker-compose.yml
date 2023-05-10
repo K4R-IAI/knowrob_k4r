@@ -2,22 +2,28 @@ version: '3'
 services:
   mongo:
     image: mongo:4.4.3-bionic
-    container_name: mongo_container
+    container_name: ${MONGODB}
 
-  knowrob:
-    image: iaik4r/knowrob:v0.1
-    container_name: knowrob_container
+  knowrob-init:
+    image: iaik4r/knowrob-init:v0.3
+    container_name: ${KNOWROB_INIT}
     depends_on:
       - 'mongo'
     environment:
-      - KNOWROB_MONGODB_URI=mongodb://mongo_container:27017/?appname=knowrob
+      - KNOWROB_MONGODB_PKG_URI=${KNOWROB_MONGODB_PKG_URI}
+
+  knowrob:
+    image: iaik4r/knowrob:v1.0.11
+    container_name: ${KNOWROB}
+    depends_on:
+      - 'mongo'
+    environment:
+      - KNOWROB_VERSION=${KNOWROB_VERSION}
+      - KNOWROB_PORT=${KNOWROB_PORT}
+      - KNOWROB_MONGODB_URI=${KNOWROB_MONGODB_URI}
+      - DT_URL=${DT_URL}
+      - GRAPHQL_URL=${GRAPHQL_URL}
     ports:
-      - "62226:62226"
+      - "${KNOWROB_PORT}:${KNOWROB_PORT}"
     entrypoint: /entrypoint.bash
     command: roslaunch knowrob_k4r knowrob_k4r.launch
-    volumes:
-      - lft:/home/data
-
-volumes:
-  # volume to transfer scanned data
-  lft:

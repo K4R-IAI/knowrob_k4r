@@ -17,7 +17,7 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>knowrob</build_depend>
-  <build_depend>knowrob_refills</build_depend>
+  <build_depend>knowrob_stocktaking</build_depend>
   <build_export_depend>knowrob</build_export_depend>
   <exec_depend>knowrob</exec_depend>
 
